@@ -16,7 +16,7 @@ defmodule Validator do
     end
   end
 
-  def validate_map(map, %{} = schema, context \\ []) do
+  defp validate_map(map, %{} = schema, context) when is_map(map) do
     field_errors =
       schema
       |> Enum.map(fn {field_name, field} ->
@@ -35,6 +35,10 @@ defmodule Validator do
       field_errors
     ]
     |> List.flatten()
+  end
+
+  defp validate_map(map, _spec, context) do
+    [Validator.Error.new("Expected a map, got: #{inspect(map)}", context)]
   end
 
   defp validate_value(value, spec, context) do

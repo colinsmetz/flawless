@@ -84,4 +84,10 @@ defmodule ValidatorTest do
     schema = [integer()]
     Validator.validate(value, schema) |> IO.inspect()
   end
+
+  test "it detects when it is not a map" do
+    value = nil
+    schema = %{}
+    Validator.validate(value, schema) |> IO.inspect()
+  end
 end
