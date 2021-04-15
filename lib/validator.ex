@@ -79,8 +79,8 @@ defmodule Validator do
     |> List.flatten()
   end
 
-  defp validate_list(list, _field, _context) do
-    ["Expected a list, got: #{inspect(list)}"]
+  defp validate_list(list, _spec, context) do
+    [Validator.Error.new("Expected a list, got: #{inspect(list)}", context)]
   end
 
   defp unexpected_fields_error(map, schema, context) do
