@@ -8,10 +8,9 @@ Example:
 ```elixir
   map = %{
     "format" => "yml",
-    "regex" => "/the/regex",
     "fields" => [
       %{"name" => "a", "type" => "INT64", "is_key" => true, "is_required" => false},
-      %{"name" => "b", "type" => "STRING", "tru" => "blop", "meta" => %{}}
+      %{"name" => "b", "type" => "STRING"}
     ],
     "polling" => %{
       "slice_size" => "50MB",
