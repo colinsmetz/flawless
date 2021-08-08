@@ -1,7 +1,114 @@
 defmodule ValidatorTest do
   use ExUnit.Case, async: true
   doctest Validator
-  import Validator, only: [defvalidator: 1]
+  import Validator, only: [defvalidator: 1, validate: 2]
+  alias Validator.Error
+
+  describe "basic types" do
+    import Validator.Helpers
+
+    test "value/1 expects any value" do
+      assert validate(123, value()) == []
+      assert validate(true, value()) == []
+      assert validate("hey", value()) == []
+    end
+
+    test "req_value/1 expects any value" do
+      assert validate(123, req_value()) == []
+      assert validate(true, req_value()) == []
+      assert validate("hey", req_value()) == []
+    end
+
+    test "boolean/1 expects a boolean value" do
+      assert validate(123, boolean()) == [Error.new("Expected a boolean, received: 123.", [])]
+      assert validate(true, boolean()) == []
+      assert validate(false, boolean()) == []
+    end
+
+    test "req_boolean/1 expects a boolean value" do
+      assert validate(123, req_boolean()) == [Error.new("Expected a boolean, received: 123.", [])]
+      assert validate(true, req_boolean()) == []
+      assert validate(false, req_boolean()) == []
+    end
+
+    test "number/1 expects a number value" do
+      assert validate("hello", number()) == [
+               Error.new("Expected a number, received: \"hello\".", [])
+             ]
+
+      assert validate(123, number()) == []
+      assert validate(1.44, number()) == []
+    end
+
+    test "req_number/1 expects a number value" do
+      assert validate("hello", req_number()) == [
+               Error.new("Expected a number, received: \"hello\".", [])
+             ]
+
+      assert validate(123, req_number()) == []
+      assert validate(1.44, req_number()) == []
+    end
+
+    test "float/1 expects a float value" do
+      assert validate("hello", float()) == [
+               Error.new("Expected a float, received: \"hello\".", [])
+             ]
+
+      assert validate(123, float()) == [
+               Error.new("Expected a float, received: 123.", [])
+             ]
+
+      assert validate(1.44, float()) == []
+    end
+
+    test "req_float/1 expects a float value" do
+      assert validate("hello", req_float()) == [
+               Error.new("Expected a float, received: \"hello\".", [])
+             ]
+
+      assert validate(123, req_float()) == [
+               Error.new("Expected a float, received: 123.", [])
+             ]
+
+      assert validate(1.44, req_float()) == []
+    end
+
+    test "integer/1 expects an integer value" do
+      assert validate("hello", integer()) == [
+               Error.new("Expected an integer, received: \"hello\".", [])
+             ]
+
+      assert validate(1.44, integer()) == [
+               Error.new("Expected an integer, received: 1.44.", [])
+             ]
+
+      assert validate(123, integer()) == []
+    end
+
+    test "req_integer/1 expects an integer value" do
+      assert validate("hello", req_integer()) == [
+               Error.new("Expected an integer, received: \"hello\".", [])
+             ]
+
+      assert validate(1.44, req_integer()) == [
+               Error.new("Expected an integer, received: 1.44.", [])
+             ]
+
+      assert validate(123, req_integer()) == []
+    end
+
+    test "string/1 expects a string value" do
+      assert validate(123, string()) == [Error.new("Expected a string, received: 123.", [])]
+      assert validate(true, string()) == [Error.new("Expected a string, received: true.", [])]
+      assert validate("hello", string()) == []
+    end
+
+    test "req_string/1 expects a string value" do
+      assert validate(123, req_string()) == [Error.new("Expected a string, received: 123.", [])]
+      assert validate(true, req_string()) == [Error.new("Expected a string, received: true.", [])]
+      assert validate("hello", req_string()) == []
+    end
+  end
 
   defp required_if_is_key() do
     Validator.Rule.rule(
@@ -10,6 +117,7 @@ defmodule ValidatorTest do
     )
   end
 
+  @tag skip: "to rewrite"
   test "it works" do
     map = %{
       "format" => "yml",
@@ -69,24 +177,28 @@ defmodule ValidatorTest do
     Validator.validate(map, schema) |> IO.inspect()
   end
 
+  @tag skip: "to rewrite"
   test "it works with basic type" do
     value = "14"
     schema = defvalidator(do: integer())
     Validator.validate(value, schema) |> IO.inspect()
   end
 
+  @tag skip: "to rewrite"
   test "it works with list type" do
     value = ["yo"]
     schema = defvalidator(do: list(integer()))
     Validator.validate(value, schema) |> IO.inspect()
   end
 
+  @tag skip: "to rewrite"
   test "it works with list type, using shortcut" do
     value = ["yo"]
     schema = defvalidator(do: [integer()])
     Validator.validate(value, schema) |> IO.inspect()
   end
 
+  @tag skip: "to rewrite"
   test "it detects when it is not a map" do
     value = nil
     schema = %{}
