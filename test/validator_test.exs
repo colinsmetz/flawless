@@ -110,6 +110,33 @@ defmodule ValidatorTest do
     end
   end
 
+  describe "checks" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "are evaluated for basic values" do
+      checks = [one_of([0, 1])]
+      expected_errors = [Error.new("Invalid value '123'. Valid options: [0, 1]", [])]
+
+      assert validate(123, value(checks: checks)) == expected_errors
+      assert validate(123, number(checks: checks)) == expected_errors
+      assert validate(123, integer(checks: checks)) == expected_errors
+      assert validate(0, integer(checks: checks)) == []
+    end
+
+    test "are all evaluated" do
+      checks = [rule(&(&1 < 100), "bigger than 100"), rule(&(&1 < 1000), "bigger than 1000")]
+
+      assert validate(1001, integer(checks: checks)) == [
+               Error.new("bigger than 100", []),
+               Error.new("bigger than 1000", [])
+             ]
+
+      assert validate(101, integer(checks: checks)) == [Error.new("bigger than 100", [])]
+      assert validate(11, integer(checks: checks)) == []
+    end
+  end
+
   defp required_if_is_key() do
     Validator.Rule.rule(
       fn field -> not (field["is_key"] == true and not field["is_required"]) end,
