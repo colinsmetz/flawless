@@ -165,79 +165,170 @@ defmodule ValidatorTest do
                  Error.new("must be lower than 5", [4])
                ]
     end
+
+    test "return an error when value is not a list" do
+      assert validate(nil, list(string())) == [Error.new("Expected a list, got: nil", [])]
+      assert validate(999, list(string())) == [Error.new("Expected a list, got: 999", [])]
+    end
   end
 
-  defp required_if_is_key() do
-    Validator.Rule.rule(
-      fn field -> not (field["is_key"] == true and not field["is_required"]) end,
-      fn field -> "Field '#{field["name"]}' is a key but is not required" end
-    )
+  describe "maps" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "detect missing required fields" do
+      schema = %{
+        "name" => req_string(),
+        "age" => req_number(),
+        "address" => string(),
+        "score" => req_number(),
+        "valid" => req_boolean()
+      }
+
+      value = %{
+        "name" => "Steve",
+        "score" => 28
+      }
+
+      assert validate(value, schema) == [
+        Error.new(~s(Missing required fields: ["age", "valid"]), [])
+      ]
+    end
+
+    test "detect unexpected fields" do
+      schema = %{
+        "x" => req_number(),
+        "y" => req_number()
+      }
+
+      value = %{
+        "name" => "secret_location",
+        "x" => 17,
+        "y" => 14,
+        "z" => 15
+      }
+
+      assert validate(value, schema) == [
+        Error.new(~s(Unexpected fields: ["name", "z"]), [])
+      ]
+    end
+
+    test "accept checks at the map and the field level" do
+      map_checks = [rule(&(&1["x"] < &1["y"]), "x must be lower than y")]
+      field_checks = [rule(& &1 > 0, "must be positive")]
+
+      schema = map(%{
+          "x" => req_number(checks: field_checks),
+          "y" => req_number(checks: field_checks)
+        },
+        checks: map_checks
+      )
+
+      value = %{
+        "x" => 18,
+        "y" => -5
+      }
+
+      assert validate(value, schema) == [
+        Error.new("x must be lower than y", []),
+        Error.new("must be positive", ["y"])
+      ]
+    end
+
+    test "return an error when value is not a map" do
+      assert validate(nil, %{}) == [Error.new("Expected a map, got: nil", [])]
+      assert validate(999, %{}) == [Error.new("Expected a map, got: 999", [])]
+    end
   end
 
-  @tag skip: "to rewrite"
-  test "it works" do
-    map = %{
-      "format" => "yml",
-      "regex" => "/the/regex",
-      "options" => %{"a" => "b"},
-      "bim" => %{},
-      "fields" => [
-        %{"name" => "a", "type" => "INT64", "is_key" => true, "is_required" => false},
-        %{"name" => "b", "type" => "STRING", "tru" => "blop", "meta" => %{}}
-      ],
-      "polling" => %{
-        "slice_size" => "50MB",
-        "interval_seconds" => "12",
-        "timeout_ms" => "34567"
-      },
-      "file_max_age_days" => "67",
-      "brands" => ["hey", 28]
-    }
+  describe "defvalidator macro" do
+    test "can be used to avoid importing globally all the helpers" do
+      schema =
+        defvalidator do
+          %{
+            "name" => req_string(checks: [rule(& &1 != "", "is empty")]),
+            "gender" => req_string(checks: [one_of(["male", "female", "other"])])
+          }
+        end
 
-    schema =
-      defvalidator do
-        %{
-          "format" => req_string(checks: [one_of(["csv", "xml"])]),
-          "banana" => req_value(),
-          "regex" => req_string(),
-          "bim" => %{
-            "truc" => req_string()
-          },
-          "polling" =>
-            map(%{
-              "slice_size" =>
-                value(
-                  checks: [rule(&(String.length(&1) > 100), "Slice size must be longer than 100")]
-                )
-            }),
-          "fields" =>
-            list(
-              map(
-                %{
-                  "name" => req_string(),
-                  "type" => req_string(),
-                  "is_key" => boolean(),
-                  "is_required" => boolean(),
-                  "meta" =>
-                    map(%{
-                      "id" => req_value()
-                    })
-                },
-                checks: [required_if_is_key()]
+      value = %{"name" => "", "gender" => "male"}
+
+      assert validate(value, schema) == [Error.new("is empty", ["name"])]
+    end
+  end
+
+  describe "complex schemas" do
+    # TODO:
+    # - Test req_map and req_list
+    # - List of list
+
+    defp required_if_is_key() do
+      Validator.Rule.rule(
+        fn field -> not (field["is_key"] == true and not field["is_required"]) end,
+        fn field -> "Field '#{field["name"]}' is a key but is not required" end
+      )
+    end
+
+    @tag skip: "to rewrite"
+    test "it works" do
+      map = %{
+        "format" => "yml",
+        "regex" => "/the/regex",
+        "options" => %{"a" => "b"},
+        "bim" => %{},
+        "fields" => [
+          %{"name" => "a", "type" => "INT64", "is_key" => true, "is_required" => false},
+          %{"name" => "b", "type" => "STRING", "tru" => "blop", "meta" => %{}}
+        ],
+        "polling" => %{
+          "slice_size" => "50MB",
+          "interval_seconds" => "12",
+          "timeout_ms" => "34567"
+        },
+        "file_max_age_days" => "67",
+        "brands" => ["hey", 28]
+      }
+
+      schema =
+        defvalidator do
+          %{
+            "format" => req_string(checks: [one_of(["csv", "xml"])]),
+            "banana" => req_value(),
+            "regex" => req_string(),
+            "bim" => %{
+              "truc" => req_string()
+            },
+            "polling" =>
+              map(%{
+                "slice_size" =>
+                  value(
+                    checks: [rule(&(String.length(&1) > 100), "Slice size must be longer than 100")]
+                  )
+              }),
+            "fields" =>
+              list(
+                map(
+                  %{
+                    "name" => req_string(),
+                    "type" => req_string(),
+                    "is_key" => boolean(),
+                    "is_required" => boolean(),
+                    "meta" =>
+                      map(%{
+                        "id" => req_value()
+                      })
+                  },
+                  checks: [required_if_is_key()]
+                ),
+                checks: [rule(&(length(&1) > 0), "Fields must contain at least one item")]
               ),
-              checks: [rule(&(length(&1) > 0), "Fields must contain at least one item")]
-            ),
-          "brands" => [string()]
-        }
-      end
+            "brands" => [string()]
+          }
+        end
 
-    Validator.validate(map, schema) |> IO.inspect()
+      Validator.validate(map, schema) |> IO.inspect()
+    end
   end
 
-  @tag skip: "to rewrite"
-  test "it detects when it is not a map" do
-    value = nil
-    schema = %{}
-    Validator.validate(value, schema) |> IO.inspect()
-  end
+
 end
