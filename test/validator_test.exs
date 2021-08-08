@@ -1,5 +1,5 @@
 defmodule ValidatorTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   doctest Validator
   import Validator, only: [defvalidator: 1]
 
@@ -60,7 +60,7 @@ defmodule ValidatorTest do
                 },
                 checks: [required_if_is_key()]
               ),
-              checks: [rule(&length(&1) > 0, "Fields must contain at least one item")]
+              checks: [rule(&(length(&1) > 0), "Fields must contain at least one item")]
             ),
           "brands" => [string()]
         }

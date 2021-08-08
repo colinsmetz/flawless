@@ -21,10 +21,10 @@ defmodule Validator do
     defstruct required: false, checks: [], schema: nil
 
     @type t() :: %__MODULE__{
-      required: boolean(),
-      checks: list(Validator.Rule.t()),
-      schema: map() | nil
-    }
+            required: boolean(),
+            checks: list(Validator.Rule.t()),
+            schema: map() | nil
+          }
   end
 
   defmodule ListSpec do
@@ -36,10 +36,10 @@ defmodule Validator do
     defstruct required: false, checks: [], item_type: nil
 
     @type t() :: %__MODULE__{
-      required: boolean(),
-      checks: list(Validator.Rule.t()),
-      item_type: Validator.spec_type()
-    }
+            required: boolean(),
+            checks: list(Validator.Rule.t()),
+            item_type: Validator.spec_type()
+          }
   end
 
   defmacro defvalidator(do: body) do

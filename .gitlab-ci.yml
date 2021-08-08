@@ -1,0 +1,16 @@
+stages:
+  - test
+
+test:
+  image: elixir:1.12.2-alpine
+  stage: test
+  tags:
+    - generic-docker
+  script:
+    - mix test
+  cache:
+    key: "validator"
+    paths:
+      - deps
+      - _build
+
