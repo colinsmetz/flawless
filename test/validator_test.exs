@@ -137,6 +137,36 @@ defmodule ValidatorTest do
     end
   end
 
+  describe "lists" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "evaluate all their elements" do
+      assert validate([1, 2, 3, "4", "5", 6], list(integer())) == [
+               Error.new("Expected an integer, received: \"4\".", [3]),
+               Error.new("Expected an integer, received: \"5\".", [4])
+             ]
+    end
+
+    test "accepts [item_type] as a shortcut" do
+      assert validate([1, 2, 3, "4", "5", 6], [integer()]) == [
+               Error.new("Expected an integer, received: \"4\".", [3]),
+               Error.new("Expected an integer, received: \"5\".", [4])
+             ]
+    end
+
+    test "accept checks at the item and the list level" do
+      item_checks = [rule(&(&1 < 5), "must be lower than 5")]
+      list_checks = [rule(&(length(&1) < 4), "must have less than 4 elements")]
+
+      assert validate([1, 2, 3, 4, 5], list(integer(checks: item_checks), checks: list_checks)) ==
+               [
+                 Error.new("must have less than 4 elements", []),
+                 Error.new("must be lower than 5", [4])
+               ]
+    end
+  end
+
   defp required_if_is_key() do
     Validator.Rule.rule(
       fn field -> not (field["is_key"] == true and not field["is_required"]) end,
@@ -202,27 +232,6 @@ defmodule ValidatorTest do
       end
 
     Validator.validate(map, schema) |> IO.inspect()
-  end
-
-  @tag skip: "to rewrite"
-  test "it works with basic type" do
-    value = "14"
-    schema = defvalidator(do: integer())
-    Validator.validate(value, schema) |> IO.inspect()
-  end
-
-  @tag skip: "to rewrite"
-  test "it works with list type" do
-    value = ["yo"]
-    schema = defvalidator(do: list(integer()))
-    Validator.validate(value, schema) |> IO.inspect()
-  end
-
-  @tag skip: "to rewrite"
-  test "it works with list type, using shortcut" do
-    value = ["yo"]
-    schema = defvalidator(do: [integer()])
-    Validator.validate(value, schema) |> IO.inspect()
   end
 
   @tag skip: "to rewrite"
