@@ -1,16 +1,62 @@
 defmodule Validator do
+  @moduledoc """
+  Validator is a library meant for validating JSON-like data structures, i.e. ones
+  that contain maps, arrays or single values. The validation is done by providing
+  the `validate` function with a value and a schema.
+
+  Schemas can be defined with the helper of the `defvalidator` macro, whose main
+  purpose is to import helpers locally.
+  """
+
+  alias Validator.Error
+
+  @type spec_type() :: Validator.ValueSpec.t() | Validator.ListSpec.t() | map()
+
   defmodule ValueSpec do
+    @moduledoc """
+    Represents a simple value or a map.
+
+    The `schema` field is used when the value is a map, and is `nil` otherwise.
+    """
     defstruct required: false, checks: [], schema: nil
+
+    @type t() :: %__MODULE__{
+      required: boolean(),
+      checks: list(Validator.Rule.t()),
+      schema: map() | nil
+    }
   end
 
   defmodule ListSpec do
+    @moduledoc """
+    Represents a list of elements.
+
+    Each element must conform to the `item_type` definition.
+    """
     defstruct required: false, checks: [], item_type: nil
+
+    @type t() :: %__MODULE__{
+      required: boolean(),
+      checks: list(Validator.Rule.t()),
+      item_type: Validator.spec_type()
+    }
   end
 
+  defmacro defvalidator(do: body) do
+    quote do
+      import Validator
+      import Validator.Rule
+      import Validator.Helpers
+
+      unquote(body)
+    end
+  end
+
+  @spec validate(any, spec_type(), list) :: list(Error.t())
   def validate(value, schema, context \\ []) do
     case schema do
       %ListSpec{} -> validate_list(value, schema, context)
-      [item_type] -> validate_list(value, list(item_type), context)
+      [item_type] -> validate_list(value, Validator.Helpers.list(item_type), context)
       %ValueSpec{} -> validate_value(value, schema, context)
       %{} -> validate_map(value, schema, context)
     end
@@ -20,12 +66,9 @@ defmodule Validator do
     field_errors =
       schema
       |> Enum.map(fn {field_name, field} ->
-        cond do
-          is_nil(map[field_name]) ->
-            []
-
-          true ->
-            validate(map[field_name], field, context ++ [field_name])
+        case Map.fetch(map, field_name) do
+          :error -> []
+          {:ok, value} -> validate(value, field, context ++ [field_name])
         end
       end)
 
@@ -38,20 +81,18 @@ defmodule Validator do
   end
 
   defp validate_map(map, _spec, context) do
-    [Validator.Error.new("Expected a map, got: #{inspect(map)}", context)]
+    [Error.new("Expected a map, got: #{inspect(map)}", context)]
   end
 
   defp validate_value(value, spec, context) do
     top_level_errors =
       spec.checks
-      |> Enum.map(fn check ->
-        check.(value, context)
-      end)
+      |> Enum.map(fn check -> check.(value, context) end)
 
     sub_errors =
-      cond do
-        not is_nil(spec.schema) -> validate_map(value, spec.schema, context)
-        true -> []
+      case spec.schema do
+        nil -> []
+        schema -> validate_map(value, schema, context)
       end
 
     [
@@ -64,9 +105,7 @@ defmodule Validator do
   defp validate_list(list, spec, context) when is_list(list) do
     top_level_errors =
       spec.checks
-      |> Enum.map(fn check ->
-        check.(list, context)
-      end)
+      |> Enum.map(fn check -> check.(list, context) end)
 
     items_errors =
       list
@@ -84,7 +123,7 @@ defmodule Validator do
   end
 
   defp validate_list(list, _spec, context) do
-    [Validator.Error.new("Expected a list, got: #{inspect(list)}", context)]
+    [Error.new("Expected a list, got: #{inspect(list)}", context)]
   end
 
   defp unexpected_fields_error(map, schema, context) do
@@ -96,7 +135,7 @@ defmodule Validator do
     if unexpected_fields == [] do
       []
     else
-      [Validator.Error.new("Unexpected fields: #{inspect(unexpected_fields)}", context)]
+      [Error.new("Unexpected fields: #{inspect(unexpected_fields)}", context)]
     end
   end
 
@@ -110,56 +149,7 @@ defmodule Validator do
     if missing_fields == [] do
       []
     else
-      [Validator.Error.new("Missing required fields: #{inspect(missing_fields)}", context)]
+      [Error.new("Missing required fields: #{inspect(missing_fields)}", context)]
     end
   end
-
-  defp required(value_fun, opts) do
-    opts |> Keyword.put(:required, true) |> value_fun.()
-  end
-
-  defp value_with_rule(rule, opts) do
-    checks = opts |> Keyword.get(:checks, [])
-    updated_checks = [rule | checks]
-    opts |> Keyword.put(:checks, updated_checks) |> value()
-  end
-
-  def value(opts \\ []) do
-    %ValueSpec{
-      required: opts |> Keyword.get(:required, false),
-      checks: opts |> Keyword.get(:checks, []),
-      schema: opts |> Keyword.get(:schema, nil)
-    }
-  end
-
-  def list(item_type, opts \\ []) do
-    %ListSpec{
-      required: opts |> Keyword.get(:required, false),
-      checks: opts |> Keyword.get(:checks, []),
-      item_type: item_type
-    }
-  end
-
-  def map(schema, opts \\ []) do
-    opts |> Keyword.put(:schema, schema) |> value()
-  end
-
-  def req_value(opts \\ []), do: required(&value/1, opts)
-  def req_list(opts \\ []), do: required(&list/1, opts)
-  def req_map(schema, opts \\ []), do: required(&map(schema, &1), opts)
-
-  def integer(opts \\ []), do: value_with_rule(Validator.Rule.is_integer_type(), opts)
-  def req_integer(opts \\ []), do: required(&integer/1, opts)
-
-  def string(opts \\ []), do: value_with_rule(Validator.Rule.is_string_type(), opts)
-  def req_string(opts \\ []), do: required(&string/1, opts)
-
-  def float(opts \\ []), do: value_with_rule(Validator.Rule.is_float_type(), opts)
-  def req_float(opts \\ []), do: required(&float/1, opts)
-
-  def number(opts \\ []), do: value_with_rule(Validator.Rule.is_number_type(), opts)
-  def req_number(opts \\ []), do: required(&number/1, opts)
-
-  def boolean(opts \\ []), do: value_with_rule(Validator.Rule.is_boolean_type(), opts)
-  def req_boolean(opts \\ []), do: required(&boolean/1, opts)
 end
