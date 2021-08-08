@@ -7,7 +7,7 @@ defmodule Validator.Error do
         }
 
   @spec new(String.t(), list()) :: t()
-  def new(message, context) do
+  def new(message, context) when is_binary(message) and is_list(context) do
     %__MODULE__{
       message: message,
       context: context
