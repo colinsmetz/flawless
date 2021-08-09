@@ -142,7 +142,7 @@ defmodule Validator do
   defp missing_fields_error(map, schema, context) do
     missing_fields =
       for {field_name, field} <- schema,
-          is_nil(map[field_name]) and field |> Map.get(:required, false) do
+          is_nil(map[field_name]) and required_field?(field) do
         field_name
       end
 
@@ -152,4 +152,7 @@ defmodule Validator do
       [Error.new("Missing required fields: #{inspect(missing_fields)}", context)]
     end
   end
+
+  defp required_field?(field) when is_list(field), do: false
+  defp required_field?(field) when is_map(field), do: field |> Map.get(:required, false)
 end

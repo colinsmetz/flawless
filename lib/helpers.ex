@@ -32,7 +32,7 @@ defmodule Validator.Helpers do
   end
 
   def req_value(opts \\ []), do: required(&value/1, opts)
-  def req_list(opts \\ []), do: required(&list/1, opts)
+  def req_list(item_type, opts \\ []), do: required(&list(item_type, &1), opts)
   def req_map(schema, opts \\ []), do: required(&map(schema, &1), opts)
 
   def integer(opts \\ []), do: value_with_rule(Validator.Rule.is_integer_type(), opts)

@@ -191,8 +191,8 @@ defmodule ValidatorTest do
       }
 
       assert validate(value, schema) == [
-        Error.new(~s(Missing required fields: ["age", "valid"]), [])
-      ]
+               Error.new(~s(Missing required fields: ["age", "valid"]), [])
+             ]
     end
 
     test "detect unexpected fields" do
@@ -209,20 +209,22 @@ defmodule ValidatorTest do
       }
 
       assert validate(value, schema) == [
-        Error.new(~s(Unexpected fields: ["name", "z"]), [])
-      ]
+               Error.new(~s(Unexpected fields: ["name", "z"]), [])
+             ]
     end
 
     test "accept checks at the map and the field level" do
       map_checks = [rule(&(&1["x"] < &1["y"]), "x must be lower than y")]
-      field_checks = [rule(& &1 > 0, "must be positive")]
+      field_checks = [rule(&(&1 > 0), "must be positive")]
 
-      schema = map(%{
-          "x" => req_number(checks: field_checks),
-          "y" => req_number(checks: field_checks)
-        },
-        checks: map_checks
-      )
+      schema =
+        map(
+          %{
+            "x" => req_number(checks: field_checks),
+            "y" => req_number(checks: field_checks)
+          },
+          checks: map_checks
+        )
 
       value = %{
         "x" => 18,
@@ -230,9 +232,9 @@ defmodule ValidatorTest do
       }
 
       assert validate(value, schema) == [
-        Error.new("x must be lower than y", []),
-        Error.new("must be positive", ["y"])
-      ]
+               Error.new("x must be lower than y", []),
+               Error.new("must be positive", ["y"])
+             ]
     end
 
     test "return an error when value is not a map" do
@@ -246,7 +248,7 @@ defmodule ValidatorTest do
       schema =
         defvalidator do
           %{
-            "name" => req_string(checks: [rule(& &1 != "", "is empty")]),
+            "name" => req_string(checks: [rule(&(&1 != ""), "is empty")]),
             "gender" => req_string(checks: [one_of(["male", "female", "other"])])
           }
         end
@@ -258,9 +260,47 @@ defmodule ValidatorTest do
   end
 
   describe "complex schemas" do
-    # TODO:
-    # - Test req_map and req_list
-    # - List of list
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "it validates map and list fields" do
+      schema = %{
+        "config" =>
+          req_map(%{
+            "min" => req_number(),
+            "max" => number()
+          }),
+        "config_override" => %{},
+        "products" =>
+          req_list(%{
+            "product_id" => req_string(),
+            "price" => req_number()
+          }),
+        "related_ids" => [string()]
+      }
+
+      assert validate(%{}, schema) == [
+               Error.new("Missing required fields: [\"config\", \"products\"]", [])
+             ]
+
+      assert validate(%{"config" => %{}, "products" => [100]}, schema) == [
+               Error.new("Missing required fields: [\"min\"]", ["config"]),
+               Error.new("Expected a map, got: 100", ["products", 0])
+             ]
+    end
+
+    test "it can validate lists of lists" do
+      schema = [[[string()]]]
+
+      assert validate(["hey"], schema) == [Error.new("Expected a list, got: \"hey\"", [0])]
+      assert validate([["hey"]], schema) == [Error.new("Expected a list, got: \"hey\"", [0, 0])]
+      assert validate([[["hey"]]], schema) == []
+      assert validate([[["hey"], []], []], schema) == []
+
+      assert validate([[[14]]], schema) == [
+               Error.new("Expected a string, received: 14.", [0, 0, 0])
+             ]
+    end
 
     defp required_if_is_key() do
       Validator.Rule.rule(
@@ -269,31 +309,9 @@ defmodule ValidatorTest do
       )
     end
 
-    @tag skip: "to rewrite"
-    test "it works" do
-      map = %{
-        "format" => "yml",
-        "regex" => "/the/regex",
-        "options" => %{"a" => "b"},
-        "bim" => %{},
-        "fields" => [
-          %{"name" => "a", "type" => "INT64", "is_key" => true, "is_required" => false},
-          %{"name" => "b", "type" => "STRING", "tru" => "blop", "meta" => %{}}
-        ],
-        "polling" => %{
-          "slice_size" => "50MB",
-          "interval_seconds" => "12",
-          "timeout_ms" => "34567"
-        },
-        "file_max_age_days" => "67",
-        "brands" => ["hey", 28]
-      }
-
-      schema =
-        defvalidator do
-          %{
+    test "it validates very complex schema" do
+      schema = %{
             "format" => req_string(checks: [one_of(["csv", "xml"])]),
-            "banana" => req_value(),
             "regex" => req_string(),
             "bim" => %{
               "truc" => req_string()
@@ -302,7 +320,9 @@ defmodule ValidatorTest do
               map(%{
                 "slice_size" =>
                   value(
-                    checks: [rule(&(String.length(&1) > 100), "Slice size must be longer than 100")]
+                    checks: [
+                      rule(&(String.length(&1) > 100), "Slice size must be longer than 100")
+                    ]
                   )
               }),
             "fields" =>
@@ -324,11 +344,36 @@ defmodule ValidatorTest do
               ),
             "brands" => [string()]
           }
-        end
 
-      Validator.validate(map, schema) |> IO.inspect()
+      value = %{
+        "format" => "yml",
+        "regex" => "/the/regex",
+        "options" => %{"a" => "b"},
+        "bim" => %{},
+        "fields" => [
+          %{"name" => "a", "type" => "INT64", "is_key" => true, "is_required" => false},
+          %{"name" => "b", "type" => "STRING", "tru" => "blop", "meta" => %{}}
+        ],
+        "polling" => %{
+          "slice_size" => "50MB",
+          "interval_seconds" => "12",
+          "timeout_ms" => "34567"
+        },
+        "file_max_age_days" => "67",
+        "brands" => ["hey", 28]
+      }
+
+      assert Validator.validate(value, schema) == [
+        Error.new("Unexpected fields: [\"file_max_age_days\", \"options\"]", []),
+        Error.new("Missing required fields: [\"truc\"]", ["bim"]),
+        Error.new("Expected a string, received: 28.", ["brands", 1]),
+        Error.new("Field 'a' is a key but is not required", ["fields", 0]),
+        Error.new("Unexpected fields: [\"tru\"]", ["fields", 1]),
+        Error.new("Missing required fields: [\"id\"]", ["fields", 1, "meta"]),
+        Error.new("Invalid value 'yml'. Valid options: [\"csv\", \"xml\"]", ["format"]),
+        Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"]", ["polling"]),
+        Error.new("Slice size must be longer than 100", ["polling", "slice_size"])
+      ]
     end
   end
-
-
 end
