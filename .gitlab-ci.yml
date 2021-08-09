@@ -7,6 +7,7 @@ test:
   tags:
     - generic-docker
   script:
+    - mix local.hex --force
     - mix test
   cache:
     key: "validator"
