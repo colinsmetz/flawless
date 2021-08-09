@@ -9,6 +9,7 @@ defmodule Validator do
   """
 
   alias Validator.Error
+  alias Validator.Helpers
 
   @type spec_type() :: Validator.ValueSpec.t() | Validator.ListSpec.t() | map()
 
@@ -56,7 +57,8 @@ defmodule Validator do
   def validate(value, schema, context \\ []) do
     case schema do
       %ListSpec{} -> validate_list(value, schema, context)
-      [item_type] -> validate_list(value, Validator.Helpers.list(item_type), context)
+      [item_type] -> validate_list(value, Helpers.list(item_type), context)
+      [] -> validate_list(value, Helpers.list(Helpers.value()), context)
       %ValueSpec{} -> validate_value(value, schema, context)
       %{} -> validate_map(value, schema, context)
     end

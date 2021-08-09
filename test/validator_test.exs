@@ -155,6 +155,12 @@ defmodule ValidatorTest do
              ]
     end
 
+    test "accepts [] to match any list" do
+      assert validate([], []) == []
+      assert validate([1, "hey", true], []) == []
+      assert validate(17, []) == [Error.new("Expected a list, got: 17", [])]
+    end
+
     test "accept checks at the item and the list level" do
       item_checks = [rule(&(&1 < 5), "must be lower than 5")]
       list_checks = [rule(&(length(&1) < 4), "must have less than 4 elements")]
