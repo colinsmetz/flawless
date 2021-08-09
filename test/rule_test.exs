@@ -101,5 +101,51 @@ defmodule Validator.RuleTest do
       assert is_boolean_type().(1, []) ==
                Error.new("Expected a boolean, received: 1.", [])
     end
+
+    test "min_length/1 validates the length of a string" do
+      test_rule = min_length(5)
+
+      assert test_rule.("hey", []) == Error.new("Minimum length of 5 required (current: 3).", [])
+      assert test_rule.("hell", []) == Error.new("Minimum length of 5 required (current: 4).", [])
+      assert test_rule.("hello", []) == []
+    end
+
+    test "min_length/1 validates the length of a list" do
+      test_rule = min_length(5)
+
+      assert test_rule.([1, 2, 3], []) == Error.new("Minimum length of 5 required (current: 3).", [])
+      assert test_rule.([1, 2, 3, 4], []) == Error.new("Minimum length of 5 required (current: 4).", [])
+      assert test_rule.([1, 2, 3, 4, 5], []) == []
+    end
+
+    test "max_length/1 validates the length of a string" do
+      test_rule = max_length(4)
+
+      assert test_rule.("hey", []) == []
+      assert test_rule.("hell", []) == []
+      assert test_rule.("hello", []) == Error.new("Maximum length of 4 required (current: 5).", [])
+    end
+
+    test "max_length/1 validates the length of a list" do
+      test_rule = max_length(4)
+
+      assert test_rule.([1, 2, 3], []) == []
+      assert test_rule.([1, 2, 3, 4], []) == []
+      assert test_rule.([1, 2, 3, 4, 5], []) == Error.new("Maximum length of 4 required (current: 5).", [])
+    end
+
+    test "non_empty/0 validates that the string is not empty" do
+      test_rule = non_empty()
+
+      assert test_rule.("", []) == Error.new("Value cannot be empty.", [])
+      assert test_rule.("hello", []) == []
+    end
+
+    test "non_empty/0 validates that the list is not empty" do
+      test_rule = non_empty()
+
+      assert test_rule.([], []) == Error.new("Value cannot be empty.", [])
+      assert test_rule.([1, 2, 3], []) == []
+    end
   end
 end

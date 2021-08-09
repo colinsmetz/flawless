@@ -67,4 +67,47 @@ defmodule Validator.Rule do
       &"Expected a boolean, received: #{inspect(&1)}."
     )
   end
+
+  defp value_length(value) when is_binary(value), do: String.length(value)
+  defp value_length(value) when is_list(value), do: length(value)
+  defp value_length(_), do: nil
+
+  @spec min_length(integer()) :: t()
+  def min_length(length) when is_integer(length) do
+    rule(
+      fn value ->
+        case value_length(value) do
+          nil -> true
+          actual_length -> actual_length >= length
+        end
+      end,
+      &"Minimum length of #{length} required (current: #{value_length(&1)})."
+    )
+  end
+
+  @spec max_length(integer()) :: t()
+  def max_length(length) when is_integer(length) do
+    rule(
+      fn value ->
+        case value_length(value) do
+          nil -> true
+          actual_length -> actual_length <= length
+        end
+      end,
+      &"Maximum length of #{length} required (current: #{value_length(&1)})."
+    )
+  end
+
+  @spec non_empty() :: t()
+  def non_empty() do
+    rule(
+      fn value ->
+        case value_length(value) do
+          nil -> true
+          actual_length -> actual_length > 0
+        end
+      end,
+      "Value cannot be empty."
+    )
+  end
 end
