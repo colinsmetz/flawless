@@ -113,8 +113,12 @@ defmodule Validator.RuleTest do
     test "min_length/1 validates the length of a list" do
       test_rule = min_length(5)
 
-      assert test_rule.([1, 2, 3], []) == Error.new("Minimum length of 5 required (current: 3).", [])
-      assert test_rule.([1, 2, 3, 4], []) == Error.new("Minimum length of 5 required (current: 4).", [])
+      assert test_rule.([1, 2, 3], []) ==
+               Error.new("Minimum length of 5 required (current: 3).", [])
+
+      assert test_rule.([1, 2, 3, 4], []) ==
+               Error.new("Minimum length of 5 required (current: 4).", [])
+
       assert test_rule.([1, 2, 3, 4, 5], []) == []
     end
 
@@ -123,7 +127,9 @@ defmodule Validator.RuleTest do
 
       assert test_rule.("hey", []) == []
       assert test_rule.("hell", []) == []
-      assert test_rule.("hello", []) == Error.new("Maximum length of 4 required (current: 5).", [])
+
+      assert test_rule.("hello", []) ==
+               Error.new("Maximum length of 4 required (current: 5).", [])
     end
 
     test "max_length/1 validates the length of a list" do
@@ -131,7 +137,9 @@ defmodule Validator.RuleTest do
 
       assert test_rule.([1, 2, 3], []) == []
       assert test_rule.([1, 2, 3, 4], []) == []
-      assert test_rule.([1, 2, 3, 4, 5], []) == Error.new("Maximum length of 4 required (current: 5).", [])
+
+      assert test_rule.([1, 2, 3, 4, 5], []) ==
+               Error.new("Maximum length of 4 required (current: 5).", [])
     end
 
     test "non_empty/0 validates that the string is not empty" do
@@ -146,6 +154,24 @@ defmodule Validator.RuleTest do
 
       assert test_rule.([], []) == Error.new("Value cannot be empty.", [])
       assert test_rule.([1, 2, 3], []) == []
+    end
+
+    test "exact_length/1 validates the length of a string" do
+      test_rule = exact_length(4)
+
+      assert test_rule.("hey", []) == Error.new("Expected length of 4 (current: 3).", [])
+      assert test_rule.("hell", []) == []
+      assert test_rule.("hello", []) == Error.new("Expected length of 4 (current: 5).", [])
+    end
+
+    test "exact_length/1 validates the length of a list" do
+      test_rule = exact_length(4)
+
+      assert test_rule.([1, 2, 3], []) == Error.new("Expected length of 4 (current: 3).", [])
+      assert test_rule.([1, 2, 3, 4], []) == []
+
+      assert test_rule.([1, 2, 3, 4, 5], []) ==
+               Error.new("Expected length of 4 (current: 5).", [])
     end
   end
 end

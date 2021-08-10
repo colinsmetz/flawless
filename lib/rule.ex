@@ -110,4 +110,17 @@ defmodule Validator.Rule do
       "Value cannot be empty."
     )
   end
+
+  @spec exact_length(integer()) :: t()
+  def exact_length(length) when is_integer(length) do
+    rule(
+      fn value ->
+        case value_length(value) do
+          nil -> true
+          actual_length -> actual_length == length
+        end
+      end,
+      &"Expected length of #{length} (current: #{value_length(&1)})."
+    )
+  end
 end

@@ -317,39 +317,39 @@ defmodule ValidatorTest do
 
     test "it validates very complex schema" do
       schema = %{
-            "format" => req_string(checks: [one_of(["csv", "xml"])]),
-            "regex" => req_string(),
-            "bim" => %{
-              "truc" => req_string()
-            },
-            "polling" =>
-              map(%{
-                "slice_size" =>
-                  value(
-                    checks: [
-                      rule(&(String.length(&1) > 100), "Slice size must be longer than 100")
-                    ]
-                  )
-              }),
-            "fields" =>
-              list(
-                map(
-                  %{
-                    "name" => req_string(),
-                    "type" => req_string(),
-                    "is_key" => boolean(),
-                    "is_required" => boolean(),
-                    "meta" =>
-                      map(%{
-                        "id" => req_value()
-                      })
-                  },
-                  checks: [required_if_is_key()]
-                ),
-                checks: [rule(&(length(&1) > 0), "Fields must contain at least one item")]
-              ),
-            "brands" => [string()]
-          }
+        "format" => req_string(checks: [one_of(["csv", "xml"])]),
+        "regex" => req_string(),
+        "bim" => %{
+          "truc" => req_string()
+        },
+        "polling" =>
+          map(%{
+            "slice_size" =>
+              value(
+                checks: [
+                  rule(&(String.length(&1) > 100), "Slice size must be longer than 100")
+                ]
+              )
+          }),
+        "fields" =>
+          list(
+            map(
+              %{
+                "name" => req_string(),
+                "type" => req_string(),
+                "is_key" => boolean(),
+                "is_required" => boolean(),
+                "meta" =>
+                  map(%{
+                    "id" => req_value()
+                  })
+              },
+              checks: [required_if_is_key()]
+            ),
+            checks: [rule(&(length(&1) > 0), "Fields must contain at least one item")]
+          ),
+        "brands" => [string()]
+      }
 
       value = %{
         "format" => "yml",
@@ -370,16 +370,16 @@ defmodule ValidatorTest do
       }
 
       assert Validator.validate(value, schema) == [
-        Error.new("Unexpected fields: [\"file_max_age_days\", \"options\"]", []),
-        Error.new("Missing required fields: [\"truc\"]", ["bim"]),
-        Error.new("Expected a string, received: 28.", ["brands", 1]),
-        Error.new("Field 'a' is a key but is not required", ["fields", 0]),
-        Error.new("Unexpected fields: [\"tru\"]", ["fields", 1]),
-        Error.new("Missing required fields: [\"id\"]", ["fields", 1, "meta"]),
-        Error.new("Invalid value 'yml'. Valid options: [\"csv\", \"xml\"]", ["format"]),
-        Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"]", ["polling"]),
-        Error.new("Slice size must be longer than 100", ["polling", "slice_size"])
-      ]
+               Error.new("Unexpected fields: [\"file_max_age_days\", \"options\"]", []),
+               Error.new("Missing required fields: [\"truc\"]", ["bim"]),
+               Error.new("Expected a string, received: 28.", ["brands", 1]),
+               Error.new("Field 'a' is a key but is not required", ["fields", 0]),
+               Error.new("Unexpected fields: [\"tru\"]", ["fields", 1]),
+               Error.new("Missing required fields: [\"id\"]", ["fields", 1, "meta"]),
+               Error.new("Invalid value 'yml'. Valid options: [\"csv\", \"xml\"]", ["format"]),
+               Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"]", ["polling"]),
+               Error.new("Slice size must be longer than 100", ["polling", "slice_size"])
+             ]
     end
   end
 end
