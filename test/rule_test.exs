@@ -180,5 +180,21 @@ defmodule Validator.RuleTest do
       assert no_duplicate().([1, 5, 3, 5, 7, 3, 3], []) ==
                Error.new("The list should not contain duplicates (duplicates found: [5, 3]).", [])
     end
+
+    test "match/1 validates string against a regex" do
+      test_rule = match(~r/^hel/)
+
+      assert test_rule.("hello", []) == []
+      assert test_rule.("helicopter", []) == []
+      assert test_rule.("heyy", []) == Error.new("Value heyy does not match regex ~r/^hel/.", [])
+    end
+
+    test "match/1 accepts a string for the regex" do
+      test_rule = match("^hel")
+
+      assert test_rule.("hello", []) == []
+      assert test_rule.("helicopter", []) == []
+      assert test_rule.("heyy", []) == Error.new("Value heyy does not match regex ~r/^hel/.", [])
+    end
   end
 end

@@ -135,4 +135,18 @@ defmodule Validator.Rule do
       &"The list should not contain duplicates (duplicates found: #{inspect(duplicates(&1))})."
     )
   end
+
+  @spec match(String.t() | Regex.t()) :: t()
+  def match(regex) when is_binary(regex) do
+    regex
+    |> Regex.compile!()
+    |> match()
+  end
+
+  def match(%Regex{} = regex) do
+    rule(
+      fn value -> Regex.match?(regex, value) end,
+      &"Value #{&1} does not match regex #{inspect(regex)}."
+    )
+  end
 end
