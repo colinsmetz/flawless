@@ -173,5 +173,12 @@ defmodule Validator.RuleTest do
       assert test_rule.([1, 2, 3, 4, 5], []) ==
                Error.new("Expected length of 4 (current: 5).", [])
     end
+
+    test "no_duplicates/0 detects duplicates in a list" do
+      assert no_duplicate().([1, 5, 3, 2, 7], []) == []
+
+      assert no_duplicate().([1, 5, 3, 5, 7, 3, 3], []) ==
+               Error.new("The list should not contain duplicates (duplicates found: [5, 3]).", [])
+    end
   end
 end

@@ -123,4 +123,16 @@ defmodule Validator.Rule do
       &"Expected length of #{length} (current: #{value_length(&1)})."
     )
   end
+
+  defp duplicates(list) when is_list(list) do
+    Enum.uniq(list -- Enum.uniq(list))
+  end
+
+  @spec no_duplicate() :: t()
+  def no_duplicate() do
+    rule(
+      fn value -> duplicates(value) == [] end,
+      &"The list should not contain duplicates (duplicates found: #{inspect(duplicates(&1))})."
+    )
+  end
 end
