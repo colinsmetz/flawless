@@ -196,5 +196,31 @@ defmodule Validator.RuleTest do
       assert test_rule.("helicopter", []) == []
       assert test_rule.("heyy", []) == Error.new("Value heyy does not match regex ~r/^hel/.", [])
     end
+
+    test "min/1 detects when value is too low" do
+      test_rule = min(10)
+
+      assert test_rule.(15, []) == []
+      assert test_rule.(10, []) == []
+      assert test_rule.(9, []) == Error.new("Must be greater than or equal to 10.", [])
+    end
+
+    test "max/1 detects when value is too high" do
+      test_rule = max(10)
+
+      assert test_rule.(5, []) == []
+      assert test_rule.(10, []) == []
+      assert test_rule.(11, []) == Error.new("Must be less than or equal to 10.", [])
+    end
+
+    test "between/2 detects when value is out of range" do
+      test_rule = between(3, 6)
+
+      assert test_rule.(2, []) == Error.new("Must be between 3 and 6.", [])
+      assert test_rule.(3, []) == []
+      assert test_rule.(5, []) == []
+      assert test_rule.(6, []) == []
+      assert test_rule.(7, []) == Error.new("Must be between 3 and 6.", [])
+    end
   end
 end

@@ -149,4 +149,28 @@ defmodule Validator.Rule do
       &"Value #{&1} does not match regex #{inspect(regex)}."
     )
   end
+
+  @spec min(number) :: t()
+  def min(min_value) when is_number(min_value) do
+    rule(
+      fn value -> value >= min_value end,
+      "Must be greater than or equal to #{min_value}."
+    )
+  end
+
+  @spec max(number) :: t()
+  def max(max_value) when is_number(max_value) do
+    rule(
+      fn value -> value <= max_value end,
+      "Must be less than or equal to #{max_value}."
+    )
+  end
+
+  @spec between(number, number) :: t()
+  def between(min, max) when is_number(min) and is_number(max) do
+    rule(
+      fn value -> value >= min and value <= max end,
+      "Must be between #{min} and #{max}."
+    )
+  end
 end
