@@ -70,6 +70,8 @@ The `validate` call on the last line will return the list of errors found in the
 All types of elements support a few common options:
 * `required`: whether the element is required (false by default)
 * `checks`: a list of rules that the element must pass
+* `cast_from`: a type or list of types, to cast the value to the expected type
+  before validating, if necessary (see [Casting](#casting) section below).
 
 Example:
 
@@ -197,6 +199,63 @@ def max_length(n) do
   )
 end
 ```
+
+### Casting
+
+Let's say you have a schema like this:
+
+```elixir
+%{
+  "code" => number(),
+  "coordinates" => {float(), float(), integer()}
+}
+```
+
+Now, you receive a value to validate against this schema. This value comes from
+an external client where the `code` is a string input, and since it uses JSON,
+tuples are replaced by arrays. Also, coordinates use only integers instead of
+floats:
+
+```elixir
+%{
+  "code" => "32",
+  "coordinates" => [17, 17, 3]
+}
+```
+
+One could decide to replace the schema with:
+
+```elixir
+%{
+  "code" => string(),
+  "coordinates" => [number()]
+}
+```
+
+However, if another source of data was correctly matching the first schema, now it
+doesn't, and we need to maintain two similar schemas and choose the correct one
+manually. Besides, this new schema is too permissive: `code` does not necessarily
+represent a number, and coordinates can have more than 3 elements. Additional
+checks would be needed to validate that, but it would be cumbersome.
+
+Instead, you can use the `cast_from` option for every part of your schema. It
+indicates that the value might be of a different type than the expected one, but
+should be cast automatically if possible. Using it, we could replace our initial
+schema with:
+
+```elixir
+%{
+  "code" => number(cast_from: :string),
+  "coordinates" => tuple(
+    {float(cast_from: :integer), float(cast_from: :integer), integer()},
+    cast_from: :list
+  )
+}
+```
+
+Now our value would match the schema, while the schema remains precise.
+
+Note that any additional check will be performed on the *converted* value.
 
 ## Improvements
 

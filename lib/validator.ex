@@ -10,6 +10,7 @@ defmodule Validator do
 
   alias Validator.Error
   alias Validator.Helpers
+  alias Validator.Types
 
   @type spec_type() ::
           Validator.ValueSpec.t()
@@ -24,12 +25,14 @@ defmodule Validator do
 
     The `schema` field is used when the value is a map, and is `nil` otherwise.
     """
-    defstruct required: false, checks: [], schema: nil
+    defstruct required: false, checks: [], schema: nil, type: :any, cast_from: []
 
     @type t() :: %__MODULE__{
             required: boolean(),
             checks: list(Validator.Rule.t()),
-            schema: map() | nil
+            schema: map() | nil,
+            type: atom(),
+            cast_from: list(atom())
           }
   end
 
@@ -39,12 +42,14 @@ defmodule Validator do
 
     Each element must conform to the `item_type` definition.
     """
-    defstruct required: false, checks: [], item_type: nil
+    defstruct required: false, checks: [], item_type: nil, type: :list, cast_from: []
 
     @type t() :: %__MODULE__{
             required: boolean(),
             checks: list(Validator.Rule.t()),
-            item_type: Validator.spec_type()
+            item_type: Validator.spec_type(),
+            type: atom(),
+            cast_from: list(atom())
           }
   end
 
@@ -55,12 +60,14 @@ defmodule Validator do
     Matching values are expected to be a tuple with the same
     size as elem_types, and matching the rule for each element.
     """
-    defstruct required: false, checks: [], elem_types: nil
+    defstruct required: false, checks: [], elem_types: nil, type: :tuple, cast_from: []
 
     @type t() :: %__MODULE__{
             required: boolean(),
             checks: list(Validator.Rule.t()),
-            elem_types: {Validator.spec_type()}
+            elem_types: {Validator.spec_type()},
+            type: atom(),
+            cast_from: list(atom())
           }
   end
 
@@ -76,6 +83,13 @@ defmodule Validator do
 
   @spec validate(any, spec_type(), list) :: list(Error.t())
   def validate(value, schema, context \\ []) do
+    case cast_if_needed(value, schema, context) do
+      {:ok, cast_value} -> dispatch_validation(cast_value, schema, context)
+      {:error, error} -> [Error.new(error, context)]
+    end
+  end
+
+  defp dispatch_validation(value, schema, context) do
     case schema do
       %ListSpec{} -> validate_list(value, schema, context)
       [item_type] -> validate_list(value, Helpers.list(item_type), context)
@@ -86,6 +100,21 @@ defmodule Validator do
       %{} -> validate_map(value, schema, context)
     end
   end
+
+  defp cast_if_needed(value, %_{type: type, cast_from: cast_from}, _context) do
+    possible_casts =
+      cast_from
+      |> List.wrap()
+      |> Enum.filter(&Types.has_type?(value, &1))
+
+    cond do
+      Types.has_type?(value, type) -> {:ok, value}
+      possible_casts != [] -> Types.cast(value, List.first(possible_casts), type)
+      true -> {:ok, value}
+    end
+  end
+
+  defp cast_if_needed(value, _schema, _context), do: {:ok, value}
 
   defp validate_map(map, %{} = schema, context) when is_map(map) do
     field_errors =

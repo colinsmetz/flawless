@@ -328,6 +328,55 @@ defmodule ValidatorTest do
     end
   end
 
+  describe "cast_from" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "can be used to cast strings to numbers" do
+      schema = number(cast_from: :string)
+
+      assert validate("100", schema) == []
+      assert validate("9.99", schema) == []
+      assert validate(15, schema) == []
+      assert validate("xxx", schema) == [Error.new("Cannot be cast to number.", [])]
+      assert validate(true, schema) == [Error.new("Expected a number, received: true.", [])]
+    end
+
+    test "can be used to cast lists to tuples" do
+      schema = tuple({number(), string()}, cast_from: :list)
+
+      assert validate([2, "euros"], schema) == []
+      assert validate({2, "euros"}, schema) == []
+
+      assert validate([2, "euros", "ttc"], schema) == [
+               Error.new("Invalid tuple size (expected: 2, received: 3)", [])
+             ]
+
+      assert validate("[]", schema) == [Error.new("Expected a tuple, got: \"[]\"", [])]
+    end
+
+    test "accepts a list of possible types" do
+      schema = string(cast_from: [:number, :boolean, :atom])
+
+      assert validate("word", schema) == []
+      assert validate(178, schema) == []
+      assert validate(true, schema) == []
+      assert validate(:boom, schema) == []
+
+      assert validate(["list"], schema) == [
+               Error.new("Expected a string, received: [\"list\"].", [])
+             ]
+    end
+
+    test "casts the value, then runs the checks on the converted value" do
+      schema = number(cast_from: :string, checks: [max(10)])
+
+      assert validate("-5", schema) == []
+      assert validate("10", schema) == []
+      assert validate("15", schema) == [Error.new("Must be less than or equal to 10.", [])]
+    end
+  end
+
   describe "defvalidator macro" do
     test "can be used to avoid importing globally all the helpers" do
       schema =
