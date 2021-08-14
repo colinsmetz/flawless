@@ -15,10 +15,16 @@ defmodule Validator.Helpers do
     |> value()
   end
 
+  defp extract_checks(opts) do
+    opts
+    |> Keyword.get(:checks, [])
+    |> Enum.concat(Keyword.get_values(opts, :check))
+  end
+
   def value(opts \\ []) do
     %ValueSpec{
       required: opts |> Keyword.get(:required, false),
-      checks: opts |> Keyword.get(:checks, []),
+      checks: extract_checks(opts),
       schema: opts |> Keyword.get(:schema, nil),
       type: opts |> Keyword.get(:type, :any),
       cast_from: opts |> Keyword.get(:cast_from, [])
@@ -28,7 +34,7 @@ defmodule Validator.Helpers do
   def list(item_type, opts \\ []) do
     %ListSpec{
       required: opts |> Keyword.get(:required, false),
-      checks: opts |> Keyword.get(:checks, []),
+      checks: extract_checks(opts),
       item_type: item_type,
       cast_from: opts |> Keyword.get(:cast_from, [])
     }
@@ -37,7 +43,7 @@ defmodule Validator.Helpers do
   def tuple(elem_types, opts \\ []) do
     %TupleSpec{
       required: opts |> Keyword.get(:required, false),
-      checks: opts |> Keyword.get(:checks, []),
+      checks: extract_checks(opts),
       elem_types: elem_types,
       cast_from: opts |> Keyword.get(:cast_from, [])
     }

@@ -68,8 +68,10 @@ The `validate` call on the last line will return the list of errors found in the
 ## How to use
 
 All types of elements support a few common options:
-* `required`: whether the element is required (false by default)
-* `checks`: a list of rules that the element must pass
+* `required`: whether the element is required (false by default).
+* `checks`: a list of rules that the element must pass.
+* `check`: similar to `checks` but for a single rule; can be passed multiple
+  times.
 * `cast_from`: a type or list of types, to cast the value to the expected type
   before validating, if necessary (see [Casting](#casting) section below).
 

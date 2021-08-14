@@ -155,6 +155,15 @@ defmodule ValidatorTest do
       assert validate(101, integer(checks: checks)) == [Error.new("bigger than 100", [])]
       assert validate(11, integer(checks: checks)) == []
     end
+
+    test "can be set with :checks or multiple :check" do
+      assert validate(0, integer(checks: [min(10), min(100)], check: min(25), check: min(17))) == [
+        Error.new("Must be greater than or equal to 10.", []),
+        Error.new("Must be greater than or equal to 100.", []),
+        Error.new("Must be greater than or equal to 25.", []),
+        Error.new("Must be greater than or equal to 17.", []),
+      ]
+    end
   end
 
   describe "lists" do
