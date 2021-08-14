@@ -1,7 +1,6 @@
 # Validator
 
-This is a library to help validate JSON-like objects (in Elixir format) against
-a specific schema.
+This is a library to help validate Elixir values against a specific schema.
 
 Example:
 
@@ -88,6 +87,7 @@ Several helpers are provided to define basic elements:
 * `number()`
 * `string()`
 * `boolean()`
+* `atom()`
 
 The type constraint will be added automatically to the `checks` when using
 specific type elements.
@@ -101,6 +101,7 @@ for each of them:
 * `req_number()`
 * `req_string()`
 * `req_boolean()`
+* `req_atom()`
 
 ### Maps
 
@@ -148,6 +149,26 @@ If the `required` or `checks` options are not used, you can use the shortcut
 ```elixir
 # A list of string
 [string()]
+```
+
+### Tuples
+
+A tuple is defined using `tuple(elem_specs, opts)` or `req_tuple(elem_specs, opts)`.
+The `elem_specs` is a tuple of the expected tuple size, and each of element of the
+tuple is the expected schema for the corresponding tuple element. Example:
+
+```elixir
+# A tuple of size 2, where the first element is an atom and the second one a string
+# The entire tuple must conform to `custom_rule`.
+tuple({atom(), string()}, checks: [custom_rule()])
+```
+
+If the `required` or `checks` options are not used, the `tuple()` function can be
+entirely ignored:
+
+```elixir
+# A tuple of size 2, where the first element is an atom and the second one a string
+{atom(), string()}
 ```
 
 ### Rules

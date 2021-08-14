@@ -11,7 +11,12 @@ defmodule Validator do
   alias Validator.Error
   alias Validator.Helpers
 
-  @type spec_type() :: Validator.ValueSpec.t() | Validator.ListSpec.t() | map()
+  @type spec_type() ::
+          Validator.ValueSpec.t()
+          | Validator.ListSpec.t()
+          | Validator.TupleSpec.t()
+          | map()
+          | list()
 
   defmodule ValueSpec do
     @moduledoc """
@@ -43,6 +48,22 @@ defmodule Validator do
           }
   end
 
+  defmodule TupleSpec do
+    @moduledoc """
+    Represents a tuple.
+
+    Matching values are expected to be a tuple with the same
+    size as elem_types, and matching the rule for each element.
+    """
+    defstruct required: false, checks: [], elem_types: nil
+
+    @type t() :: %__MODULE__{
+            required: boolean(),
+            checks: list(Validator.Rule.t()),
+            elem_types: {Validator.spec_type()}
+          }
+  end
+
   defmacro defvalidator(do: body) do
     quote do
       import Validator
@@ -59,6 +80,8 @@ defmodule Validator do
       %ListSpec{} -> validate_list(value, schema, context)
       [item_type] -> validate_list(value, Helpers.list(item_type), context)
       [] -> validate_list(value, Helpers.list(Helpers.value()), context)
+      %TupleSpec{} -> validate_tuple(value, schema, context)
+      tuple when is_tuple(tuple) -> validate_tuple(value, Helpers.tuple(tuple), context)
       %ValueSpec{} -> validate_value(value, schema, context)
       %{} -> validate_map(value, schema, context)
     end
@@ -128,6 +151,45 @@ defmodule Validator do
     [Error.new("Expected a list, got: #{inspect(list)}", context)]
   end
 
+  defp validate_tuple(tuple, spec, context)
+       when is_tuple(tuple) and tuple_size(tuple) == tuple_size(spec.elem_types) do
+    top_level_errors =
+      spec.checks
+      |> Enum.map(fn check -> check.(tuple, context) end)
+
+    elem_errors =
+      tuple
+      |> Tuple.to_list()
+      |> Enum.zip(Tuple.to_list(spec.elem_types))
+      |> Enum.with_index()
+      |> Enum.map(fn {{value, elem_type}, index} ->
+        validate(value, elem_type, context ++ [index])
+      end)
+      |> List.flatten()
+
+    [
+      top_level_errors,
+      elem_errors
+    ]
+    |> List.flatten()
+  end
+
+  defp validate_tuple(tuple, spec, context) when is_tuple(tuple) do
+    expected_size = tuple_size(spec.elem_types)
+    actual_size = tuple_size(tuple)
+
+    [
+      Error.new(
+        "Invalid tuple size (expected: #{expected_size}, received: #{actual_size})",
+        context
+      )
+    ]
+  end
+
+  defp validate_tuple(value, _spec, context) do
+    [Error.new("Expected a tuple, got: #{inspect(value)}", context)]
+  end
+
   defp unexpected_fields_error(map, schema, context) do
     map_fields = map |> Map.keys()
     schema_fields = schema |> Map.keys()
@@ -156,5 +218,6 @@ defmodule Validator do
   end
 
   defp required_field?(field) when is_list(field), do: false
+  defp required_field?(field) when is_tuple(field), do: false
   defp required_field?(field) when is_map(field), do: field |> Map.get(:required, false)
 end

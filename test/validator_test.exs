@@ -111,13 +111,21 @@ defmodule ValidatorTest do
 
     test "atom/1 expects an atom value" do
       assert validate(123, atom()) == [Error.new("Expected an atom, received: 123.", [])]
-      assert validate("hello", atom()) == [Error.new("Expected an atom, received: \"hello\".", [])]
+
+      assert validate("hello", atom()) == [
+               Error.new("Expected an atom, received: \"hello\".", [])
+             ]
+
       assert validate(:test, atom()) == []
     end
 
     test "req_atom/1 expects an atom value" do
       assert validate(123, req_atom()) == [Error.new("Expected an atom, received: 123.", [])]
-      assert validate("hello", req_atom()) == [Error.new("Expected an atom, received: \"hello\".", [])]
+
+      assert validate("hello", req_atom()) == [
+               Error.new("Expected an atom, received: \"hello\".", [])
+             ]
+
       assert validate(:test, req_atom()) == []
     end
   end
@@ -128,7 +136,7 @@ defmodule ValidatorTest do
 
     test "are evaluated for basic values" do
       checks = [one_of([0, 1])]
-      expected_errors = [Error.new("Invalid value '123'. Valid options: [0, 1]", [])]
+      expected_errors = [Error.new("Invalid value: 123. Valid options: [0, 1]", [])]
 
       assert validate(123, value(checks: checks)) == expected_errors
       assert validate(123, number(checks: checks)) == expected_errors
@@ -261,6 +269,65 @@ defmodule ValidatorTest do
     end
   end
 
+  describe "tuples" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "validate tuple size before anything else" do
+      schema = tuple({number(), string(), string()})
+
+      assert validate({1, "a", "b"}, schema) == []
+
+      assert validate({1, 2}, schema) == [
+               Error.new("Invalid tuple size (expected: 3, received: 2)", [])
+             ]
+
+      assert validate({1, 2, 3, 4}, schema) == [
+               Error.new("Invalid tuple size (expected: 3, received: 4)", [])
+             ]
+    end
+
+    test "detect error in tuple fields" do
+      schema = tuple({number(), string(), string()})
+
+      assert validate({1, 2, "plop"}, schema) == [
+               Error.new("Expected a string, received: 2.", [1])
+             ]
+    end
+
+    test "accept direct tuple as shortcut" do
+      schema = {number(), string(), string()}
+
+      assert validate({1, 2, "plop"}, schema) == [
+               Error.new("Expected a string, received: 2.", [1])
+             ]
+    end
+
+    test "accept checks at the tuple and the field level" do
+      tuple_checks = [rule(&(elem(&1, 0) != elem(&1, 1)), "tuple elements must be different")]
+
+      schema =
+        tuple(
+          {
+            atom(checks: [one_of([:ok, :error])]),
+            value()
+          },
+          checks: tuple_checks
+        )
+
+      assert validate({:bim, :bim}, schema) == [
+               Error.new("tuple elements must be different", []),
+               Error.new("Invalid value: :bim. Valid options: [:ok, :error]", [0])
+             ]
+    end
+
+    test "return an error when value is not a tuple" do
+      assert validate(nil, {}) == [Error.new("Expected a tuple, got: nil", [])]
+      assert validate(999, {}) == [Error.new("Expected a tuple, got: 999", [])]
+      assert validate([1, 2], {}) == [Error.new("Expected a tuple, got: [1, 2]", [])]
+    end
+  end
+
   describe "defvalidator macro" do
     test "can be used to avoid importing globally all the helpers" do
       schema =
@@ -281,7 +348,7 @@ defmodule ValidatorTest do
     import Validator.Helpers
     import Validator.Rule
 
-    test "it validates map and list fields" do
+    test "it validates map, list and tuple fields" do
       schema = %{
         "config" =>
           req_map(%{
@@ -294,15 +361,24 @@ defmodule ValidatorTest do
             "product_id" => req_string(),
             "price" => req_number()
           }),
-        "related_ids" => [string()]
+        "related_ids" => [string()],
+        "coordinates" => req_tuple({float(), float(), float()}),
+        "status" => {atom(), number()}
       }
 
       assert validate(%{}, schema) == [
-               Error.new("Missing required fields: [\"config\", \"products\"]", [])
+               Error.new(
+                 "Missing required fields: [\"config\", \"coordinates\", \"products\"]",
+                 []
+               )
              ]
 
-      assert validate(%{"config" => %{}, "products" => [100]}, schema) == [
+      assert validate(
+               %{"config" => %{}, "products" => [100], "coordinates" => {1.0, 2.0}},
+               schema
+             ) == [
                Error.new("Missing required fields: [\"min\"]", ["config"]),
+               Error.new("Invalid tuple size (expected: 3, received: 2)", ["coordinates"]),
                Error.new("Expected a map, got: 100", ["products", 0])
              ]
     end
@@ -318,6 +394,21 @@ defmodule ValidatorTest do
       assert validate([[[14]]], schema) == [
                Error.new("Expected a string, received: 14.", [0, 0, 0])
              ]
+    end
+
+    test "it can validate tuples of tuples" do
+      schema = {{atom(), string()}, {atom(), number(), {number()}}}
+
+      assert validate({1, 2}, schema) == [
+               Error.new("Expected a tuple, got: 1", [0]),
+               Error.new("Expected a tuple, got: 2", [1])
+             ]
+
+      assert validate({{:ok, "elixir"}, {:plop, 1, 7}}, schema) == [
+               Error.new("Expected a tuple, got: 7", [1, 2])
+             ]
+
+      assert validate({{:ok, "elixir"}, {:plop, 1, {9}}}, schema) == []
     end
 
     defp required_if_is_key() do
@@ -362,6 +453,10 @@ defmodule ValidatorTest do
           ),
         "brands" => [string()],
         "status" => req_atom(checks: [one_of([:ok, :error])]),
+        "tuple_of_things" => {
+          [string()],
+          %{"a" => string()}
+        }
       }
 
       value = %{
@@ -380,7 +475,8 @@ defmodule ValidatorTest do
         },
         "file_max_age_days" => "67",
         "brands" => ["hey", 28],
-        "status" => :ok
+        "status" => :ok,
+        "tuple_of_things" => {["x", "y", 9, "z"], %{}}
       }
 
       assert Validator.validate(value, schema) == [
@@ -390,9 +486,10 @@ defmodule ValidatorTest do
                Error.new("Field 'a' is a key but is not required", ["fields", 0]),
                Error.new("Unexpected fields: [\"tru\"]", ["fields", 1]),
                Error.new("Missing required fields: [\"id\"]", ["fields", 1, "meta"]),
-               Error.new("Invalid value 'yml'. Valid options: [\"csv\", \"xml\"]", ["format"]),
+               Error.new("Invalid value: \"yml\". Valid options: [\"csv\", \"xml\"]", ["format"]),
                Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"]", ["polling"]),
-               Error.new("Slice size must be longer than 100", ["polling", "slice_size"])
+               Error.new("Slice size must be longer than 100", ["polling", "slice_size"]),
+               Error.new("Expected a string, received: 9.", ["tuple_of_things", 0, 2])
              ]
     end
   end

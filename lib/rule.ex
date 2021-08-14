@@ -24,7 +24,7 @@ defmodule Validator.Rule do
   def one_of(options) when is_list(options) do
     rule(
       &(&1 in options),
-      &"Invalid value '#{&1}'. Valid options: #{inspect(options)}"
+      &"Invalid value: #{inspect(&1)}. Valid options: #{inspect(options)}"
     )
   end
 

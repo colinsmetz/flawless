@@ -1,5 +1,5 @@
 defmodule Validator.Helpers do
-  alias Validator.{ListSpec, ValueSpec}
+  alias Validator.{ListSpec, ValueSpec, TupleSpec}
 
   defp required(value_fun, opts) do
     opts |> Keyword.put(:required, true) |> value_fun.()
@@ -27,6 +27,14 @@ defmodule Validator.Helpers do
     }
   end
 
+  def tuple(elem_types, opts \\ []) do
+    %TupleSpec{
+      required: opts |> Keyword.get(:required, false),
+      checks: opts |> Keyword.get(:checks, []),
+      elem_types: elem_types
+    }
+  end
+
   def map(schema, opts \\ []) do
     opts |> Keyword.put(:schema, schema) |> value()
   end
@@ -34,6 +42,7 @@ defmodule Validator.Helpers do
   def req_value(opts \\ []), do: required(&value/1, opts)
   def req_list(item_type, opts \\ []), do: required(&list(item_type, &1), opts)
   def req_map(schema, opts \\ []), do: required(&map(schema, &1), opts)
+  def req_tuple(elem_types, opts \\ []), do: required(&tuple(elem_types, &1), opts)
 
   def integer(opts \\ []), do: value_with_rule(Validator.Rule.is_integer_type(), opts)
   def req_integer(opts \\ []), do: required(&integer/1, opts)

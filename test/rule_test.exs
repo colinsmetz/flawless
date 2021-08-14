@@ -56,7 +56,7 @@ defmodule Validator.RuleTest do
       assert test_rule.(1, []) == []
 
       assert one_of([1, 2, 3]).(7, []) ==
-               Error.new("Invalid value '7'. Valid options: [1, 2, 3]", [])
+               Error.new("Invalid value: 7. Valid options: [1, 2, 3]", [])
     end
 
     test "is_integer_type/0 validates that value is an integer" do
