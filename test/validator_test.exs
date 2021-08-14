@@ -108,6 +108,18 @@ defmodule ValidatorTest do
       assert validate(true, req_string()) == [Error.new("Expected a string, received: true.", [])]
       assert validate("hello", req_string()) == []
     end
+
+    test "atom/1 expects an atom value" do
+      assert validate(123, atom()) == [Error.new("Expected an atom, received: 123.", [])]
+      assert validate("hello", atom()) == [Error.new("Expected an atom, received: \"hello\".", [])]
+      assert validate(:test, atom()) == []
+    end
+
+    test "req_atom/1 expects an atom value" do
+      assert validate(123, req_atom()) == [Error.new("Expected an atom, received: 123.", [])]
+      assert validate("hello", req_atom()) == [Error.new("Expected an atom, received: \"hello\".", [])]
+      assert validate(:test, req_atom()) == []
+    end
   end
 
   describe "checks" do
@@ -348,7 +360,8 @@ defmodule ValidatorTest do
             ),
             checks: [rule(&(length(&1) > 0), "Fields must contain at least one item")]
           ),
-        "brands" => [string()]
+        "brands" => [string()],
+        "status" => req_atom(checks: [one_of([:ok, :error])]),
       }
 
       value = %{
@@ -366,7 +379,8 @@ defmodule ValidatorTest do
           "timeout_ms" => "34567"
         },
         "file_max_age_days" => "67",
-        "brands" => ["hey", 28]
+        "brands" => ["hey", 28],
+        "status" => :ok
       }
 
       assert Validator.validate(value, schema) == [

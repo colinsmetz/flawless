@@ -49,4 +49,7 @@ defmodule Validator.Helpers do
 
   def boolean(opts \\ []), do: value_with_rule(Validator.Rule.is_boolean_type(), opts)
   def req_boolean(opts \\ []), do: required(&boolean/1, opts)
+
+  def atom(opts \\ []), do: value_with_rule(Validator.Rule.is_atom_type(), opts)
+  def req_atom(opts \\ []), do: required(&atom/1, opts)
 end

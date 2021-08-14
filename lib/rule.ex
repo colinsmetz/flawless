@@ -68,6 +68,14 @@ defmodule Validator.Rule do
     )
   end
 
+  @spec is_atom_type :: t()
+  def is_atom_type() do
+    rule(
+      &is_atom/1,
+      &"Expected an atom, received: #{inspect(&1)}."
+    )
+  end
+
   defp value_length(value) when is_binary(value), do: String.length(value)
   defp value_length(value) when is_list(value), do: length(value)
   defp value_length(_), do: nil

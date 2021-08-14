@@ -102,6 +102,17 @@ defmodule Validator.RuleTest do
                Error.new("Expected a boolean, received: 1.", [])
     end
 
+    test "is_atom_type/0 validates that value is an atom" do
+      assert is_atom_type().(:plop, []) == []
+      assert is_atom_type().(Plop, []) == []
+
+      assert is_atom_type().("plop", []) ==
+               Error.new("Expected an atom, received: \"plop\".", [])
+
+      assert is_atom_type().(10, []) ==
+               Error.new("Expected an atom, received: 10.", [])
+    end
+
     test "min_length/1 validates the length of a string" do
       test_rule = min_length(5)
 
