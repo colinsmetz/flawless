@@ -118,6 +118,10 @@ defmodule Validator do
 
   defp cast_if_needed(value, _schema, _context), do: {:ok, value}
 
+  defp validate_map(map, %{} = schema, context) when is_struct(map) do
+    validate_map(Map.from_struct(map), schema, context)
+  end
+
   defp validate_map(map, %{} = schema, context) when is_map(map) do
     field_errors =
       schema
@@ -244,7 +248,7 @@ defmodule Validator do
   defp missing_fields_error(map, schema, context) do
     missing_fields =
       for {field_name, field} <- schema,
-          is_nil(map[field_name]) and required_field?(field) do
+          is_nil(map |> Map.get(field_name)) and required_field?(field) do
         field_name
       end
 

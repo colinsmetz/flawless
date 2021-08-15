@@ -388,6 +388,19 @@ defmodule ValidatorTest do
                ]
       end
     end
+
+    defmodule TestModule do
+      defstruct a: nil, b: nil
+    end
+
+    test "can be used to validate structs" do
+      schema = %{
+        a: req_number(),
+        b: req_number()
+      }
+
+      assert validate(%TestModule{a: 1, b: 2}, schema) == []
+    end
   end
 
   describe "tuples" do
