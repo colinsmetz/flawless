@@ -98,6 +98,7 @@ defmodule Validator do
       tuple when is_tuple(tuple) -> validate_tuple(value, Helpers.tuple(tuple), context)
       %ValueSpec{} -> validate_value(value, schema, context)
       %{} -> validate_map(value, schema, context)
+      func when is_function(func, 0) -> validate(value, func.(), context)
     end
   end
 
@@ -249,4 +250,5 @@ defmodule Validator do
   defp required_field?(field) when is_list(field), do: false
   defp required_field?(field) when is_tuple(field), do: false
   defp required_field?(field) when is_map(field), do: field |> Map.get(:required, false)
+  defp required_field?(field) when is_function(field), do: false
 end

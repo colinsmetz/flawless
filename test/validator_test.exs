@@ -671,4 +671,51 @@ defmodule ValidatorTest do
              ]
     end
   end
+
+  describe "recursive data structures" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    def tree_schema() do
+      %{
+        value: number(max: 100),
+        left: &tree_schema/0,
+        right: &tree_schema/0
+      }
+    end
+
+    test "are validated recursively" do
+      tree = %{
+        value: 17,
+        left: %{
+          value: 33
+        },
+        right: %{
+          value: 18,
+          left: %{
+            value: 333
+          }
+        }
+      }
+
+      assert validate(tree, tree_schema()) == [
+        Error.new("Must be less than or equal to 100.", [:right, :left, :value])
+      ]
+
+      tree2 = %{
+        value: 17,
+        left: %{
+          value: 33
+        },
+        right: %{
+          value: 18,
+          left: %{
+            value: 33
+          }
+        }
+      }
+
+      assert validate(tree2, tree_schema()) == []
+    end
+  end
 end
