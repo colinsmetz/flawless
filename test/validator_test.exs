@@ -128,6 +128,84 @@ defmodule ValidatorTest do
 
       assert validate(:test, req_atom()) == []
     end
+
+    test "number/1, req_number/1, integer/1 and req_integer/1 have shortcut rules" do
+      for rule_func <- [&number/1, &req_number/1, &integer/1, &req_integer/1] do
+        assert validate(0, rule_func.(min: 2, max: 10)) == [
+                 Error.new("Must be greater than or equal to 2.", [])
+               ]
+
+        assert validate(100, rule_func.(min: 2, max: 10)) == [
+                 Error.new("Must be less than or equal to 10.", [])
+               ]
+
+        assert validate(2, rule_func.(in: [1, 3, 5])) == [
+                 Error.new("Invalid value: 2. Valid options: [1, 3, 5]", [])
+               ]
+
+        assert validate(7, rule_func.(between: [1, 5])) == [
+                 Error.new("Must be between 1 and 5.", [])
+               ]
+      end
+    end
+
+    test "float/1 and req_float/1 have shortcut rules" do
+      for rule_func <- [&float/1, &req_float/1] do
+        assert validate(0.0, rule_func.(min: 2.0, max: 10.0)) == [
+                 Error.new("Must be greater than or equal to 2.0.", [])
+               ]
+
+        assert validate(100.0, rule_func.(min: 2.0, max: 10.0)) == [
+                 Error.new("Must be less than or equal to 10.0.", [])
+               ]
+
+        assert validate(2.0, rule_func.(in: [1.0, 3.0, 5.0])) == [
+                 Error.new("Invalid value: 2.0. Valid options: [1.0, 3.0, 5.0]", [])
+               ]
+
+        assert validate(7.0, rule_func.(between: [1.0, 5.0])) == [
+                 Error.new("Must be between 1.0 and 5.0.", [])
+               ]
+      end
+    end
+
+    test "string/1 and req_string/1 have shortcut rules" do
+      for rule_func <- [&string/1, &req_string/1] do
+        assert validate("hey", rule_func.(min_length: 5)) == [
+                 Error.new("Minimum length of 5 required (current: 3).", [])
+               ]
+
+        assert validate("validation", rule_func.(max_length: 5)) == [
+                 Error.new("Maximum length of 5 required (current: 10).", [])
+               ]
+
+        assert validate("hey", rule_func.(length: 5)) == [
+                 Error.new("Expected length of 5 (current: 3).", [])
+               ]
+
+        assert validate("", rule_func.(non_empty: true, in: ["plop"], format: ~r/plop/)) == [
+                 Error.new("Invalid value: \"\". Valid options: [\"plop\"]", []),
+                 Error.new("Value cannot be empty.", []),
+                 Error.new("Value \"\" does not match regex ~r/plop/.", [])
+               ]
+      end
+    end
+
+    test "boolean/1 and req_boolean/1 have shortcut rules" do
+      for rule_func <- [&boolean/1, &req_boolean/1] do
+        assert validate(true, rule_func.(in: [false])) == [
+                 Error.new("Invalid value: true. Valid options: [false]", [])
+               ]
+      end
+    end
+
+    test "atom/1 and req_atom/1 have shortcut rules" do
+      for rule_func <- [&atom/1, &req_atom/1] do
+        assert validate(:hola, rule_func.(in: [:abc, :def])) == [
+                 Error.new("Invalid value: :hola. Valid options: [:abc, :def]", [])
+               ]
+      end
+    end
   end
 
   describe "checks" do
@@ -157,12 +235,13 @@ defmodule ValidatorTest do
     end
 
     test "can be set with :checks or multiple :check" do
-      assert validate(0, integer(checks: [min(10), min(100)], check: min(25), check: min(17))) == [
-        Error.new("Must be greater than or equal to 10.", []),
-        Error.new("Must be greater than or equal to 100.", []),
-        Error.new("Must be greater than or equal to 25.", []),
-        Error.new("Must be greater than or equal to 17.", []),
-      ]
+      assert validate(0, integer(checks: [min(10), min(100)], check: min(25), check: min(17))) ==
+               [
+                 Error.new("Must be greater than or equal to 10.", []),
+                 Error.new("Must be greater than or equal to 100.", []),
+                 Error.new("Must be greater than or equal to 25.", []),
+                 Error.new("Must be greater than or equal to 17.", [])
+               ]
     end
   end
 
@@ -204,6 +283,31 @@ defmodule ValidatorTest do
     test "return an error when value is not a list" do
       assert validate(nil, list(string())) == [Error.new("Expected a list, got: nil", [])]
       assert validate(999, list(string())) == [Error.new("Expected a list, got: 999", [])]
+    end
+
+    test "have shortcut rules" do
+      for rule_func <- [&list/2, &req_list/2] do
+        assert validate([1, 2, 3], rule_func.(number(), min_length: 5)) == [
+                 Error.new("Minimum length of 5 required (current: 3).", [])
+               ]
+
+        assert validate([1, 2, 3, 4], rule_func.(number(), max_length: 3)) == [
+                 Error.new("Maximum length of 3 required (current: 4).", [])
+               ]
+
+        assert validate([1, 2, 3], rule_func.(number(), length: 5)) == [
+                 Error.new("Expected length of 5 (current: 3).", [])
+               ]
+
+        assert validate([], rule_func.(number(), non_empty: true, in: [[1, 2]])) == [
+                 Error.new("Invalid value: []. Valid options: [[1, 2]]", []),
+                 Error.new("Value cannot be empty.", [])
+               ]
+
+        assert validate([1, 1, 2], rule_func.(number(), no_duplicate: true)) == [
+                 Error.new("The list should not contain duplicates (duplicates found: [1]).", [])
+               ]
+      end
     end
   end
 
@@ -276,6 +380,14 @@ defmodule ValidatorTest do
       assert validate(nil, %{}) == [Error.new("Expected a map, got: nil", [])]
       assert validate(999, %{}) == [Error.new("Expected a map, got: 999", [])]
     end
+
+    test "have shortcut rules" do
+      for rule_func <- [&map/2, &req_map/2] do
+        assert validate(%{}, rule_func.(%{}, in: [%{c: 3}])) == [
+                 Error.new("Invalid value: %{}. Valid options: [%{c: 3}]", [])
+               ]
+      end
+    end
   end
 
   describe "tuples" do
@@ -334,6 +446,14 @@ defmodule ValidatorTest do
       assert validate(nil, {}) == [Error.new("Expected a tuple, got: nil", [])]
       assert validate(999, {}) == [Error.new("Expected a tuple, got: 999", [])]
       assert validate([1, 2], {}) == [Error.new("Expected a tuple, got: [1, 2]", [])]
+    end
+
+    test "have shortcut rules" do
+      for rule_func <- [&tuple/2, &req_tuple/2] do
+        assert validate({}, rule_func.({}, in: [{1, 2}])) == [
+                 Error.new("Invalid value: {}. Valid options: [{1, 2}]", [])
+               ]
+      end
     end
   end
 

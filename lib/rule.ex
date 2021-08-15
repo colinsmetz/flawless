@@ -154,7 +154,7 @@ defmodule Validator.Rule do
   def match(%Regex{} = regex) do
     rule(
       fn value -> Regex.match?(regex, value) end,
-      &"Value #{&1} does not match regex #{inspect(regex)}."
+      &"Value #{inspect(&1)} does not match regex #{inspect(regex)}."
     )
   end
 

@@ -197,7 +197,9 @@ defmodule Validator.RuleTest do
 
       assert test_rule.("hello", []) == []
       assert test_rule.("helicopter", []) == []
-      assert test_rule.("heyy", []) == Error.new("Value heyy does not match regex ~r/^hel/.", [])
+
+      assert test_rule.("heyy", []) ==
+               Error.new("Value \"heyy\" does not match regex ~r/^hel/.", [])
     end
 
     test "match/1 accepts a string for the regex" do
@@ -205,7 +207,9 @@ defmodule Validator.RuleTest do
 
       assert test_rule.("hello", []) == []
       assert test_rule.("helicopter", []) == []
-      assert test_rule.("heyy", []) == Error.new("Value heyy does not match regex ~r/^hel/.", [])
+
+      assert test_rule.("heyy", []) ==
+               Error.new("Value \"heyy\" does not match regex ~r/^hel/.", [])
     end
 
     test "min/1 detects when value is too low" do

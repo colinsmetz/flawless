@@ -180,6 +180,16 @@ entirely ignored:
 Several rules are predefined and can be used in `checks`:
 * `one_of(list)`: checks that the value is among a predefined set of elements
 
+The type helpers (`number()`, `req_string()`, etc.) also accept shortcut options
+for their supported built-in rules. For example, those are equivalent:
+
+```elixir
+number(checks: [min(2), max(6)])
+number(min: 2, max: 6)
+```
+
+#### Custom rules
+
 To define a custom rule, you must use the `rule(predicate, error_message)` function:
 * `predicate` is a function taking the value as argument, and returning a
   boolean (`true` if the condition is met).
