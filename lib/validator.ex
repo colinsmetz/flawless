@@ -99,6 +99,7 @@ defmodule Validator do
       %ValueSpec{} -> validate_value(value, schema, context)
       %{} -> validate_map(value, schema, context)
       func when is_function(func, 0) -> validate(value, func.(), context)
+      func when is_function(func, 1) -> validate_select(value, func, context)
     end
   end
 
@@ -218,6 +219,13 @@ defmodule Validator do
 
   defp validate_tuple(value, _spec, context) do
     [Error.new("Expected a tuple, got: #{inspect(value)}", context)]
+  end
+
+  defp validate_select(value, func_spec, context) do
+    validate(value, func_spec.(value), context)
+  rescue
+    _e in FunctionClauseError ->
+      [Error.new("Value does not match any of the possible schemas.", context)]
   end
 
   defp unexpected_fields_error(map, schema, context) do

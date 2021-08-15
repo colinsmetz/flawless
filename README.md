@@ -269,6 +269,56 @@ Now our value would match the schema, while the schema remains precise.
 
 Note that any additional check will be performed on the *converted* value.
 
+### Recursive data structures
+
+For recursive data structures, you can use 0-arity functions that return a
+schema, like this:
+
+```elixir
+def tree_schema() do
+  %{
+    value: number(max: 100),
+    left: &tree_schema/0,
+    right: &tree_schema/0
+  }
+end
+```
+
+Then you can call `validate(tree, tree_schema())` as usual.
+
+### Union types / Case type
+
+Union types are supported as such. However, there are multiple ways a field can
+have different types (without matching *anything* with `value()`):
+* Using `cast_from` (see "Casting" section above).
+* Using selectors
+
+Selectors are defined using a 1-arity function taking the current data as a
+parameter. This data can be used to decide on which schema should be used. For
+example:
+
+```elixir
+schema = %{
+  a: fn
+    %{} -> %{b: number(), c: number()}
+    l when is_list(l) -> list(number())
+  end
+}
+```
+
+This schema would accept field `:a` to be either:
+* A map with schema `%{b: number(), c: number()}`
+* A list of numbers
+
+If the input data is not a map or a list, then it is considered an error and
+none of the subschemas is tested.
+
+Compared to a potential generic `union([typeA, typeB])` function, this method
+has the advantage that we know which schema is expected to be used, so we can
+return more specific errors corresponding to the selected subschemas. If we
+didn't know, we'd have to either return a single generic error, or the errors
+for both schemas, which would be confusing.
+
 ## Improvements
 
 * A field with a `nil` value is considered as present (the `required` constraint

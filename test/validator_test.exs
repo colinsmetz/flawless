@@ -699,8 +699,8 @@ defmodule ValidatorTest do
       }
 
       assert validate(tree, tree_schema()) == [
-        Error.new("Must be less than or equal to 100.", [:right, :left, :value])
-      ]
+               Error.new("Must be less than or equal to 100.", [:right, :left, :value])
+             ]
 
       tree2 = %{
         value: 17,
@@ -716,6 +716,55 @@ defmodule ValidatorTest do
       }
 
       assert validate(tree2, tree_schema()) == []
+    end
+  end
+
+  describe "selects" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "pass if the selected match is valid" do
+      schema = %{
+        a: fn
+          %{} -> %{b: number(), c: number()}
+          [_ | _] -> list(number())
+        end
+      }
+
+      assert validate(%{a: %{b: 1, c: 2}}, schema) == []
+      assert validate(%{a: [1, 2, 3]}, schema) == []
+    end
+
+    test "fail with the correct errors if select match is invalid" do
+      schema = %{
+        a: fn
+          %{} -> %{b: req_number(), c: number()}
+          [_ | _] -> list(number())
+        end
+      }
+
+      assert validate(%{a: %{c: "d"}}, schema) == [
+               Error.new("Missing required fields: [:b]", [:a]),
+               Error.new("Expected a number, received: \"d\".", [:a, :c])
+             ]
+
+      assert validate(%{a: ["1", "2"]}, schema) == [
+               Error.new("Expected a number, received: \"1\".", [:a, 0]),
+               Error.new("Expected a number, received: \"2\".", [:a, 1])
+             ]
+    end
+
+    test "fail with the correct error if nothing matched in the function" do
+      schema = %{
+        a: fn
+          %{} -> %{b: req_number(), c: number()}
+          [_ | _] -> list(number())
+        end
+      }
+
+      assert validate(%{a: 14}, schema) == [
+               Error.new("Value does not match any of the possible schemas.", [:a])
+             ]
     end
   end
 end
