@@ -136,6 +136,26 @@ function can be entirely ignored:
 }
 ```
 
+#### Accept non-defined fields
+
+By default, if the input map contains keys that were not defined in the schema,
+it will return an error. To avoid that, you should make sure to define *all*
+the potential keys that the map could have.
+
+If you still want to accept other non-defined keys, you can use the `any_key()`
+helper as a key in the map:
+
+```elixir
+%{
+  "id" => req_string(),
+  any_key() => string()
+}
+```
+
+This will make sure that the map contains a field named `id`, but also accept
+any other unexpected field in the map. Those extra fields should however comply
+with the associated schema (which could be `value()` to truly accept anything).
+
 ### Lists
 
 A list is defined using `list(item_spec, opts)` or `req_list(item_spec, opts)`.

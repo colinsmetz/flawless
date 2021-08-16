@@ -71,6 +71,12 @@ defmodule Validator do
           }
   end
 
+  defmodule AnyOtherKey do
+    defstruct []
+
+    @type t() :: %__MODULE__{}
+  end
+
   defmacro defvalidator(do: body) do
     quote do
       import Validator
@@ -125,11 +131,13 @@ defmodule Validator do
   defp validate_map(map, %{} = schema, context) when is_map(map) do
     field_errors =
       schema
-      |> Enum.map(fn {field_name, field} ->
-        case Map.fetch(map, field_name) do
-          :error -> []
-          {:ok, value} -> validate(value, field, context ++ [field_name])
-        end
+      |> Enum.map(fn
+        {%AnyOtherKey{}, field} ->
+          unexpected_fields(map, schema)
+          |> Enum.map(&validate_map_field(map, &1, field, context))
+
+        {field_name, field} ->
+          validate_map_field(map, field_name, field, context)
       end)
 
     [
@@ -142,6 +150,13 @@ defmodule Validator do
 
   defp validate_map(map, _spec, context) do
     [Error.new("Expected a map, got: #{inspect(map)}", context)]
+  end
+
+  defp validate_map_field(map, field_name, field_schema, context) do
+    case Map.fetch(map, field_name) do
+      :error -> []
+      {:ok, value} -> validate(value, field_schema, context ++ [field_name])
+    end
   end
 
   defp validate_value(value, spec, context) do
@@ -232,11 +247,14 @@ defmodule Validator do
       [Error.new("Value does not match any of the possible schemas.", context)]
   end
 
-  defp unexpected_fields_error(map, schema, context) do
-    map_fields = map |> Map.keys()
-    schema_fields = schema |> Map.keys()
+  defp unexpected_fields(map, schema) do
+    Map.keys(map) -- Map.keys(schema)
+  end
 
-    unexpected_fields = map_fields -- schema_fields
+  defp unexpected_fields_error(_map, %{%AnyOtherKey{} => _}, _context), do: []
+
+  defp unexpected_fields_error(map, schema, context) do
+    unexpected_fields = unexpected_fields(map, schema)
 
     if unexpected_fields == [] do
       []

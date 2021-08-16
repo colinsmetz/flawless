@@ -401,6 +401,24 @@ defmodule ValidatorTest do
 
       assert validate(%TestModule{a: 1, b: 2}, schema) == []
     end
+
+    test "accepts and validates any non-specified key with any_key()" do
+      schema = %{
+        "a" => string(),
+        "b" => string(),
+        any_key() => number()
+      }
+
+      assert validate(%{"a" => "x", "b" => "y"}, schema) == []
+      assert validate(%{"a" => "x", "b" => "y", "c" => 17}, schema) == []
+      assert validate(%{"a" => "x", "b" => "y", "c" => 17, "d" => 100}, schema) == []
+
+      assert validate(%{"a" => "x", "b" => "y", "c" => 17, "d" => "hey"}, schema) == [
+               Error.new("Expected a number, received: \"hey\".", ["d"])
+             ]
+
+      assert validate(%{}, %{any_key() => value()}) == []
+    end
   end
 
   describe "tuples" do

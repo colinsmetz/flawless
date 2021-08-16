@@ -1,5 +1,5 @@
 defmodule Validator.Helpers do
-  alias Validator.{ListSpec, ValueSpec, TupleSpec}
+  alias Validator.{ListSpec, ValueSpec, TupleSpec, AnyOtherKey}
   alias Validator.Rule
 
   defp required(value_fun, opts) do
@@ -82,6 +82,8 @@ defmodule Validator.Helpers do
 
   def atom(opts \\ []), do: value_with_type(:atom, Rule.is_atom_type(), opts)
   def req_atom(opts \\ []), do: required(&atom/1, opts)
+
+  def any_key(), do: %AnyOtherKey{}
 
   #######################
   #   BUILT-IN CHECKS   #
