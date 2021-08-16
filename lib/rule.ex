@@ -181,4 +181,12 @@ defmodule Validator.Rule do
       "Must be between #{min} and #{max}."
     )
   end
+
+  @spec not_both(any, any) :: t()
+  def not_both(field1, field2) do
+    rule(
+      fn map -> not (field1 in Map.keys(map) and field2 in Map.keys(map)) end,
+      "Fields #{field1} and #{field2} cannot both be defined."
+    )
+  end
 end

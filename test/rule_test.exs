@@ -237,5 +237,16 @@ defmodule Validator.RuleTest do
       assert test_rule.(6, []) == []
       assert test_rule.(7, []) == Error.new("Must be between 3 and 6.", [])
     end
+
+    test "not_both/2 detects when a map contains both keys" do
+      test_rule = not_both("a", "b")
+
+      assert test_rule.(%{}, []) == []
+      assert test_rule.(%{"a" => 17}, []) == []
+      assert test_rule.(%{"b" => 15}, []) == []
+
+      assert test_rule.(%{"b" => 12, "a" => 9}, []) ==
+               Error.new("Fields a and b cannot both be defined.", [])
+    end
   end
 end
