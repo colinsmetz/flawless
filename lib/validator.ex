@@ -71,6 +71,24 @@ defmodule Validator do
           }
   end
 
+  defmodule LiteralSpec do
+    @moduledoc """
+    Represents a literal constant.
+
+    Matching values are expected to be strictly equal to the value.
+    """
+
+    defstruct value: nil, required: false, checks: [], type: :any, cast_from: []
+
+    @type t() :: %__MODULE__{
+            value: any(),
+            required: boolean(),
+            checks: list(Validator.Rule.t()),
+            type: atom(),
+            cast_from: list(atom())
+          }
+  end
+
   defmodule AnyOtherKey do
     defstruct []
 
@@ -103,6 +121,7 @@ defmodule Validator do
       %TupleSpec{} -> validate_tuple(value, schema, context)
       tuple when is_tuple(tuple) -> validate_tuple(value, Helpers.tuple(tuple), context)
       %ValueSpec{} -> validate_value(value, schema, context)
+      %LiteralSpec{} -> validate_literal(value, schema, context)
       %{} -> validate_map(value, schema, context)
       func when is_function(func, 0) -> validate(value, func.(), context)
       func when is_function(func, 1) -> validate_select(value, func, context)
@@ -245,6 +264,19 @@ defmodule Validator do
   rescue
     _e in FunctionClauseError ->
       [Error.new("Value does not match any of the possible schemas.", context)]
+  end
+
+  defp validate_literal(value, spec, context) do
+    if value == spec.value do
+      []
+    else
+      [
+        Error.new(
+          "Expected literal value #{inspect(spec.value)}, got: #{inspect(value)}.",
+          context
+        )
+      ]
+    end
   end
 
   defp unexpected_fields(map, schema) do

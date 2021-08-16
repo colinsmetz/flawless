@@ -488,6 +488,21 @@ defmodule ValidatorTest do
     end
   end
 
+  describe "literals" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "validate that value is strictly equal to expected value" do
+      assert validate(14, literal(14)) == []
+      assert validate(:plop, literal(:plop)) == []
+      assert validate("abc", literal("abc")) == []
+      assert validate(%{a: 1, b: []}, literal(%{a: 1, b: []})) == []
+
+      assert validate(6, literal(10)) == [Error.new("Expected literal value 10, got: 6.", [])]
+      assert validate(8, literal("8")) == [Error.new("Expected literal value \"8\", got: 8.", [])]
+    end
+  end
+
   describe "cast_from" do
     import Validator.Helpers
     import Validator.Rule
@@ -534,6 +549,13 @@ defmodule ValidatorTest do
       assert validate("-5", schema) == []
       assert validate("10", schema) == []
       assert validate("15", schema) == [Error.new("Must be less than or equal to 10.", [])]
+    end
+
+    test "cast literals" do
+      schema = literal(100, cast_from: :string)
+
+      assert validate("100", schema) == []
+      assert validate("101", schema) == [Error.new("Expected literal value 100, got: 101.", [])]
     end
   end
 

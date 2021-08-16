@@ -27,6 +27,22 @@ defmodule Validator.Types do
     end
   end
 
+  @spec type_of(any) :: t()
+  def type_of(value) do
+    cond do
+      is_binary(value) -> :string
+      is_float(value) -> :float
+      is_integer(value) -> :integer
+      is_number(value) -> :number
+      is_boolean(value) -> :boolean
+      is_atom(value) -> :atom
+      is_list(value) -> :list
+      is_tuple(value) -> :tuple
+      is_map(value) -> :map
+      true -> :any
+    end
+  end
+
   @spec cast(any, t(), t()) :: {:ok, any} | {:error, String.t()}
   def cast(value, from, to) do
     case do_cast(value, from, to) do

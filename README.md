@@ -195,6 +195,15 @@ entirely ignored:
 {atom(), string()}
 ```
 
+### Literals
+
+If you need to match against a specific value, use `literal(value)`. It will
+match only if the value is exactly the expected one.
+
+The schema `literal(10)` would actually be equivalent to `integer(in: [10])`,
+but it has the advantage of being more explicit and provide a better error
+message.
+
 ### Rules
 
 Several rules are predefined and can be used in `checks`:

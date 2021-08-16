@@ -1,6 +1,7 @@
 defmodule Validator.Helpers do
-  alias Validator.{ListSpec, ValueSpec, TupleSpec, AnyOtherKey}
+  alias Validator.{ListSpec, ValueSpec, TupleSpec, AnyOtherKey, LiteralSpec}
   alias Validator.Rule
+  alias Validator.Types
 
   defp required(value_fun, opts) do
     opts |> Keyword.put(:required, true) |> value_fun.()
@@ -58,6 +59,15 @@ defmodule Validator.Helpers do
     |> Keyword.put(:schema, schema)
     |> Keyword.put(:type, :map)
     |> value()
+  end
+
+  def literal(value, opts \\ []) do
+    %LiteralSpec{
+      value: value,
+      required: opts |> Keyword.get(:required, false),
+      cast_from: opts |> Keyword.get(:cast_from, []),
+      type: Types.type_of(value)
+    }
   end
 
   def req_value(opts \\ []), do: required(&value/1, opts)

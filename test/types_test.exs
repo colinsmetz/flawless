@@ -51,6 +51,18 @@ defmodule Validator.TypesTest do
     assert has_type?(898, :map) == false
   end
 
+  test "type_of determines the type of a value" do
+    assert type_of("hi") == :string
+    assert type_of(10) == :integer
+    assert type_of(10.0) == :float
+    assert type_of(true) == :boolean
+    assert type_of(:ok) == :atom
+    assert type_of([1, 2]) == :list
+    assert type_of({1, 2}) == :tuple
+    assert type_of(%{c: 3}) == :map
+    assert type_of(make_ref()) == :any
+  end
+
   test "cast/3 can cast from one type to another" do
     assert cast("hello", :string, :string) == {:ok, "hello"}
     assert cast(189.6, :number, :string) == {:ok, "189.6"}
