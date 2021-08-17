@@ -107,7 +107,7 @@ defmodule Validator do
 
   @spec validate(any, spec_type(), list) :: list(Error.t())
   def validate(value, schema, context \\ []) do
-    case cast_if_needed(value, schema, context) do
+    case check_type_and_cast_if_needed(value, schema, context) do
       {:ok, cast_value} -> dispatch_validation(cast_value, schema, context)
       {:error, error} -> [Error.new(error, context)]
     end
@@ -128,7 +128,7 @@ defmodule Validator do
     end
   end
 
-  defp cast_if_needed(value, %_{type: type, cast_from: cast_from}, _context) do
+  defp check_type_and_cast_if_needed(value, %spec_module{type: type, cast_from: cast_from}, _context) do
     possible_casts =
       cast_from
       |> List.wrap()
@@ -137,11 +137,12 @@ defmodule Validator do
     cond do
       Types.has_type?(value, type) -> {:ok, value}
       possible_casts != [] -> Types.cast(value, List.first(possible_casts), type)
+      spec_module != LiteralSpec -> {:error, "Expected type: #{type}, got: #{inspect(value)}."}
       true -> {:ok, value}
     end
   end
 
-  defp cast_if_needed(value, _schema, _context), do: {:ok, value}
+  defp check_type_and_cast_if_needed(value, _schema, _context), do: {:ok, value}
 
   defp validate_map(map, %{} = schema, context) when is_struct(map) do
     validate_map(Map.from_struct(map), schema, context)
@@ -168,7 +169,7 @@ defmodule Validator do
   end
 
   defp validate_map(map, _spec, context) do
-    [Error.new("Expected a map, got: #{inspect(map)}", context)]
+    [Error.new("Expected type: map, got: #{inspect(map)}.", context)]
   end
 
   defp validate_map_field(map, field_name, field_schema, context) do
@@ -217,7 +218,7 @@ defmodule Validator do
   end
 
   defp validate_list(list, _spec, context) do
-    [Error.new("Expected a list, got: #{inspect(list)}", context)]
+    [Error.new("Expected type: list, got: #{inspect(list)}.", context)]
   end
 
   defp validate_tuple(tuple, spec, context)
@@ -256,7 +257,7 @@ defmodule Validator do
   end
 
   defp validate_tuple(value, _spec, context) do
-    [Error.new("Expected a tuple, got: #{inspect(value)}", context)]
+    [Error.new("Expected type: tuple, got: #{inspect(value)}.", context)]
   end
 
   defp validate_select(value, func_spec, context) do

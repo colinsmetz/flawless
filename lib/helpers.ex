@@ -7,13 +7,9 @@ defmodule Validator.Helpers do
     opts |> Keyword.put(:required, true) |> value_fun.()
   end
 
-  defp value_with_type(type, type_rule, opts) do
-    checks = opts |> Keyword.get(:checks, [])
-    updated_checks = [type_rule | checks]
-
+  defp value_with_type(type, opts) do
     opts
     |> Keyword.put(:type, type)
-    |> Keyword.put(:checks, updated_checks)
     |> value()
   end
 
@@ -75,22 +71,22 @@ defmodule Validator.Helpers do
   def req_map(schema, opts \\ []), do: required(&map(schema, &1), opts)
   def req_tuple(elem_types, opts \\ []), do: required(&tuple(elem_types, &1), opts)
 
-  def integer(opts \\ []), do: value_with_type(:integer, Rule.is_integer_type(), opts)
+  def integer(opts \\ []), do: value_with_type(:integer, opts)
   def req_integer(opts \\ []), do: required(&integer/1, opts)
 
-  def string(opts \\ []), do: value_with_type(:string, Rule.is_string_type(), opts)
+  def string(opts \\ []), do: value_with_type(:string, opts)
   def req_string(opts \\ []), do: required(&string/1, opts)
 
-  def float(opts \\ []), do: value_with_type(:float, Rule.is_float_type(), opts)
+  def float(opts \\ []), do: value_with_type(:float, opts)
   def req_float(opts \\ []), do: required(&float/1, opts)
 
-  def number(opts \\ []), do: value_with_type(:number, Rule.is_number_type(), opts)
+  def number(opts \\ []), do: value_with_type(:number, opts)
   def req_number(opts \\ []), do: required(&number/1, opts)
 
-  def boolean(opts \\ []), do: value_with_type(:boolean, Rule.is_boolean_type(), opts)
+  def boolean(opts \\ []), do: value_with_type(:boolean, opts)
   def req_boolean(opts \\ []), do: required(&boolean/1, opts)
 
-  def atom(opts \\ []), do: value_with_type(:atom, Rule.is_atom_type(), opts)
+  def atom(opts \\ []), do: value_with_type(:atom, opts)
   def req_atom(opts \\ []), do: required(&atom/1, opts)
 
   def any_key(), do: %AnyOtherKey{}

@@ -36,54 +36,6 @@ defmodule Validator.Rule do
     )
   end
 
-  @spec is_integer_type :: t()
-  def is_integer_type() do
-    rule(
-      &is_integer/1,
-      &"Expected an integer, received: #{inspect(&1)}."
-    )
-  end
-
-  @spec is_string_type :: t()
-  def is_string_type() do
-    rule(
-      &is_binary/1,
-      &"Expected a string, received: #{inspect(&1)}."
-    )
-  end
-
-  @spec is_float_type :: t()
-  def is_float_type() do
-    rule(
-      &is_float/1,
-      &"Expected a float, received: #{inspect(&1)}."
-    )
-  end
-
-  @spec is_number_type :: t()
-  def is_number_type() do
-    rule(
-      &is_number/1,
-      &"Expected a number, received: #{inspect(&1)}."
-    )
-  end
-
-  @spec is_boolean_type :: t()
-  def is_boolean_type() do
-    rule(
-      &is_boolean/1,
-      &"Expected a boolean, received: #{inspect(&1)}."
-    )
-  end
-
-  @spec is_atom_type :: t()
-  def is_atom_type() do
-    rule(
-      &is_atom/1,
-      &"Expected an atom, received: #{inspect(&1)}."
-    )
-  end
-
   defp value_length(value) when is_binary(value), do: String.length(value)
   defp value_length(value) when is_list(value), do: length(value)
   defp value_length(_), do: nil

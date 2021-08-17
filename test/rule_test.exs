@@ -76,60 +76,6 @@ defmodule Validator.RuleTest do
                Error.new("Invalid value: 7. Valid options: [1, 2, 3]", [])
     end
 
-    test "is_integer_type/0 validates that value is an integer" do
-      assert is_integer_type().(14, []) == []
-      assert is_integer_type().(14.5, []) == Error.new("Expected an integer, received: 14.5.", [])
-
-      assert is_integer_type().("plop", []) ==
-               Error.new("Expected an integer, received: \"plop\".", [])
-    end
-
-    test "is_string_type/0 validates that value is a string" do
-      assert is_string_type().("plop", []) == []
-      assert is_string_type().(14.5, []) == Error.new("Expected a string, received: 14.5.", [])
-
-      assert is_string_type().(:bim, []) ==
-               Error.new("Expected a string, received: :bim.", [])
-    end
-
-    test "is_float_type/0 validates that value is a float" do
-      assert is_float_type().(14.5, []) == []
-      assert is_float_type().(14, []) == Error.new("Expected a float, received: 14.", [])
-
-      assert is_float_type().("plop", []) ==
-               Error.new("Expected a float, received: \"plop\".", [])
-    end
-
-    test "is_number_type/0 validates that value is a number" do
-      assert is_number_type().(14.5, []) == []
-      assert is_number_type().(14, []) == []
-
-      assert is_number_type().("plop", []) ==
-               Error.new("Expected a number, received: \"plop\".", [])
-    end
-
-    test "is_boolean_type/0 validates that value is a boolean" do
-      assert is_boolean_type().(true, []) == []
-      assert is_boolean_type().(false, []) == []
-
-      assert is_boolean_type().("true", []) ==
-               Error.new("Expected a boolean, received: \"true\".", [])
-
-      assert is_boolean_type().(1, []) ==
-               Error.new("Expected a boolean, received: 1.", [])
-    end
-
-    test "is_atom_type/0 validates that value is an atom" do
-      assert is_atom_type().(:plop, []) == []
-      assert is_atom_type().(Plop, []) == []
-
-      assert is_atom_type().("plop", []) ==
-               Error.new("Expected an atom, received: \"plop\".", [])
-
-      assert is_atom_type().(10, []) ==
-               Error.new("Expected an atom, received: 10.", [])
-    end
-
     test "min_length/1 validates the length of a string" do
       test_rule = min_length(5)
 

@@ -72,13 +72,14 @@ All types of elements support a few common options:
 * `checks`: a list of rules that the element must pass.
 * `check`: similar to `checks` but for a single rule; can be passed multiple
   times.
+* `type`: the type of the element (`:any` by default).
 * `cast_from`: a type or list of types, to cast the value to the expected type
   before validating, if necessary (see [Casting](#casting) section below).
 
 Example:
 
 ```elixir
-value(required: true, checks: [is_string_type(), one_of(["csv", "ftp"])])
+value(required: true, type: :string, checks: [one_of(["csv", "ftp"])])
 ```
 
 ### Basic elements

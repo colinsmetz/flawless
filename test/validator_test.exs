@@ -20,20 +20,20 @@ defmodule ValidatorTest do
     end
 
     test "boolean/1 expects a boolean value" do
-      assert validate(123, boolean()) == [Error.new("Expected a boolean, received: 123.", [])]
+      assert validate(123, boolean()) == [Error.new("Expected type: boolean, got: 123.", [])]
       assert validate(true, boolean()) == []
       assert validate(false, boolean()) == []
     end
 
     test "req_boolean/1 expects a boolean value" do
-      assert validate(123, req_boolean()) == [Error.new("Expected a boolean, received: 123.", [])]
+      assert validate(123, req_boolean()) == [Error.new("Expected type: boolean, got: 123.", [])]
       assert validate(true, req_boolean()) == []
       assert validate(false, req_boolean()) == []
     end
 
     test "number/1 expects a number value" do
       assert validate("hello", number()) == [
-               Error.new("Expected a number, received: \"hello\".", [])
+               Error.new("Expected type: number, got: \"hello\".", [])
              ]
 
       assert validate(123, number()) == []
@@ -42,7 +42,7 @@ defmodule ValidatorTest do
 
     test "req_number/1 expects a number value" do
       assert validate("hello", req_number()) == [
-               Error.new("Expected a number, received: \"hello\".", [])
+               Error.new("Expected type: number, got: \"hello\".", [])
              ]
 
       assert validate(123, req_number()) == []
@@ -51,11 +51,11 @@ defmodule ValidatorTest do
 
     test "float/1 expects a float value" do
       assert validate("hello", float()) == [
-               Error.new("Expected a float, received: \"hello\".", [])
+               Error.new("Expected type: float, got: \"hello\".", [])
              ]
 
       assert validate(123, float()) == [
-               Error.new("Expected a float, received: 123.", [])
+               Error.new("Expected type: float, got: 123.", [])
              ]
 
       assert validate(1.44, float()) == []
@@ -63,11 +63,11 @@ defmodule ValidatorTest do
 
     test "req_float/1 expects a float value" do
       assert validate("hello", req_float()) == [
-               Error.new("Expected a float, received: \"hello\".", [])
+               Error.new("Expected type: float, got: \"hello\".", [])
              ]
 
       assert validate(123, req_float()) == [
-               Error.new("Expected a float, received: 123.", [])
+               Error.new("Expected type: float, got: 123.", [])
              ]
 
       assert validate(1.44, req_float()) == []
@@ -75,11 +75,11 @@ defmodule ValidatorTest do
 
     test "integer/1 expects an integer value" do
       assert validate("hello", integer()) == [
-               Error.new("Expected an integer, received: \"hello\".", [])
+               Error.new("Expected type: integer, got: \"hello\".", [])
              ]
 
       assert validate(1.44, integer()) == [
-               Error.new("Expected an integer, received: 1.44.", [])
+               Error.new("Expected type: integer, got: 1.44.", [])
              ]
 
       assert validate(123, integer()) == []
@@ -87,43 +87,43 @@ defmodule ValidatorTest do
 
     test "req_integer/1 expects an integer value" do
       assert validate("hello", req_integer()) == [
-               Error.new("Expected an integer, received: \"hello\".", [])
+               Error.new("Expected type: integer, got: \"hello\".", [])
              ]
 
       assert validate(1.44, req_integer()) == [
-               Error.new("Expected an integer, received: 1.44.", [])
+               Error.new("Expected type: integer, got: 1.44.", [])
              ]
 
       assert validate(123, req_integer()) == []
     end
 
     test "string/1 expects a string value" do
-      assert validate(123, string()) == [Error.new("Expected a string, received: 123.", [])]
-      assert validate(true, string()) == [Error.new("Expected a string, received: true.", [])]
+      assert validate(123, string()) == [Error.new("Expected type: string, got: 123.", [])]
+      assert validate(true, string()) == [Error.new("Expected type: string, got: true.", [])]
       assert validate("hello", string()) == []
     end
 
     test "req_string/1 expects a string value" do
-      assert validate(123, req_string()) == [Error.new("Expected a string, received: 123.", [])]
-      assert validate(true, req_string()) == [Error.new("Expected a string, received: true.", [])]
+      assert validate(123, req_string()) == [Error.new("Expected type: string, got: 123.", [])]
+      assert validate(true, req_string()) == [Error.new("Expected type: string, got: true.", [])]
       assert validate("hello", req_string()) == []
     end
 
     test "atom/1 expects an atom value" do
-      assert validate(123, atom()) == [Error.new("Expected an atom, received: 123.", [])]
+      assert validate(123, atom()) == [Error.new("Expected type: atom, got: 123.", [])]
 
       assert validate("hello", atom()) == [
-               Error.new("Expected an atom, received: \"hello\".", [])
+               Error.new("Expected type: atom, got: \"hello\".", [])
              ]
 
       assert validate(:test, atom()) == []
     end
 
     test "req_atom/1 expects an atom value" do
-      assert validate(123, req_atom()) == [Error.new("Expected an atom, received: 123.", [])]
+      assert validate(123, req_atom()) == [Error.new("Expected type: atom, got: 123.", [])]
 
       assert validate("hello", req_atom()) == [
-               Error.new("Expected an atom, received: \"hello\".", [])
+               Error.new("Expected type: atom, got: \"hello\".", [])
              ]
 
       assert validate(:test, req_atom()) == []
@@ -243,6 +243,16 @@ defmodule ValidatorTest do
                  Error.new("Must be greater than or equal to 17.", [])
                ]
     end
+
+    test "are not evaluated if the type is invalid" do
+      assert validate(14, string(checks: [min_length(10), one_of(["a", "b"])])) == [
+        Error.new("Expected type: string, got: 14.", [])
+      ]
+
+      assert validate("xx", number(checks: [min(10)], cast_from: :string)) == [
+        Error.new("Cannot be cast to number.", [])
+      ]
+    end
   end
 
   describe "lists" do
@@ -251,22 +261,22 @@ defmodule ValidatorTest do
 
     test "evaluate all their elements" do
       assert validate([1, 2, 3, "4", "5", 6], list(integer())) == [
-               Error.new("Expected an integer, received: \"4\".", [3]),
-               Error.new("Expected an integer, received: \"5\".", [4])
+               Error.new("Expected type: integer, got: \"4\".", [3]),
+               Error.new("Expected type: integer, got: \"5\".", [4])
              ]
     end
 
     test "accepts [item_type] as a shortcut" do
       assert validate([1, 2, 3, "4", "5", 6], [integer()]) == [
-               Error.new("Expected an integer, received: \"4\".", [3]),
-               Error.new("Expected an integer, received: \"5\".", [4])
+               Error.new("Expected type: integer, got: \"4\".", [3]),
+               Error.new("Expected type: integer, got: \"5\".", [4])
              ]
     end
 
     test "accepts [] to match any list" do
       assert validate([], []) == []
       assert validate([1, "hey", true], []) == []
-      assert validate(17, []) == [Error.new("Expected a list, got: 17", [])]
+      assert validate(17, []) == [Error.new("Expected type: list, got: 17.", [])]
     end
 
     test "accept checks at the item and the list level" do
@@ -281,8 +291,8 @@ defmodule ValidatorTest do
     end
 
     test "return an error when value is not a list" do
-      assert validate(nil, list(string())) == [Error.new("Expected a list, got: nil", [])]
-      assert validate(999, list(string())) == [Error.new("Expected a list, got: 999", [])]
+      assert validate(nil, list(string())) == [Error.new("Expected type: list, got: nil.", [])]
+      assert validate(999, list(string())) == [Error.new("Expected type: list, got: 999.", [])]
     end
 
     test "have shortcut rules" do
@@ -377,8 +387,8 @@ defmodule ValidatorTest do
     end
 
     test "return an error when value is not a map" do
-      assert validate(nil, %{}) == [Error.new("Expected a map, got: nil", [])]
-      assert validate(999, %{}) == [Error.new("Expected a map, got: 999", [])]
+      assert validate(nil, %{}) == [Error.new("Expected type: map, got: nil.", [])]
+      assert validate(999, %{}) == [Error.new("Expected type: map, got: 999.", [])]
     end
 
     test "have shortcut rules" do
@@ -414,7 +424,7 @@ defmodule ValidatorTest do
       assert validate(%{"a" => "x", "b" => "y", "c" => 17, "d" => 100}, schema) == []
 
       assert validate(%{"a" => "x", "b" => "y", "c" => 17, "d" => "hey"}, schema) == [
-               Error.new("Expected a number, received: \"hey\".", ["d"])
+               Error.new("Expected type: number, got: \"hey\".", ["d"])
              ]
 
       assert validate(%{}, %{any_key() => value()}) == []
@@ -443,7 +453,7 @@ defmodule ValidatorTest do
       schema = tuple({number(), string(), string()})
 
       assert validate({1, 2, "plop"}, schema) == [
-               Error.new("Expected a string, received: 2.", [1])
+               Error.new("Expected type: string, got: 2.", [1])
              ]
     end
 
@@ -451,7 +461,7 @@ defmodule ValidatorTest do
       schema = {number(), string(), string()}
 
       assert validate({1, 2, "plop"}, schema) == [
-               Error.new("Expected a string, received: 2.", [1])
+               Error.new("Expected type: string, got: 2.", [1])
              ]
     end
 
@@ -474,9 +484,9 @@ defmodule ValidatorTest do
     end
 
     test "return an error when value is not a tuple" do
-      assert validate(nil, {}) == [Error.new("Expected a tuple, got: nil", [])]
-      assert validate(999, {}) == [Error.new("Expected a tuple, got: 999", [])]
-      assert validate([1, 2], {}) == [Error.new("Expected a tuple, got: [1, 2]", [])]
+      assert validate(nil, {}) == [Error.new("Expected type: tuple, got: nil.", [])]
+      assert validate(999, {}) == [Error.new("Expected type: tuple, got: 999.", [])]
+      assert validate([1, 2], {}) == [Error.new("Expected type: tuple, got: [1, 2].", [])]
     end
 
     test "have shortcut rules" do
@@ -514,7 +524,7 @@ defmodule ValidatorTest do
       assert validate("9.99", schema) == []
       assert validate(15, schema) == []
       assert validate("xxx", schema) == [Error.new("Cannot be cast to number.", [])]
-      assert validate(true, schema) == [Error.new("Expected a number, received: true.", [])]
+      assert validate(true, schema) == [Error.new("Expected type: number, got: true.", [])]
     end
 
     test "can be used to cast lists to tuples" do
@@ -527,7 +537,7 @@ defmodule ValidatorTest do
                Error.new("Invalid tuple size (expected: 2, received: 3)", [])
              ]
 
-      assert validate("[]", schema) == [Error.new("Expected a tuple, got: \"[]\"", [])]
+      assert validate("[]", schema) == [Error.new("Expected type: tuple, got: \"[]\".", [])]
     end
 
     test "accepts a list of possible types" do
@@ -539,7 +549,7 @@ defmodule ValidatorTest do
       assert validate(:boom, schema) == []
 
       assert validate(["list"], schema) == [
-               Error.new("Expected a string, received: [\"list\"].", [])
+               Error.new("Expected type: string, got: [\"list\"].", [])
              ]
     end
 
@@ -610,20 +620,20 @@ defmodule ValidatorTest do
              ) == [
                Error.new("Missing required fields: [\"min\"]", ["config"]),
                Error.new("Invalid tuple size (expected: 3, received: 2)", ["coordinates"]),
-               Error.new("Expected a map, got: 100", ["products", 0])
+               Error.new("Expected type: map, got: 100.", ["products", 0])
              ]
     end
 
     test "it can validate lists of lists" do
       schema = [[[string()]]]
 
-      assert validate(["hey"], schema) == [Error.new("Expected a list, got: \"hey\"", [0])]
-      assert validate([["hey"]], schema) == [Error.new("Expected a list, got: \"hey\"", [0, 0])]
+      assert validate(["hey"], schema) == [Error.new("Expected type: list, got: \"hey\".", [0])]
+      assert validate([["hey"]], schema) == [Error.new("Expected type: list, got: \"hey\".", [0, 0])]
       assert validate([[["hey"]]], schema) == []
       assert validate([[["hey"], []], []], schema) == []
 
       assert validate([[[14]]], schema) == [
-               Error.new("Expected a string, received: 14.", [0, 0, 0])
+               Error.new("Expected type: string, got: 14.", [0, 0, 0])
              ]
     end
 
@@ -631,12 +641,12 @@ defmodule ValidatorTest do
       schema = {{atom(), string()}, {atom(), number(), {number()}}}
 
       assert validate({1, 2}, schema) == [
-               Error.new("Expected a tuple, got: 1", [0]),
-               Error.new("Expected a tuple, got: 2", [1])
+               Error.new("Expected type: tuple, got: 1.", [0]),
+               Error.new("Expected type: tuple, got: 2.", [1])
              ]
 
       assert validate({{:ok, "elixir"}, {:plop, 1, 7}}, schema) == [
-               Error.new("Expected a tuple, got: 7", [1, 2])
+               Error.new("Expected type: tuple, got: 7.", [1, 2])
              ]
 
       assert validate({{:ok, "elixir"}, {:plop, 1, {9}}}, schema) == []
@@ -713,14 +723,14 @@ defmodule ValidatorTest do
       assert Validator.validate(value, schema) == [
                Error.new("Unexpected fields: [\"file_max_age_days\", \"options\"]", []),
                Error.new("Missing required fields: [\"truc\"]", ["bim"]),
-               Error.new("Expected a string, received: 28.", ["brands", 1]),
+               Error.new("Expected type: string, got: 28.", ["brands", 1]),
                Error.new("Field 'a' is a key but is not required", ["fields", 0]),
                Error.new("Unexpected fields: [\"tru\"]", ["fields", 1]),
                Error.new("Missing required fields: [\"id\"]", ["fields", 1, "meta"]),
                Error.new("Invalid value: \"yml\". Valid options: [\"csv\", \"xml\"]", ["format"]),
                Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"]", ["polling"]),
                Error.new("Slice size must be longer than 100", ["polling", "slice_size"]),
-               Error.new("Expected a string, received: 9.", ["tuple_of_things", 0, 2])
+               Error.new("Expected type: string, got: 9.", ["tuple_of_things", 0, 2])
              ]
     end
   end
@@ -798,12 +808,12 @@ defmodule ValidatorTest do
 
       assert validate(%{a: %{c: "d"}}, schema) == [
                Error.new("Missing required fields: [:b]", [:a]),
-               Error.new("Expected a number, received: \"d\".", [:a, :c])
+               Error.new("Expected type: number, got: \"d\".", [:a, :c])
              ]
 
       assert validate(%{a: ["1", "2"]}, schema) == [
-               Error.new("Expected a number, received: \"1\".", [:a, 0]),
-               Error.new("Expected a number, received: \"2\".", [:a, 1])
+               Error.new("Expected type: number, got: \"1\".", [:a, 0]),
+               Error.new("Expected type: number, got: \"2\".", [:a, 1])
              ]
     end
 
