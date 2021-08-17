@@ -48,6 +48,23 @@ defmodule Validator.RuleTest do
       assert test_rule.("plop", context) ==
                Error.new("plop is wrong in mycontext", context)
     end
+
+    test "catches exceptions and return generic error message if it happens" do
+      test_rule =
+        rule(
+          fn value -> String.to_integer(value) > 0 end,
+          "normal error message"
+        )
+
+      assert test_rule.("10", []) == []
+      assert test_rule.("-1", []) == Error.new("normal error message", [])
+
+      assert test_rule.("xxx", []) ==
+               Error.new(
+                 "An exception was raised while evaluating a rule on that element, so it is likely incorrect.",
+                 []
+               )
+    end
   end
 
   describe "predefined rule" do

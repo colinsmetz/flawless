@@ -7,15 +7,23 @@ defmodule Validator.Rule do
   @spec rule(predicate(), error_function()) :: t()
   def rule(predicate, error_message) do
     fn value, context ->
-      cond do
-        predicate.(value) -> []
-        is_binary(error_message) -> error_message
-        is_function(error_message, 1) -> error_message.(value)
-        is_function(error_message, 2) -> error_message.(value, context)
-      end
-      |> case do
-        [] -> []
-        error -> Validator.Error.new(error, context)
+      try do
+        cond do
+          predicate.(value) -> []
+          is_binary(error_message) -> error_message
+          is_function(error_message, 1) -> error_message.(value)
+          is_function(error_message, 2) -> error_message.(value, context)
+        end
+        |> case do
+          [] -> []
+          error -> Validator.Error.new(error, context)
+        end
+      rescue
+        _ ->
+          Validator.Error.new(
+            "An exception was raised while evaluating a rule on that element, so it is likely incorrect.",
+            context
+          )
       end
     end
   end
