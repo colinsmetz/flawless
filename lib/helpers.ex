@@ -89,6 +89,9 @@ defmodule Validator.Helpers do
   def atom(opts \\ []), do: value_with_type(:atom, opts)
   def req_atom(opts \\ []), do: required(&atom/1, opts)
 
+  def pid(opts \\ []), do: value_with_type(:pid, opts)
+  def req_pid(opts \\ []), do: required(&pid/1, opts)
+
   def any_key(), do: %AnyOtherKey{}
 
   #######################

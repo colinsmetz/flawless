@@ -34,6 +34,10 @@ defmodule Validator.TypesTest do
     assert has_type?(:bim, :atom) == true
     assert has_type?(898, :atom) == false
 
+    assert has_type?(self(), :pid) == true
+    assert has_type?("#PID<0.106.0>", :pid) == false
+    assert has_type?(106, :pid) == false
+
     assert has_type?("plop", :list) == false
     assert has_type?([:bim], :list) == true
     assert has_type?([1, 2, 3], :list) == true
@@ -57,6 +61,7 @@ defmodule Validator.TypesTest do
     assert type_of(10.0) == :float
     assert type_of(true) == :boolean
     assert type_of(:ok) == :atom
+    assert type_of(self()) == :pid
     assert type_of([1, 2]) == :list
     assert type_of({1, 2}) == :tuple
     assert type_of(%{c: 3}) == :map
@@ -139,6 +144,15 @@ defmodule Validator.TypesTest do
     assert cast([:ok], :list, :atom) == {:error, "Cannot be cast to atom."}
     assert cast({:ok}, :tuple, :atom) == {:error, "Cannot be cast to atom."}
     assert cast(%{a: :a}, :map, :atom) == {:error, "Cannot be cast to atom."}
+
+    assert cast("%{}", :string, :pid) == {:error, "Cannot be cast to pid."}
+    assert cast(12, :number, :pid) == {:error, "Cannot be cast to pid."}
+    assert cast(12, :integer, :pid) == {:error, "Cannot be cast to pid."}
+    assert cast(12.0, :float, :pid) == {:error, "Cannot be cast to pid."}
+    assert cast(false, :boolean, :pid) == {:error, "Cannot be cast to pid."}
+    assert cast(:%{}, :atom, :pid) == {:error, "Cannot be cast to pid."}
+    assert cast([1, 2], :list, :pid) == {:error, "Cannot be cast to pid."}
+    assert cast({1, 2}, :tuple, :pid) == {:error, "Cannot be cast to pid."}
 
     assert cast("[]", :string, :list) == {:error, "Cannot be cast to list."}
     assert cast(78, :number, :list) == {:error, "Cannot be cast to list."}

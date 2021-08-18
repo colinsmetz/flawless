@@ -129,6 +129,20 @@ defmodule ValidatorTest do
       assert validate(:test, req_atom()) == []
     end
 
+    test "pid/1 expects a pid value" do
+      assert validate(:c.pid(0, 1, 2), pid()) == []
+      assert validate(self(), pid()) == []
+      assert validate("self", pid()) == [Error.new("Expected type: pid, got: \"self\".", [])]
+      assert validate(123, pid()) == [Error.new("Expected type: pid, got: 123.", [])]
+    end
+
+    test "req_pid/1 expects a pid value" do
+      assert validate(:c.pid(0, 1, 2), req_pid()) == []
+      assert validate(self(), req_pid()) == []
+      assert validate("self", req_pid()) == [Error.new("Expected type: pid, got: \"self\".", [])]
+      assert validate(123, req_pid()) == [Error.new("Expected type: pid, got: 123.", [])]
+    end
+
     test "number/1, req_number/1, integer/1 and req_integer/1 have shortcut rules" do
       for rule_func <- [&number/1, &req_number/1, &integer/1, &req_integer/1] do
         assert validate(0, rule_func.(min: 2, max: 10)) == [

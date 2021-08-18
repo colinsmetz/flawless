@@ -7,6 +7,7 @@ defmodule Validator.Types do
           | :float
           | :boolean
           | :atom
+          | :pid
           | :list
           | :tuple
           | :map
@@ -21,6 +22,7 @@ defmodule Validator.Types do
       :float -> is_float(value)
       :boolean -> is_boolean(value)
       :atom -> is_atom(value)
+      :pid -> is_pid(value)
       :list -> is_list(value)
       :tuple -> is_tuple(value)
       :map -> is_map(value)
@@ -36,6 +38,7 @@ defmodule Validator.Types do
       is_number(value) -> :number
       is_boolean(value) -> :boolean
       is_atom(value) -> :atom
+      is_pid(value) -> :pid
       is_list(value) -> :list
       is_tuple(value) -> :tuple
       is_map(value) -> :map

@@ -93,6 +93,7 @@ Several helpers are provided to define basic elements:
 * `string()`
 * `boolean()`
 * `atom()`
+* `pid()`
 
 The type constraint will be added automatically to the `checks` when using
 specific type elements.
@@ -107,6 +108,7 @@ for each of them:
 * `req_string()`
 * `req_boolean()`
 * `req_atom()`
+* `req_pid()`
 
 ### Maps
 
