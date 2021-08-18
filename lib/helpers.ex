@@ -92,6 +92,9 @@ defmodule Validator.Helpers do
   def pid(opts \\ []), do: value_with_type(:pid, opts)
   def req_pid(opts \\ []), do: required(&pid/1, opts)
 
+  def ref(opts \\ []), do: value_with_type(:ref, opts)
+  def req_ref(opts \\ []), do: required(&ref/1, opts)
+
   def any_key(), do: %AnyOtherKey{}
 
   #######################

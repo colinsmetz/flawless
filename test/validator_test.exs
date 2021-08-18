@@ -143,6 +143,18 @@ defmodule ValidatorTest do
       assert validate(123, req_pid()) == [Error.new("Expected type: pid, got: 123.", [])]
     end
 
+    test "ref/1 expects a ref value" do
+      assert validate(make_ref(), ref()) == []
+      assert validate("self", ref()) == [Error.new("Expected type: ref, got: \"self\".", [])]
+      assert validate(123, ref()) == [Error.new("Expected type: ref, got: 123.", [])]
+    end
+
+    test "req_ref/1 expects a ref value" do
+      assert validate(make_ref(), req_ref()) == []
+      assert validate("self", req_ref()) == [Error.new("Expected type: ref, got: \"self\".", [])]
+      assert validate(123, req_ref()) == [Error.new("Expected type: ref, got: 123.", [])]
+    end
+
     test "number/1, req_number/1, integer/1 and req_integer/1 have shortcut rules" do
       for rule_func <- [&number/1, &req_number/1, &integer/1, &req_integer/1] do
         assert validate(0, rule_func.(min: 2, max: 10)) == [

@@ -94,6 +94,7 @@ Several helpers are provided to define basic elements:
 * `boolean()`
 * `atom()`
 * `pid()`
+* `ref()`
 
 The type constraint will be added automatically to the `checks` when using
 specific type elements.
@@ -109,6 +110,7 @@ for each of them:
 * `req_boolean()`
 * `req_atom()`
 * `req_pid()`
+* `req_ref()`
 
 ### Maps
 

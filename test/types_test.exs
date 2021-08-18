@@ -38,6 +38,10 @@ defmodule Validator.TypesTest do
     assert has_type?("#PID<0.106.0>", :pid) == false
     assert has_type?(106, :pid) == false
 
+    assert has_type?(make_ref(), :ref) == true
+    assert has_type?(self(), :ref) == false
+    assert has_type?("#Reference<0.1374.2455.116>", :ref) == false
+
     assert has_type?("plop", :list) == false
     assert has_type?([:bim], :list) == true
     assert has_type?([1, 2, 3], :list) == true
@@ -62,10 +66,11 @@ defmodule Validator.TypesTest do
     assert type_of(true) == :boolean
     assert type_of(:ok) == :atom
     assert type_of(self()) == :pid
+    assert type_of(make_ref()) == :ref
     assert type_of([1, 2]) == :list
     assert type_of({1, 2}) == :tuple
     assert type_of(%{c: 3}) == :map
-    assert type_of(make_ref()) == :any
+    assert type_of(fn -> 0 end) == :any
   end
 
   test "cast/3 can cast from one type to another" do
@@ -153,6 +158,15 @@ defmodule Validator.TypesTest do
     assert cast(:%{}, :atom, :pid) == {:error, "Cannot be cast to pid."}
     assert cast([1, 2], :list, :pid) == {:error, "Cannot be cast to pid."}
     assert cast({1, 2}, :tuple, :pid) == {:error, "Cannot be cast to pid."}
+
+    assert cast("%{}", :string, :ref) == {:error, "Cannot be cast to ref."}
+    assert cast(12, :number, :ref) == {:error, "Cannot be cast to ref."}
+    assert cast(12, :integer, :ref) == {:error, "Cannot be cast to ref."}
+    assert cast(12.0, :float, :ref) == {:error, "Cannot be cast to ref."}
+    assert cast(false, :boolean, :ref) == {:error, "Cannot be cast to ref."}
+    assert cast(:%{}, :atom, :ref) == {:error, "Cannot be cast to ref."}
+    assert cast([1, 2], :list, :ref) == {:error, "Cannot be cast to ref."}
+    assert cast({1, 2}, :tuple, :ref) == {:error, "Cannot be cast to ref."}
 
     assert cast("[]", :string, :list) == {:error, "Cannot be cast to list."}
     assert cast(78, :number, :list) == {:error, "Cannot be cast to list."}
