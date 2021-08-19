@@ -576,6 +576,27 @@ defmodule ValidatorTest do
       assert validate(6, literal(10)) == [Error.new("Expected literal value 10, got: 6.", [])]
       assert validate(8, literal("8")) == [Error.new("Expected literal value \"8\", got: 8.", [])]
     end
+
+    test "work without the `literal` helper for strings" do
+      assert validate("abc", "abc") == []
+
+      assert validate("abcd", "abc") == [
+               Error.new("Expected literal value \"abc\", got: \"abcd\".", [])
+             ]
+    end
+
+    test "work without the `literal` helper for atoms" do
+      assert validate(:plop, :plop) == []
+      assert validate(true, true) == []
+      assert validate(nil, nil) == []
+      assert validate(:tru, :plop) == [Error.new("Expected literal value :plop, got: :tru.", [])]
+    end
+
+    test "work without the `literal` helper for numbers" do
+      assert validate(14, 14) == []
+      assert validate(1.4, 1.4) == []
+      assert validate(14, 100) == [Error.new("Expected literal value 100, got: 14.", [])]
+    end
   end
 
   describe "cast_from" do

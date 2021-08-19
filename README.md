@@ -211,6 +211,23 @@ The schema `literal(10)` would actually be equivalent to `integer(in: [10])`,
 but it has the advantage of being more explicit and provide a better error
 message.
 
+For strings, atoms and numbers, the `literal()` function can even be ignored.
+For example, those two schemas would be equivalent:
+
+```elixir
+schema1 = %{
+  "a" => literal(88),
+  "b" => literal(:ok),
+  "c" => literal("hello")
+}
+
+schema2 = %{
+  "a" => 88,
+  "b" => :ok,
+  "c" => "hello"
+}
+```
+
 ### Rules
 
 Several rules are predefined and can be used in `checks`:

@@ -125,6 +125,9 @@ defmodule Validator do
       %{} -> validate_map(value, schema, context)
       func when is_function(func, 0) -> validate(value, func.(), context)
       func when is_function(func, 1) -> validate_select(value, func, context)
+      literal when is_binary(literal) -> validate_literal(value, Helpers.literal(schema), context)
+      literal when is_atom(literal) -> validate_literal(value, Helpers.literal(schema), context)
+      literal when is_number(literal) -> validate_literal(value, Helpers.literal(schema), context)
     end
   end
 
