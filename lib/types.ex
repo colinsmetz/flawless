@@ -10,6 +10,7 @@ defmodule Validator.Types do
           | :pid
           | :ref
           | :function
+          | :port
           | :list
           | :tuple
           | :map
@@ -27,6 +28,7 @@ defmodule Validator.Types do
       :pid -> is_pid(value)
       :ref -> is_reference(value)
       :function -> is_function(value)
+      :port -> is_port(value)
       :list -> is_list(value)
       :tuple -> is_tuple(value)
       :map -> is_map(value)
@@ -45,6 +47,7 @@ defmodule Validator.Types do
       is_pid(value) -> :pid
       is_reference(value) -> :ref
       is_function(value) -> :function
+      is_port(value) -> :port
       is_list(value) -> :list
       is_tuple(value) -> :tuple
       is_map(value) -> :map

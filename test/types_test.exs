@@ -47,6 +47,10 @@ defmodule Validator.TypesTest do
     assert has_type?(0, :function) == false
     assert has_type?("fn", :function) == false
 
+    assert has_type?(Port.list() |> Enum.at(0), :port) == true
+    assert has_type?(self(), :port) == false
+    assert has_type?(make_ref(), :port) == false
+
     assert has_type?("plop", :list) == false
     assert has_type?([:bim], :list) == true
     assert has_type?([1, 2, 3], :list) == true
@@ -73,10 +77,10 @@ defmodule Validator.TypesTest do
     assert type_of(self()) == :pid
     assert type_of(make_ref()) == :ref
     assert type_of(fn -> 0 end) == :function
+    assert type_of(Port.list() |> Enum.at(0)) == :port
     assert type_of([1, 2]) == :list
     assert type_of({1, 2}) == :tuple
     assert type_of(%{c: 3}) == :map
-    assert type_of(Port.list() |> Enum.at(0)) == :any
   end
 
   test "cast/3 can cast from one type to another" do
@@ -182,6 +186,15 @@ defmodule Validator.TypesTest do
     assert cast(:fn, :atom, :function) == {:error, "Cannot be cast to function."}
     assert cast([1, 2], :list, :function) == {:error, "Cannot be cast to function."}
     assert cast({1, 2}, :tuple, :function) == {:error, "Cannot be cast to function."}
+
+    assert cast("port", :string, :port) == {:error, "Cannot be cast to port."}
+    assert cast(12, :number, :port) == {:error, "Cannot be cast to port."}
+    assert cast(12, :integer, :port) == {:error, "Cannot be cast to port."}
+    assert cast(12.0, :float, :port) == {:error, "Cannot be cast to port."}
+    assert cast(false, :boolean, :port) == {:error, "Cannot be cast to port."}
+    assert cast(:port, :atom, :port) == {:error, "Cannot be cast to port."}
+    assert cast([1, 2], :list, :port) == {:error, "Cannot be cast to port."}
+    assert cast({1, 2}, :tuple, :port) == {:error, "Cannot be cast to port."}
 
     assert cast("[]", :string, :list) == {:error, "Cannot be cast to list."}
     assert cast(78, :number, :list) == {:error, "Cannot be cast to list."}

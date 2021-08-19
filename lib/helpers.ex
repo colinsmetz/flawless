@@ -98,6 +98,9 @@ defmodule Validator.Helpers do
   def function(opts \\ []), do: value_with_type(:function, opts)
   def req_function(opts \\ []), do: required(&function/1, opts)
 
+  def port(opts \\ []), do: value_with_type(:port, opts)
+  def req_port(opts \\ []), do: required(&port/1, opts)
+
   def any_key(), do: %AnyOtherKey{}
 
   #######################

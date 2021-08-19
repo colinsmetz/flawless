@@ -179,6 +179,18 @@ defmodule ValidatorTest do
              ]
     end
 
+    test "port/1 expects a port value" do
+      assert validate(Port.list |> Enum.at(0), port()) == []
+      assert validate("self", port()) == [Error.new("Expected type: port, got: \"self\".", [])]
+      assert validate(123, port()) == [Error.new("Expected type: port, got: 123.", [])]
+    end
+
+    test "req_port/1 expects a port value" do
+      assert validate(Port.list |> Enum.at(0), req_port()) == []
+      assert validate("self", req_port()) == [Error.new("Expected type: port, got: \"self\".", [])]
+      assert validate(123, req_port()) == [Error.new("Expected type: port, got: 123.", [])]
+    end
+
     test "number/1, req_number/1, integer/1 and req_integer/1 have shortcut rules" do
       for rule_func <- [&number/1, &req_number/1, &integer/1, &req_integer/1] do
         assert validate(0, rule_func.(min: 2, max: 10)) == [

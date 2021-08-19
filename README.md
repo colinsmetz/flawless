@@ -96,6 +96,7 @@ Several helpers are provided to define basic elements:
 * `pid()`
 * `ref()`
 * `function()`
+* `port()`
 
 The type constraint will be added automatically to the `checks` when using
 specific type elements.
@@ -113,6 +114,7 @@ for each of them:
 * `req_pid()`
 * `req_ref()`
 * `req_function()`
+* `req_port()`
 
 ### Maps
 
