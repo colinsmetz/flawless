@@ -9,6 +9,7 @@ defmodule Validator.Types do
           | :atom
           | :pid
           | :ref
+          | :function
           | :list
           | :tuple
           | :map
@@ -25,6 +26,7 @@ defmodule Validator.Types do
       :atom -> is_atom(value)
       :pid -> is_pid(value)
       :ref -> is_reference(value)
+      :function -> is_function(value)
       :list -> is_list(value)
       :tuple -> is_tuple(value)
       :map -> is_map(value)
@@ -42,6 +44,7 @@ defmodule Validator.Types do
       is_atom(value) -> :atom
       is_pid(value) -> :pid
       is_reference(value) -> :ref
+      is_function(value) -> :function
       is_list(value) -> :list
       is_tuple(value) -> :tuple
       is_map(value) -> :map

@@ -211,5 +211,16 @@ defmodule Validator.RuleTest do
       assert test_rule.(%{"b" => 12, "a" => 9}, []) ==
                Error.new("Fields a and b cannot both be defined.", [])
     end
+
+    test "arity/1 checks the arity of a function" do
+      test_rule = arity(2)
+
+      assert test_rule.(fn -> 0 end, []) == Error.new("Expected arity of 2, found: 0.", [])
+      assert test_rule.(fn x -> x end, []) == Error.new("Expected arity of 2, found: 1.", [])
+      assert test_rule.(fn x, y -> x + y end, []) == []
+
+      assert test_rule.(fn x, y, z -> x + y + z end, []) ==
+               Error.new("Expected arity of 2, found: 3.", [])
+    end
   end
 end

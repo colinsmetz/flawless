@@ -149,4 +149,18 @@ defmodule Validator.Rule do
       "Fields #{field1} and #{field2} cannot both be defined."
     )
   end
+
+  defp get_arity(func) do
+    func
+    |> Function.info()
+    |> Keyword.get(:arity, 0)
+  end
+
+  @spec arity(integer) :: t()
+  def arity(arity) do
+    rule(
+      fn func -> get_arity(func) == arity end,
+      &"Expected arity of #{arity}, found: #{get_arity(&1)}."
+    )
+  end
 end

@@ -95,6 +95,7 @@ Several helpers are provided to define basic elements:
 * `atom()`
 * `pid()`
 * `ref()`
+* `function()`
 
 The type constraint will be added automatically to the `checks` when using
 specific type elements.
@@ -111,6 +112,7 @@ for each of them:
 * `req_atom()`
 * `req_pid()`
 * `req_ref()`
+* `req_function()`
 
 ### Maps
 

@@ -95,6 +95,9 @@ defmodule Validator.Helpers do
   def ref(opts \\ []), do: value_with_type(:ref, opts)
   def req_ref(opts \\ []), do: required(&ref/1, opts)
 
+  def function(opts \\ []), do: value_with_type(:function, opts)
+  def req_function(opts \\ []), do: required(&function/1, opts)
+
   def any_key(), do: %AnyOtherKey{}
 
   #######################
@@ -162,6 +165,14 @@ defmodule Validator.Helpers do
       in: &Rule.one_of/1,
       non_empty: &Rule.non_empty/0,
       no_duplicate: &Rule.no_duplicate/0
+    )
+  end
+
+  defp built_in_checks(opts, :function) do
+    opts
+    |> built_in_checks(
+      in: &Rule.one_of/1,
+      arity: &Rule.arity/1
     )
   end
 

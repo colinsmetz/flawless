@@ -128,7 +128,11 @@ defmodule Validator do
     end
   end
 
-  defp check_type_and_cast_if_needed(value, %spec_module{type: type, cast_from: cast_from}, _context) do
+  defp check_type_and_cast_if_needed(
+         value,
+         %spec_module{type: type, cast_from: cast_from},
+         _context
+       ) do
     possible_casts =
       cast_from
       |> List.wrap()

@@ -155,6 +155,30 @@ defmodule ValidatorTest do
       assert validate(123, req_ref()) == [Error.new("Expected type: ref, got: 123.", [])]
     end
 
+    test "function/1 expects a function value" do
+      assert validate(fn -> 1 end, function()) == []
+      assert validate(&(&1 + &2), function()) == []
+
+      assert validate("fn", function()) == [
+               Error.new("Expected type: function, got: \"fn\".", [])
+             ]
+
+      assert validate(123, function()) == [Error.new("Expected type: function, got: 123.", [])]
+    end
+
+    test "req_function/1 expects a function value" do
+      assert validate(fn -> 1 end, req_function()) == []
+      assert validate(&(&1 + &2), req_function()) == []
+
+      assert validate("fn", req_function()) == [
+               Error.new("Expected type: function, got: \"fn\".", [])
+             ]
+
+      assert validate(123, req_function()) == [
+               Error.new("Expected type: function, got: 123.", [])
+             ]
+    end
+
     test "number/1, req_number/1, integer/1 and req_integer/1 have shortcut rules" do
       for rule_func <- [&number/1, &req_number/1, &integer/1, &req_integer/1] do
         assert validate(0, rule_func.(min: 2, max: 10)) == [
@@ -232,6 +256,21 @@ defmodule ValidatorTest do
                ]
       end
     end
+
+    test "function/1 and req_atom/1 have shortcut rules" do
+      for rule_func <- [&function/1, &req_function/1] do
+        assert validate(&Enum.count/1, rule_func.(in: [&Enum.sum/1, &List.first/1])) == [
+                 Error.new(
+                   "Invalid value: &Enum.count/1. Valid options: [&Enum.sum/1, &List.first/1]",
+                   []
+                 )
+               ]
+
+        assert validate(fn -> 0 end, rule_func.(arity: 1)) == [
+                 Error.new("Expected arity of 1, found: 0.", [])
+               ]
+      end
+    end
   end
 
   describe "checks" do
@@ -272,12 +311,12 @@ defmodule ValidatorTest do
 
     test "are not evaluated if the type is invalid" do
       assert validate(14, string(checks: [min_length(10), one_of(["a", "b"])])) == [
-        Error.new("Expected type: string, got: 14.", [])
-      ]
+               Error.new("Expected type: string, got: 14.", [])
+             ]
 
       assert validate("xx", number(checks: [min(10)], cast_from: :string)) == [
-        Error.new("Cannot be cast to number.", [])
-      ]
+               Error.new("Cannot be cast to number.", [])
+             ]
     end
   end
 
@@ -654,7 +693,11 @@ defmodule ValidatorTest do
       schema = [[[string()]]]
 
       assert validate(["hey"], schema) == [Error.new("Expected type: list, got: \"hey\".", [0])]
-      assert validate([["hey"]], schema) == [Error.new("Expected type: list, got: \"hey\".", [0, 0])]
+
+      assert validate([["hey"]], schema) == [
+               Error.new("Expected type: list, got: \"hey\".", [0, 0])
+             ]
+
       assert validate([[["hey"]]], schema) == []
       assert validate([[["hey"], []], []], schema) == []
 

@@ -42,6 +42,11 @@ defmodule Validator.TypesTest do
     assert has_type?(self(), :ref) == false
     assert has_type?("#Reference<0.1374.2455.116>", :ref) == false
 
+    assert has_type?(fn -> 0 end, :function) == true
+    assert has_type?(fn x -> x end, :function) == true
+    assert has_type?(0, :function) == false
+    assert has_type?("fn", :function) == false
+
     assert has_type?("plop", :list) == false
     assert has_type?([:bim], :list) == true
     assert has_type?([1, 2, 3], :list) == true
@@ -67,10 +72,11 @@ defmodule Validator.TypesTest do
     assert type_of(:ok) == :atom
     assert type_of(self()) == :pid
     assert type_of(make_ref()) == :ref
+    assert type_of(fn -> 0 end) == :function
     assert type_of([1, 2]) == :list
     assert type_of({1, 2}) == :tuple
     assert type_of(%{c: 3}) == :map
-    assert type_of(fn -> 0 end) == :any
+    assert type_of(Port.list() |> Enum.at(0)) == :any
   end
 
   test "cast/3 can cast from one type to another" do
@@ -167,6 +173,15 @@ defmodule Validator.TypesTest do
     assert cast(:%{}, :atom, :ref) == {:error, "Cannot be cast to ref."}
     assert cast([1, 2], :list, :ref) == {:error, "Cannot be cast to ref."}
     assert cast({1, 2}, :tuple, :ref) == {:error, "Cannot be cast to ref."}
+
+    assert cast("fn -> 0 end", :string, :function) == {:error, "Cannot be cast to function."}
+    assert cast(12, :number, :function) == {:error, "Cannot be cast to function."}
+    assert cast(12, :integer, :function) == {:error, "Cannot be cast to function."}
+    assert cast(12.0, :float, :function) == {:error, "Cannot be cast to function."}
+    assert cast(false, :boolean, :function) == {:error, "Cannot be cast to function."}
+    assert cast(:fn, :atom, :function) == {:error, "Cannot be cast to function."}
+    assert cast([1, 2], :list, :function) == {:error, "Cannot be cast to function."}
+    assert cast({1, 2}, :tuple, :function) == {:error, "Cannot be cast to function."}
 
     assert cast("[]", :string, :list) == {:error, "Cannot be cast to list."}
     assert cast(78, :number, :list) == {:error, "Cannot be cast to list."}
