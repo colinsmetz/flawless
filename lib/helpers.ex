@@ -1,5 +1,5 @@
 defmodule Validator.Helpers do
-  alias Validator.{ListSpec, ValueSpec, TupleSpec, AnyOtherKey, LiteralSpec}
+  alias Validator.{ListSpec, ValueSpec, TupleSpec, AnyOtherKey, LiteralSpec, StructSpec}
   alias Validator.Rule
   alias Validator.Types
 
@@ -57,6 +57,17 @@ defmodule Validator.Helpers do
     |> value()
   end
 
+  def structure(%module{} = schema, opts \\ []) do
+    %StructSpec{
+      module: module,
+      required: opts |> Keyword.get(:required, false),
+      checks: extract_checks(opts, :struct),
+      schema: schema,
+      type: :struct,
+      cast_from: opts |> Keyword.get(:cast_from, [])
+    }
+  end
+
   def literal(value, opts \\ []) do
     %LiteralSpec{
       value: value,
@@ -69,6 +80,7 @@ defmodule Validator.Helpers do
   def req_value(opts \\ []), do: required(&value/1, opts)
   def req_list(item_type, opts \\ []), do: required(&list(item_type, &1), opts)
   def req_map(schema, opts \\ []), do: required(&map(schema, &1), opts)
+  def req_structure(schema, opts \\ []), do: required(&structure(schema, &1), opts)
   def req_tuple(elem_types, opts \\ []), do: required(&tuple(elem_types, &1), opts)
 
   def integer(opts \\ []), do: value_with_type(:integer, opts)

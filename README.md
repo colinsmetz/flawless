@@ -165,6 +165,31 @@ This will make sure that the map contains a field named `id`, but also accept
 any other unexpected field in the map. Those extra fields should however comply
 with the associated schema (which could be `value()` to truly accept anything).
 
+### Structs
+
+Structs function similarly to maps, with the `structure(spec, opts)` and
+`req_structure(spec, opts)` (unfortunately `struct` is already a function in
+`Kernel`).
+
+```elixir
+structure(
+  %User{
+    first_name: req_string(),
+    last_name: req_string(),
+    age: req_number()
+  },
+  checks: [
+    first_name_different_than_last_name()
+  ]
+)
+```
+
+Again, the `structure` function can be entirely omitted if options are not
+necessary.
+
+**Note:** a struct will never match a classic `map` schema, unless you specify
+otherwise with the `cast_from: :struct` option.
+
 ### Lists
 
 A list is defined using `list(item_spec, opts)` or `req_list(item_spec, opts)`.

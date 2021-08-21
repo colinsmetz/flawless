@@ -36,6 +36,22 @@ defmodule Validator do
           }
   end
 
+  defmodule StructSpec do
+    @moduledoc """
+    Represents a struct.
+    """
+    defstruct required: false, checks: [], schema: nil, module: nil, type: :any, cast_from: []
+
+    @type t() :: %__MODULE__{
+            required: boolean(),
+            checks: list(Validator.Rule.t()),
+            schema: map() | nil,
+            module: atom(),
+            type: atom(),
+            cast_from: list(atom()) | atom()
+          }
+  end
+
   defmodule ListSpec do
     @moduledoc """
     Represents a list of elements.
@@ -112,7 +128,7 @@ defmodule Validator do
     if check_schema do
       case validate_schema(schema) do
         [] -> do_validate(value, schema)
-        _else -> raise "Invalid schema"
+        errors -> raise "Invalid schema: #{inspect(errors)}"
       end
     else
       do_validate(value, schema)
@@ -140,6 +156,8 @@ defmodule Validator do
       tuple when is_tuple(tuple) -> validate_tuple(value, Helpers.tuple(tuple), context)
       %ValueSpec{} -> validate_value(value, schema, context)
       %LiteralSpec{} -> validate_literal(value, schema, context)
+      %StructSpec{} -> validate_struct(value, schema, context)
+      %_{} -> validate_struct(value, Helpers.structure(schema), context)
       %{} -> validate_map(value, schema, context)
       func when is_function(func, 0) -> do_validate(value, func.(), context)
       func when is_function(func, 1) -> validate_select(value, func, context)
@@ -169,8 +187,8 @@ defmodule Validator do
 
   defp check_type_and_cast_if_needed(value, _schema, _context), do: {:ok, value}
 
-  defp validate_map(map, %{} = schema, context) when is_struct(map) do
-    validate_map(Map.from_struct(map), schema, context)
+  defp validate_map(map, %{} = _schema, context) when is_struct(map) do
+    [Error.new("Expected type: map, got: struct.", context)]
   end
 
   defp validate_map(map, %{} = schema, context) when is_map(map) do
@@ -202,6 +220,39 @@ defmodule Validator do
       :error -> []
       {:ok, value} -> do_validate(value, field_schema, context ++ [field_name])
     end
+  end
+
+  defp validate_struct(
+         %value_module{} = struct,
+         %StructSpec{module: module, schema: schema} = spec,
+         context
+       )
+       when value_module == module do
+    top_level_errors =
+      spec.checks
+      |> Enum.map(fn check -> check.(struct, context) end)
+
+    sub_errors = validate_map(Map.from_struct(struct), Map.from_struct(schema), context)
+
+    [
+      top_level_errors,
+      sub_errors
+    ]
+    |> List.flatten()
+  end
+
+  defp validate_struct(%value_module{} = _struct, %StructSpec{module: module}, context)
+       when value_module != module do
+    [
+      Error.new(
+        "Expected struct of type: #{inspect(module)}, got struct of type: #{inspect(value_module)}.",
+        context
+      )
+    ]
+  end
+
+  defp validate_struct(struct, _spec, context) do
+    [Error.new("Expected type: struct, got: #{inspect(struct)}.", context)]
   end
 
   defp validate_value(value, spec, context) do
@@ -339,4 +390,5 @@ defmodule Validator do
   defp required_field?(field) when is_tuple(field), do: false
   defp required_field?(field) when is_map(field), do: field |> Map.get(:required, false)
   defp required_field?(field) when is_function(field), do: false
+  defp required_field?(_field), do: false
 end

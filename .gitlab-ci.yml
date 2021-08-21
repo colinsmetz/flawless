@@ -1,7 +1,7 @@
 stages:
   - test
 
-test:
+.test:
   image: elixir:1.12.2-alpine
   stage: test
   tags:

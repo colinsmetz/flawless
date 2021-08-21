@@ -13,7 +13,8 @@ defmodule Validator.Types do
     :port,
     :list,
     :tuple,
-    :map
+    :map,
+    :struct
   ]
 
   @type t() :: unquote(Enum.reduce(@valid_types, &{:|, [], [&1, &2]}))
@@ -37,7 +38,8 @@ defmodule Validator.Types do
       :port -> is_port(value)
       :list -> is_list(value)
       :tuple -> is_tuple(value)
-      :map -> is_map(value)
+      :struct -> is_struct(value)
+      :map -> is_map(value) and not is_struct(value)
     end
   end
 
@@ -56,6 +58,7 @@ defmodule Validator.Types do
       is_port(value) -> :port
       is_list(value) -> :list
       is_tuple(value) -> :tuple
+      is_struct(value) -> :struct
       is_map(value) -> :map
       true -> :any
     end
@@ -117,5 +120,6 @@ defmodule Validator.Types do
   defp do_cast(value, :atom, :string), do: {:ok, Atom.to_string(value)}
   defp do_cast(value, :list, :tuple), do: {:ok, List.to_tuple(value)}
   defp do_cast(value, :tuple, :list), do: {:ok, Tuple.to_list(value)}
+  defp do_cast(value, :struct, :map), do: {:ok, Map.from_struct(value)}
   defp do_cast(_, _, _), do: :error
 end

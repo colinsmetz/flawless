@@ -69,7 +69,7 @@ defmodule Validator.SchemaValidatorTest do
 
       assert validate_schema(schema) == [
                Error.new(
-                 "Invalid value: :nothing. Valid options: [:any, :string, :number, :integer, :float, :boolean, :atom, :pid, :ref, :function, :port, :list, :tuple, :map]",
+                 "Invalid value: :nothing. Valid options: [:any, :string, :number, :integer, :float, :boolean, :atom, :pid, :ref, :function, :port, :list, :tuple, :map, :struct]",
                  ["name", :cast_from]
                ),
                Error.new("Expected type: boolean, got: :maybe.", ["name", :required]),

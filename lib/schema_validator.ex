@@ -7,11 +7,13 @@ defmodule Validator.SchemaValidator do
       %Validator.ListSpec{} -> list_spec_schema()
       %Validator.TupleSpec{} -> tuple_spec_schema()
       %Validator.LiteralSpec{} -> literal_spec_schema()
+      %Validator.StructSpec{module: module} -> struct_spec_schema(module)
       [] -> literal([])
       l when is_list(l) -> list_schema()
       t when is_tuple(t) -> tuple_schema()
       f when is_function(f, 0) -> function(arity: 0)
       f when is_function(f, 1) -> function(arity: 1)
+      %module{} -> struct_schema(module)
       %{} -> map_schema()
       literal when is_binary(literal) -> string()
       literal when is_atom(literal) -> atom()
@@ -20,7 +22,7 @@ defmodule Validator.SchemaValidator do
   end
 
   defp value_spec_schema() do
-    %{
+    structure(%Validator.ValueSpec{
       required: boolean(),
       checks: checks_schema(),
       schema: fn
@@ -29,37 +31,48 @@ defmodule Validator.SchemaValidator do
       end,
       type: type_schema(),
       cast_from: cast_from_schema()
-    }
+    })
+  end
+
+  defp struct_spec_schema(module) do
+    structure(%Validator.StructSpec{
+      required: boolean(),
+      checks: checks_schema(),
+      module: atom(),
+      schema: struct_schema(module),
+      type: type_schema(),
+      cast_from: cast_from_schema()
+    })
   end
 
   defp list_spec_schema() do
-    %{
+    structure(%Validator.ListSpec{
       required: boolean(),
       checks: checks_schema(),
       item_type: &schema_schema/0,
       type: :list,
       cast_from: cast_from_schema()
-    }
+    })
   end
 
   defp tuple_spec_schema() do
-    %{
+    structure(%Validator.TupleSpec{
       required: boolean(),
       checks: checks_schema(),
       elem_types: list(&schema_schema/0, cast_from: :tuple),
       type: :tuple,
       cast_from: cast_from_schema()
-    }
+    })
   end
 
   defp literal_spec_schema() do
-    %{
+    structure(%Validator.LiteralSpec{
       value: value(),
       required: boolean(),
       checks: checks_schema(),
       type: type_schema(),
       cast_from: cast_from_schema()
-    }
+    })
   end
 
   defp list_schema() do
@@ -72,6 +85,13 @@ defmodule Validator.SchemaValidator do
 
   defp map_schema() do
     %{any_key() => &schema_schema/0}
+  end
+
+  defp struct_schema(module) do
+    structure(%{
+      any_key() => &schema_schema/0,
+      __struct__: module
+    })
   end
 
   defp type_schema() do

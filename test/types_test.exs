@@ -2,6 +2,10 @@ defmodule Validator.TypesTest do
   use ExUnit.Case, async: true
   import Validator.Types
 
+  defmodule TestModule do
+    defstruct c: nil
+  end
+
   test "has_type?/2 checks the type of a value" do
     assert has_type?(12, :any) == true
     assert has_type?("plop", :any) == true
@@ -66,6 +70,13 @@ defmodule Validator.TypesTest do
     assert has_type?(%{}, :map) == true
     assert has_type?(%{"a" => 17, b: 99}, :map) == true
     assert has_type?(898, :map) == false
+    assert has_type?(1..2, :map) == false
+
+    assert has_type?("plop", :struct) == false
+    assert has_type?({:bim}, :struct) == false
+    assert has_type?(%TestModule{}, :struct) == true
+    assert has_type?(1..2, :struct) == true
+    assert has_type?(%{}, :struct) == false
   end
 
   test "type_of determines the type of a value" do
@@ -81,6 +92,7 @@ defmodule Validator.TypesTest do
     assert type_of([1, 2]) == :list
     assert type_of({1, 2}) == :tuple
     assert type_of(%{c: 3}) == :map
+    assert type_of(%TestModule{}) == :struct
   end
 
   test "cast/3 can cast from one type to another" do
@@ -119,6 +131,8 @@ defmodule Validator.TypesTest do
     assert cast({1, 2}, :tuple, :tuple) == {:ok, {1, 2}}
 
     assert cast(%{c: 3}, :map, :map) == {:ok, %{c: 3}}
+
+    assert cast(%TestModule{c: 3}, :struct, :map) == {:ok, %{c: 3}}
   end
 
   test "cast/3 returns an error if cast is not possible" do
@@ -220,5 +234,7 @@ defmodule Validator.TypesTest do
     assert cast(:%{}, :atom, :map) == {:error, "Cannot be cast to map."}
     assert cast([1, 2], :list, :map) == {:error, "Cannot be cast to map."}
     assert cast({1, 2}, :tuple, :map) == {:error, "Cannot be cast to map."}
+
+    assert cast(%{}, :map, :struct) == {:error, "Cannot be cast to struct."}
   end
 end

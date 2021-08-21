@@ -484,13 +484,15 @@ defmodule ValidatorTest do
       defstruct a: nil, b: nil
     end
 
-    test "can be used to validate structs" do
+    test "cannot validate structs" do
       schema = %{
         a: req_number(),
         b: req_number()
       }
 
-      assert validate(%TestModule{a: 1, b: 2}, schema) == []
+      assert validate(%TestModule{a: 1, b: 2}, schema) == [
+               Error.new("Expected type: map, got: struct.", [])
+             ]
     end
 
     test "accepts and validates any non-specified key with any_key()" do
@@ -509,6 +511,86 @@ defmodule ValidatorTest do
              ]
 
       assert validate(%{}, %{any_key() => value()}) == []
+    end
+  end
+
+  describe "structs" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    defmodule TestStructA do
+      defstruct a: nil, b: nil
+    end
+
+    defmodule TestStructB do
+      defstruct a: nil, b: nil
+    end
+
+    test "accept checks at the struct and the field level" do
+      map_checks = [rule(&(&1.a < &1.b), "a must be lower than b")]
+      field_checks = [rule(&(&1 > 0), "must be positive")]
+
+      schema =
+        structure(
+          %TestStructA{
+            a: req_number(checks: field_checks),
+            b: req_number(checks: field_checks)
+          },
+          checks: map_checks
+        )
+
+      value = %TestStructA{
+        a: 18,
+        b: -5
+      }
+
+      assert validate(value, schema) == [
+               Error.new("a must be lower than b", []),
+               Error.new("must be positive", [:b])
+             ]
+    end
+
+    test "return an error when they receive a struct of another type" do
+      schema = %TestStructA{
+        a: number(),
+        b: string()
+      }
+
+      assert validate(%TestStructB{a: 11, b: "yo"}, schema) == [
+               Error.new(
+                 "Expected struct of type: ValidatorTest.TestStructA, got struct of type: ValidatorTest.TestStructB.",
+                 []
+               )
+             ]
+    end
+
+    test "return an error when value is not a struct" do
+      schema = %TestStructA{
+        a: number(),
+        b: string()
+      }
+
+      assert validate(%{a: 11, b: "yo"}, schema) == [
+               Error.new("Expected type: struct, got: %{a: 11, b: \"yo\"}.", [])
+             ]
+
+      assert validate(TestStructA, schema) == [
+               Error.new("Expected type: struct, got: ValidatorTest.TestStructA.", [])
+             ]
+    end
+
+    test "have shortcut rules" do
+      for rule_func <- [&structure/2, &req_structure/2] do
+        assert validate(
+                 %TestStructA{},
+                 rule_func.(%TestStructA{}, in: [%TestStructA{a: 3, b: 4}])
+               ) == [
+                 Error.new(
+                   "Invalid value: %ValidatorTest.TestStructA{a: nil, b: nil}. Valid options: [%ValidatorTest.TestStructA{a: 3, b: 4}]",
+                   []
+                 )
+               ]
+      end
     end
   end
 
@@ -642,6 +724,20 @@ defmodule ValidatorTest do
       assert validate("[]", schema) == [Error.new("Expected type: tuple, got: \"[]\".", [])]
     end
 
+    defmodule CastFromTestStruct do
+      defstruct a: nil, b: nil
+    end
+
+    test "can be used to cast structs to maps" do
+      schema = map(%{a: number(), b: number()}, cast_from: :struct)
+
+      assert validate(%CastFromTestStruct{a: 1, b: 2}, schema) == []
+
+      assert validate(%CastFromTestStruct{a: "x", b: 2}, schema) == [
+               Error.new("Expected type: number, got: \"x\".", [:a])
+             ]
+    end
+
     test "accepts a list of possible types" do
       schema = string(cast_from: [:number, :boolean, :atom])
 
@@ -765,12 +861,17 @@ defmodule ValidatorTest do
       )
     end
 
+    defmodule M do
+      defstruct x: nil
+    end
+
     test "it validates very complex schema" do
       schema = %{
         "format" => req_string(checks: [one_of(["csv", "xml"])]),
         "regex" => req_string(),
         "bim" => %{
-          "truc" => req_string()
+          "truc" => req_string(),
+          "struct" => req_structure(%M{x: number()})
         },
         "polling" =>
           map(%{
@@ -828,7 +929,7 @@ defmodule ValidatorTest do
 
       assert Validator.validate(value, schema) == [
                Error.new("Unexpected fields: [\"file_max_age_days\", \"options\"]", []),
-               Error.new("Missing required fields: [\"truc\"]", ["bim"]),
+               Error.new("Missing required fields: [\"struct\", \"truc\"]", ["bim"]),
                Error.new("Expected type: string, got: 28.", ["brands", 1]),
                Error.new("Field 'a' is a key but is not required", ["fields", 0]),
                Error.new("Unexpected fields: [\"tru\"]", ["fields", 1]),
