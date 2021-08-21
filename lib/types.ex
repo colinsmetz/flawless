@@ -1,19 +1,25 @@
 defmodule Validator.Types do
-  @type t() ::
-          :any
-          | :string
-          | :number
-          | :integer
-          | :float
-          | :boolean
-          | :atom
-          | :pid
-          | :ref
-          | :function
-          | :port
-          | :list
-          | :tuple
-          | :map
+  @valid_types [
+    :any,
+    :string,
+    :number,
+    :integer,
+    :float,
+    :boolean,
+    :atom,
+    :pid,
+    :ref,
+    :function,
+    :port,
+    :list,
+    :tuple,
+    :map
+  ]
+
+  @type t() :: unquote(Enum.reduce(@valid_types, &{:|, [], [&1, &2]}))
+
+  @spec valid_types() :: [t()]
+  def valid_types(), do: @valid_types
 
   @spec has_type?(any, t()) :: boolean
   def has_type?(value, expected_type) do

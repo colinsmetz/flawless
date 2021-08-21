@@ -374,6 +374,27 @@ return more specific errors corresponding to the selected subschemas. If we
 didn't know, we'd have to either return a single generic error, or the errors
 for both schemas, which would be confusing.
 
+### Validate a schema
+
+You can validate that a schema you're using is a valid schema with the
+`validate_schema/1` function:
+
+```elixir
+schema = %{
+  name: string(),
+  age: number()
+}
+
+validate_schema(schema)
+```
+
+It returns the same kind of errors as `validate/3`. The "schema of a schema" is
+actually defined using this library, and that schema validates itself.
+
+By default, validating a value against a schema will validate the schema first.
+If you wish to disable that behaviour (in particular if you can the function
+many times with the same schema), set the `check_schema` option to false.
+
 ## Improvements
 
 * A field with a `nil` value is considered as present (the `required` constraint

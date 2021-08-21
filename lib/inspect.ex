@@ -17,18 +17,28 @@ defimpl Inspect, for: Validator.ValueSpec do
   import Validator.Inspect
   alias Validator.ValueSpec
 
-  def inspect(%ValueSpec{type: type, required: required, schema: schema, cast_from: cast_from, checks: checks}, opts) do
-    params = [
-      if(schema, do: [to_doc(schema, opts)], else: nil),
-      checks(checks, opts),
-      cast_from(cast_from, opts)
-    ]
-    |> Enum.reject(& &1 == nil)
+  def inspect(
+        %ValueSpec{
+          type: type,
+          required: required,
+          schema: schema,
+          cast_from: cast_from,
+          checks: checks
+        },
+        opts
+      ) do
+    params =
+      [
+        if(schema, do: [to_doc(schema, opts)], else: nil),
+        checks(checks, opts),
+        cast_from(cast_from, opts)
+      ]
+      |> Enum.reject(&(&1 == nil))
 
     concat([
       if(required, do: "req_", else: ""),
       "#{type}",
-      function_args(params, opts),
+      function_args(params, opts)
     ])
   end
 end
@@ -39,11 +49,12 @@ defimpl Inspect, for: Validator.LiteralSpec do
   alias Validator.LiteralSpec
 
   def inspect(%LiteralSpec{value: value, cast_from: cast_from}, opts) do
-    params = [
-      [to_doc(value, opts)],
-      cast_from(cast_from, opts)
-    ]
-    |> Enum.reject(& &1 == nil)
+    params =
+      [
+        [to_doc(value, opts)],
+        cast_from(cast_from, opts)
+      ]
+      |> Enum.reject(&(&1 == nil))
 
     concat(["literal", function_args(params, opts)])
   end
@@ -54,18 +65,22 @@ defimpl Inspect, for: Validator.ListSpec do
   import Validator.Inspect
   alias Validator.ListSpec
 
-  def inspect(%ListSpec{required: required, item_type: item_type, cast_from: cast_from, checks: checks}, opts) do
-    params = [
-      [to_doc(item_type, opts)],
-      checks(checks, opts),
-      cast_from(cast_from, opts)
-    ]
-    |> Enum.reject(& &1 == nil)
+  def inspect(
+        %ListSpec{required: required, item_type: item_type, cast_from: cast_from, checks: checks},
+        opts
+      ) do
+    params =
+      [
+        [to_doc(item_type, opts)],
+        checks(checks, opts),
+        cast_from(cast_from, opts)
+      ]
+      |> Enum.reject(&(&1 == nil))
 
     concat([
       if(required, do: "req_", else: ""),
       "list",
-      function_args(params, opts),
+      function_args(params, opts)
     ])
   end
 end
@@ -75,18 +90,27 @@ defimpl Inspect, for: Validator.TupleSpec do
   import Validator.Inspect
   alias Validator.TupleSpec
 
-  def inspect(%TupleSpec{required: required, elem_types: elem_types, cast_from: cast_from, checks: checks}, opts) do
-    params = [
-      [to_doc(elem_types, opts)],
-      checks(checks, opts),
-      cast_from(cast_from, opts)
-    ]
-    |> Enum.reject(& &1 == nil)
+  def inspect(
+        %TupleSpec{
+          required: required,
+          elem_types: elem_types,
+          cast_from: cast_from,
+          checks: checks
+        },
+        opts
+      ) do
+    params =
+      [
+        [to_doc(elem_types, opts)],
+        checks(checks, opts),
+        cast_from(cast_from, opts)
+      ]
+      |> Enum.reject(&(&1 == nil))
 
     concat([
       if(required, do: "req_", else: ""),
       "tuple",
-      function_args(params, opts),
+      function_args(params, opts)
     ])
   end
 end

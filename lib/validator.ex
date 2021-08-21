@@ -32,7 +32,7 @@ defmodule Validator do
             checks: list(Validator.Rule.t()),
             schema: map() | nil,
             type: atom(),
-            cast_from: list(atom())
+            cast_from: list(atom()) | atom()
           }
   end
 
@@ -49,7 +49,7 @@ defmodule Validator do
             checks: list(Validator.Rule.t()),
             item_type: Validator.spec_type(),
             type: atom(),
-            cast_from: list(atom())
+            cast_from: list(atom()) | atom()
           }
   end
 
@@ -67,7 +67,7 @@ defmodule Validator do
             checks: list(Validator.Rule.t()),
             elem_types: {Validator.spec_type()},
             type: atom(),
-            cast_from: list(atom())
+            cast_from: list(atom()) | atom()
           }
   end
 
@@ -85,7 +85,7 @@ defmodule Validator do
             required: boolean(),
             checks: list(Validator.Rule.t()),
             type: atom(),
-            cast_from: list(atom())
+            cast_from: list(atom()) | atom()
           }
   end
 
@@ -105,8 +105,26 @@ defmodule Validator do
     end
   end
 
-  @spec validate(any, spec_type(), list) :: list(Error.t())
-  def validate(value, schema, context \\ []) do
+  @spec validate(any, spec_type(), Keyword.t()) :: list(Error.t())
+  def validate(value, schema, opts \\ []) do
+    check_schema = opts |> Keyword.get(:check_schema, true)
+
+    if check_schema do
+      case validate_schema(schema) do
+        [] -> do_validate(value, schema)
+        _else -> raise "Invalid schema"
+      end
+    else
+      do_validate(value, schema)
+    end
+  end
+
+  @spec validate_schema(any) :: list(Error.t())
+  def validate_schema(schema) do
+    do_validate(schema, Validator.SchemaValidator.schema_schema())
+  end
+
+  defp do_validate(value, schema, context \\ []) do
     case check_type_and_cast_if_needed(value, schema, context) do
       {:ok, cast_value} -> dispatch_validation(cast_value, schema, context)
       {:error, error} -> [Error.new(error, context)]
@@ -123,7 +141,7 @@ defmodule Validator do
       %ValueSpec{} -> validate_value(value, schema, context)
       %LiteralSpec{} -> validate_literal(value, schema, context)
       %{} -> validate_map(value, schema, context)
-      func when is_function(func, 0) -> validate(value, func.(), context)
+      func when is_function(func, 0) -> do_validate(value, func.(), context)
       func when is_function(func, 1) -> validate_select(value, func, context)
       literal when is_binary(literal) -> validate_literal(value, Helpers.literal(schema), context)
       literal when is_atom(literal) -> validate_literal(value, Helpers.literal(schema), context)
@@ -182,7 +200,7 @@ defmodule Validator do
   defp validate_map_field(map, field_name, field_schema, context) do
     case Map.fetch(map, field_name) do
       :error -> []
-      {:ok, value} -> validate(value, field_schema, context ++ [field_name])
+      {:ok, value} -> do_validate(value, field_schema, context ++ [field_name])
     end
   end
 
@@ -213,7 +231,7 @@ defmodule Validator do
       list
       |> Enum.with_index()
       |> Enum.map(fn {value, index} ->
-        validate(value, spec.item_type, context ++ [index])
+        do_validate(value, spec.item_type, context ++ [index])
       end)
       |> List.flatten()
 
@@ -240,7 +258,7 @@ defmodule Validator do
       |> Enum.zip(Tuple.to_list(spec.elem_types))
       |> Enum.with_index()
       |> Enum.map(fn {{value, elem_type}, index} ->
-        validate(value, elem_type, context ++ [index])
+        do_validate(value, elem_type, context ++ [index])
       end)
       |> List.flatten()
 
@@ -268,7 +286,7 @@ defmodule Validator do
   end
 
   defp validate_select(value, func_spec, context) do
-    validate(value, func_spec.(value), context)
+    do_validate(value, func_spec.(value), context)
   rescue
     _e in FunctionClauseError ->
       [Error.new("Value does not match any of the possible schemas.", context)]

@@ -16,16 +16,16 @@ defmodule Validator.InspectTest do
     }
 
     assert inspect(schema, pretty: true) <> "\n" == ~s"""
-    %{
-      any_key() => string(),
-      "a" => number(),
-      "b" => req_string(checks: #1, cast_from: [:integer, :atom]),
-      "c" => any(),
-      "d" => literal(19),
-      "e" => req_list(string(), checks: #2),
-      "f" => tuple({number(), atom()}),
-      "g" => req_map(%{z: pid()})
-    }
-    """
+           %{
+             any_key() => string(),
+             "a" => number(),
+             "b" => req_string(checks: #1, cast_from: [:integer, :atom]),
+             "c" => any(),
+             "d" => literal(19),
+             "e" => req_list(string(), checks: #2),
+             "f" => tuple({number(), atom()}),
+             "g" => req_map(%{z: pid()})
+           }
+           """
   end
 end
