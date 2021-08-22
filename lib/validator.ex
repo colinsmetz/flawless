@@ -133,11 +133,13 @@ defmodule Validator do
     else
       do_validate(value, schema)
     end
+    |> Error.evaluate_messages()
   end
 
   @spec validate_schema(any) :: list(Error.t())
   def validate_schema(schema) do
     do_validate(schema, Validator.SchemaValidator.schema_schema())
+    |> Error.evaluate_messages()
   end
 
   defp do_validate(value, schema, context \\ []) do
@@ -212,7 +214,7 @@ defmodule Validator do
   end
 
   defp validate_map(map, _spec, context) do
-    [Error.new("Expected type: map, got: #{inspect(map)}.", context)]
+    [Error.invalid_type_error(:map, map, context)]
   end
 
   defp validate_map_field(map, field_name, field_schema, context) do
@@ -245,14 +247,15 @@ defmodule Validator do
        when value_module != module do
     [
       Error.new(
-        "Expected struct of type: #{inspect(module)}, got struct of type: #{inspect(value_module)}.",
+        {"Expected struct of type: %{expected_module}, got struct of type: %{actual_module}.",
+         expected_module: inspect(module), actual_module: inspect(value_module)},
         context
       )
     ]
   end
 
   defp validate_struct(struct, _spec, context) do
-    [Error.new("Expected type: struct, got: #{inspect(struct)}.", context)]
+    [Error.invalid_type_error(:struct, struct, context)]
   end
 
   defp validate_value(value, spec, context) do
@@ -294,7 +297,7 @@ defmodule Validator do
   end
 
   defp validate_list(list, _spec, context) do
-    [Error.new("Expected type: list, got: #{inspect(list)}.", context)]
+    [Error.invalid_type_error(:list, list, context)]
   end
 
   defp validate_tuple(tuple, spec, context)
@@ -326,14 +329,15 @@ defmodule Validator do
 
     [
       Error.new(
-        "Invalid tuple size (expected: #{expected_size}, received: #{actual_size})",
+        {"Invalid tuple size (expected: %{expected_size}, received: %{actual_size}).",
+         expected_size: expected_size, actual_size: actual_size},
         context
       )
     ]
   end
 
   defp validate_tuple(value, _spec, context) do
-    [Error.new("Expected type: tuple, got: #{inspect(value)}.", context)]
+    [Error.invalid_type_error(:tuple, value, context)]
   end
 
   defp validate_select(value, func_spec, context) do
@@ -349,7 +353,8 @@ defmodule Validator do
     else
       [
         Error.new(
-          "Expected literal value #{inspect(spec.value)}, got: #{inspect(value)}.",
+          {"Expected literal value %{expected_value}, got: %{value}.",
+           expected_value: inspect(spec.value), value: inspect(value)},
           context
         )
       ]
@@ -368,7 +373,13 @@ defmodule Validator do
     if unexpected_fields == [] do
       []
     else
-      [Error.new("Unexpected fields: #{inspect(unexpected_fields)}", context)]
+      [
+        Error.new(
+          {"Unexpected fields: %{unexpected_fields}.",
+           unexpected_fields: inspect(unexpected_fields)},
+          context
+        )
+      ]
     end
   end
 
@@ -382,7 +393,13 @@ defmodule Validator do
     if missing_fields == [] do
       []
     else
-      [Error.new("Missing required fields: #{inspect(missing_fields)}", context)]
+      [
+        Error.new(
+          {"Missing required fields: %{missing_fields}.",
+           missing_fields: inspect(missing_fields)},
+          context
+        )
+      ]
     end
   end
 

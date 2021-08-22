@@ -2,7 +2,10 @@ defmodule Validator.Rule do
   @type t() :: (any, list -> [] | Validator.Error.t())
 
   @type predicate() :: (any -> boolean())
-  @type error_function() :: String.t() | (any -> String.t()) | (any, list -> String.t())
+  @type error_function() ::
+          Validator.Error.t_message()
+          | (any -> Validator.Error.t_message())
+          | (any, list -> Validator.Error.t_message())
 
   @spec rule(predicate(), error_function()) :: t()
   def rule(predicate, error_message) do
@@ -11,6 +14,7 @@ defmodule Validator.Rule do
         cond do
           predicate.(value) -> []
           is_binary(error_message) -> error_message
+          is_tuple(error_message) -> error_message
           is_function(error_message, 1) -> error_message.(value)
           is_function(error_message, 2) -> error_message.(value, context)
         end
@@ -32,7 +36,8 @@ defmodule Validator.Rule do
   def one_of(options) when is_list(options) do
     rule(
       &(&1 in options),
-      &"Invalid value: #{inspect(&1)}. Valid options: #{inspect(options)}"
+      &{"Invalid value: %{value}. Valid options: %{options}",
+       value: inspect(&1), options: inspect(options)}
     )
   end
 
@@ -49,7 +54,8 @@ defmodule Validator.Rule do
           actual_length -> actual_length >= length
         end
       end,
-      &"Minimum length of #{length} required (current: #{value_length(&1)})."
+      &{"Minimum length of %{min_length} required (current: %{actual_length}).",
+       min_length: length, actual_length: value_length(&1)}
     )
   end
 
@@ -62,7 +68,8 @@ defmodule Validator.Rule do
           actual_length -> actual_length <= length
         end
       end,
-      &"Maximum length of #{length} required (current: #{value_length(&1)})."
+      &{"Maximum length of %{max_length} required (current: %{actual_length}).",
+       max_length: length, actual_length: value_length(&1)}
     )
   end
 
@@ -88,7 +95,8 @@ defmodule Validator.Rule do
           actual_length -> actual_length == length
         end
       end,
-      &"Expected length of #{length} (current: #{value_length(&1)})."
+      &{"Expected length of %{expected_length} (current: %{actual_length}).",
+       expected_length: length, actual_length: value_length(&1)}
     )
   end
 
@@ -100,7 +108,8 @@ defmodule Validator.Rule do
   def no_duplicate() do
     rule(
       fn value -> duplicates(value) == [] end,
-      &"The list should not contain duplicates (duplicates found: #{inspect(duplicates(&1))})."
+      &{"The list should not contain duplicates (duplicates found: %{duplicates}).",
+       duplicates: inspect(duplicates(&1))}
     )
   end
 
@@ -114,7 +123,8 @@ defmodule Validator.Rule do
   def match(%Regex{} = regex) do
     rule(
       fn value -> Regex.match?(regex, value) end,
-      &"Value #{inspect(&1)} does not match regex #{inspect(regex)}."
+      &{"Value %{value} does not match regex %{regex}.",
+       value: inspect(&1), regex: inspect(regex)}
     )
   end
 
@@ -122,7 +132,7 @@ defmodule Validator.Rule do
   def min(min_value) when is_number(min_value) do
     rule(
       fn value -> value >= min_value end,
-      "Must be greater than or equal to #{min_value}."
+      {"Must be greater than or equal to %{min_value}.", min_value: min_value}
     )
   end
 
@@ -130,7 +140,7 @@ defmodule Validator.Rule do
   def max(max_value) when is_number(max_value) do
     rule(
       fn value -> value <= max_value end,
-      "Must be less than or equal to #{max_value}."
+      {"Must be less than or equal to %{max_value}.", max_value: max_value}
     )
   end
 
@@ -138,7 +148,7 @@ defmodule Validator.Rule do
   def between(min, max) when is_number(min) and is_number(max) do
     rule(
       fn value -> value >= min and value <= max end,
-      "Must be between #{min} and #{max}."
+      {"Must be between %{min_value} and %{max_value}.", min_value: min, max_value: max}
     )
   end
 
@@ -146,7 +156,7 @@ defmodule Validator.Rule do
   def not_both(field1, field2) do
     rule(
       fn map -> not (field1 in Map.keys(map) and field2 in Map.keys(map)) end,
-      "Fields #{field1} and #{field2} cannot both be defined."
+      {"Fields %{field1} and %{field2} cannot both be defined.", field1: field1, field2: field2}
     )
   end
 
@@ -160,7 +170,8 @@ defmodule Validator.Rule do
   def arity(arity) do
     rule(
       fn func -> get_arity(func) == arity end,
-      &"Expected arity of #{arity}, found: #{get_arity(&1)}."
+      &{"Expected arity of %{expected_arity}, found: %{actual_arity}.",
+       expected_arity: arity, actual_arity: get_arity(&1)}
     )
   end
 end

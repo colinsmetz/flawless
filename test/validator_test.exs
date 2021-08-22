@@ -421,7 +421,7 @@ defmodule ValidatorTest do
       }
 
       assert validate(value, schema) == [
-               Error.new(~s(Missing required fields: ["age", "valid"]), [])
+               Error.new(~s(Missing required fields: ["age", "valid"].), [])
              ]
     end
 
@@ -439,7 +439,7 @@ defmodule ValidatorTest do
       }
 
       assert validate(value, schema) == [
-               Error.new(~s(Unexpected fields: ["name", "z"]), [])
+               Error.new(~s(Unexpected fields: ["name", "z"].), [])
              ]
     end
 
@@ -604,11 +604,11 @@ defmodule ValidatorTest do
       assert validate({1, "a", "b"}, schema) == []
 
       assert validate({1, 2}, schema) == [
-               Error.new("Invalid tuple size (expected: 3, received: 2)", [])
+               Error.new("Invalid tuple size (expected: 3, received: 2).", [])
              ]
 
       assert validate({1, 2, 3, 4}, schema) == [
-               Error.new("Invalid tuple size (expected: 3, received: 4)", [])
+               Error.new("Invalid tuple size (expected: 3, received: 4).", [])
              ]
     end
 
@@ -718,7 +718,7 @@ defmodule ValidatorTest do
       assert validate({2, "euros"}, schema) == []
 
       assert validate([2, "euros", "ttc"], schema) == [
-               Error.new("Invalid tuple size (expected: 2, received: 3)", [])
+               Error.new("Invalid tuple size (expected: 2, received: 3).", [])
              ]
 
       assert validate("[]", schema) == [Error.new("Expected type: tuple, got: \"[]\".", [])]
@@ -807,7 +807,7 @@ defmodule ValidatorTest do
 
       assert validate(%{}, schema) == [
                Error.new(
-                 "Missing required fields: [\"config\", \"coordinates\", \"products\"]",
+                 "Missing required fields: [\"config\", \"coordinates\", \"products\"].",
                  []
                )
              ]
@@ -816,8 +816,8 @@ defmodule ValidatorTest do
                %{"config" => %{}, "products" => [100], "coordinates" => {1.0, 2.0}},
                schema
              ) == [
-               Error.new("Missing required fields: [\"min\"]", ["config"]),
-               Error.new("Invalid tuple size (expected: 3, received: 2)", ["coordinates"]),
+               Error.new("Missing required fields: [\"min\"].", ["config"]),
+               Error.new("Invalid tuple size (expected: 3, received: 2).", ["coordinates"]),
                Error.new("Expected type: map, got: 100.", ["products", 0])
              ]
     end
@@ -928,14 +928,14 @@ defmodule ValidatorTest do
       }
 
       assert Validator.validate(value, schema) == [
-               Error.new("Unexpected fields: [\"file_max_age_days\", \"options\"]", []),
-               Error.new("Missing required fields: [\"struct\", \"truc\"]", ["bim"]),
+               Error.new("Unexpected fields: [\"file_max_age_days\", \"options\"].", []),
+               Error.new("Missing required fields: [\"struct\", \"truc\"].", ["bim"]),
                Error.new("Expected type: string, got: 28.", ["brands", 1]),
                Error.new("Field 'a' is a key but is not required", ["fields", 0]),
-               Error.new("Unexpected fields: [\"tru\"]", ["fields", 1]),
-               Error.new("Missing required fields: [\"id\"]", ["fields", 1, "meta"]),
+               Error.new("Unexpected fields: [\"tru\"].", ["fields", 1]),
+               Error.new("Missing required fields: [\"id\"].", ["fields", 1, "meta"]),
                Error.new("Invalid value: \"yml\". Valid options: [\"csv\", \"xml\"]", ["format"]),
-               Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"]", ["polling"]),
+               Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"].", ["polling"]),
                Error.new("Slice size must be longer than 100", ["polling", "slice_size"]),
                Error.new("Expected type: string, got: 9.", ["tuple_of_things", 0, 2])
              ]
@@ -1014,7 +1014,7 @@ defmodule ValidatorTest do
       }
 
       assert validate(%{a: %{c: "d"}}, schema) == [
-               Error.new("Missing required fields: [:b]", [:a]),
+               Error.new("Missing required fields: [:b].", [:a]),
                Error.new("Expected type: number, got: \"d\".", [:a, :c])
              ]
 

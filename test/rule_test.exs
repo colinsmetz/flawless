@@ -73,14 +73,30 @@ defmodule Validator.RuleTest do
       assert test_rule.(1, []) == []
 
       assert one_of([1, 2, 3]).(7, []) ==
-               Error.new("Invalid value: 7. Valid options: [1, 2, 3]", [])
+               Error.new(
+                 {"Invalid value: %{value}. Valid options: %{options}",
+                  [value: "7", options: "[1, 2, 3]"]},
+                 []
+               )
     end
 
     test "min_length/1 validates the length of a string" do
       test_rule = min_length(5)
 
-      assert test_rule.("hey", []) == Error.new("Minimum length of 5 required (current: 3).", [])
-      assert test_rule.("hell", []) == Error.new("Minimum length of 5 required (current: 4).", [])
+      assert test_rule.("hey", []) ==
+               Error.new(
+                 {"Minimum length of %{min_length} required (current: %{actual_length}).",
+                  [min_length: 5, actual_length: 3]},
+                 []
+               )
+
+      assert test_rule.("hell", []) ==
+               Error.new(
+                 {"Minimum length of %{min_length} required (current: %{actual_length}).",
+                  [min_length: 5, actual_length: 4]},
+                 []
+               )
+
       assert test_rule.("hello", []) == []
     end
 
@@ -88,10 +104,18 @@ defmodule Validator.RuleTest do
       test_rule = min_length(5)
 
       assert test_rule.([1, 2, 3], []) ==
-               Error.new("Minimum length of 5 required (current: 3).", [])
+               Error.new(
+                 {"Minimum length of %{min_length} required (current: %{actual_length}).",
+                  [min_length: 5, actual_length: 3]},
+                 []
+               )
 
       assert test_rule.([1, 2, 3, 4], []) ==
-               Error.new("Minimum length of 5 required (current: 4).", [])
+               Error.new(
+                 {"Minimum length of %{min_length} required (current: %{actual_length}).",
+                  [min_length: 5, actual_length: 4]},
+                 []
+               )
 
       assert test_rule.([1, 2, 3, 4, 5], []) == []
     end
@@ -103,7 +127,11 @@ defmodule Validator.RuleTest do
       assert test_rule.("hell", []) == []
 
       assert test_rule.("hello", []) ==
-               Error.new("Maximum length of 4 required (current: 5).", [])
+               Error.new(
+                 {"Maximum length of %{max_length} required (current: %{actual_length}).",
+                  [max_length: 4, actual_length: 5]},
+                 []
+               )
     end
 
     test "max_length/1 validates the length of a list" do
@@ -113,7 +141,11 @@ defmodule Validator.RuleTest do
       assert test_rule.([1, 2, 3, 4], []) == []
 
       assert test_rule.([1, 2, 3, 4, 5], []) ==
-               Error.new("Maximum length of 4 required (current: 5).", [])
+               Error.new(
+                 {"Maximum length of %{max_length} required (current: %{actual_length}).",
+                  [max_length: 4, actual_length: 5]},
+                 []
+               )
     end
 
     test "non_empty/0 validates that the string is not empty" do
@@ -133,26 +165,52 @@ defmodule Validator.RuleTest do
     test "exact_length/1 validates the length of a string" do
       test_rule = exact_length(4)
 
-      assert test_rule.("hey", []) == Error.new("Expected length of 4 (current: 3).", [])
+      assert test_rule.("hey", []) ==
+               Error.new(
+                 {"Expected length of %{expected_length} (current: %{actual_length}).",
+                  [expected_length: 4, actual_length: 3]},
+                 []
+               )
+
       assert test_rule.("hell", []) == []
-      assert test_rule.("hello", []) == Error.new("Expected length of 4 (current: 5).", [])
+
+      assert test_rule.("hello", []) ==
+               Error.new(
+                 {"Expected length of %{expected_length} (current: %{actual_length}).",
+                  [expected_length: 4, actual_length: 5]},
+                 []
+               )
     end
 
     test "exact_length/1 validates the length of a list" do
       test_rule = exact_length(4)
 
-      assert test_rule.([1, 2, 3], []) == Error.new("Expected length of 4 (current: 3).", [])
+      assert test_rule.([1, 2, 3], []) ==
+               Error.new(
+                 {"Expected length of %{expected_length} (current: %{actual_length}).",
+                  [expected_length: 4, actual_length: 3]},
+                 []
+               )
+
       assert test_rule.([1, 2, 3, 4], []) == []
 
       assert test_rule.([1, 2, 3, 4, 5], []) ==
-               Error.new("Expected length of 4 (current: 5).", [])
+               Error.new(
+                 {"Expected length of %{expected_length} (current: %{actual_length}).",
+                  [expected_length: 4, actual_length: 5]},
+                 []
+               )
     end
 
     test "no_duplicates/0 detects duplicates in a list" do
       assert no_duplicate().([1, 5, 3, 2, 7], []) == []
 
       assert no_duplicate().([1, 5, 3, 5, 7, 3, 3], []) ==
-               Error.new("The list should not contain duplicates (duplicates found: [5, 3]).", [])
+               Error.new(
+                 {"The list should not contain duplicates (duplicates found: %{duplicates}).",
+                  [duplicates: "[5, 3]"]},
+                 []
+               )
     end
 
     test "match/1 validates string against a regex" do
@@ -162,7 +220,11 @@ defmodule Validator.RuleTest do
       assert test_rule.("helicopter", []) == []
 
       assert test_rule.("heyy", []) ==
-               Error.new("Value \"heyy\" does not match regex ~r/^hel/.", [])
+               Error.new(
+                 {"Value %{value} does not match regex %{regex}.",
+                  [value: "\"heyy\"", regex: "~r/^hel/"]},
+                 []
+               )
     end
 
     test "match/1 accepts a string for the regex" do
@@ -172,7 +234,11 @@ defmodule Validator.RuleTest do
       assert test_rule.("helicopter", []) == []
 
       assert test_rule.("heyy", []) ==
-               Error.new("Value \"heyy\" does not match regex ~r/^hel/.", [])
+               Error.new(
+                 {"Value %{value} does not match regex %{regex}.",
+                  [value: "\"heyy\"", regex: "~r/^hel/"]},
+                 []
+               )
     end
 
     test "min/1 detects when value is too low" do
@@ -180,7 +246,9 @@ defmodule Validator.RuleTest do
 
       assert test_rule.(15, []) == []
       assert test_rule.(10, []) == []
-      assert test_rule.(9, []) == Error.new("Must be greater than or equal to 10.", [])
+
+      assert test_rule.(9, []) ==
+               Error.new({"Must be greater than or equal to %{min_value}.", [min_value: 10]}, [])
     end
 
     test "max/1 detects when value is too high" do
@@ -188,17 +256,29 @@ defmodule Validator.RuleTest do
 
       assert test_rule.(5, []) == []
       assert test_rule.(10, []) == []
-      assert test_rule.(11, []) == Error.new("Must be less than or equal to 10.", [])
+
+      assert test_rule.(11, []) ==
+               Error.new({"Must be less than or equal to %{max_value}.", [max_value: 10]}, [])
     end
 
     test "between/2 detects when value is out of range" do
       test_rule = between(3, 6)
 
-      assert test_rule.(2, []) == Error.new("Must be between 3 and 6.", [])
+      assert test_rule.(2, []) ==
+               Error.new(
+                 {"Must be between %{min_value} and %{max_value}.", [min_value: 3, max_value: 6]},
+                 []
+               )
+
       assert test_rule.(3, []) == []
       assert test_rule.(5, []) == []
       assert test_rule.(6, []) == []
-      assert test_rule.(7, []) == Error.new("Must be between 3 and 6.", [])
+
+      assert test_rule.(7, []) ==
+               Error.new(
+                 {"Must be between %{min_value} and %{max_value}.", [min_value: 3, max_value: 6]},
+                 []
+               )
     end
 
     test "not_both/2 detects when a map contains both keys" do
@@ -209,18 +289,38 @@ defmodule Validator.RuleTest do
       assert test_rule.(%{"b" => 15}, []) == []
 
       assert test_rule.(%{"b" => 12, "a" => 9}, []) ==
-               Error.new("Fields a and b cannot both be defined.", [])
+               Error.new(
+                 {"Fields %{field1} and %{field2} cannot both be defined.",
+                  [field1: "a", field2: "b"]},
+                 []
+               )
     end
 
     test "arity/1 checks the arity of a function" do
       test_rule = arity(2)
 
-      assert test_rule.(fn -> 0 end, []) == Error.new("Expected arity of 2, found: 0.", [])
-      assert test_rule.(fn x -> x end, []) == Error.new("Expected arity of 2, found: 1.", [])
+      assert test_rule.(fn -> 0 end, []) ==
+               Error.new(
+                 {"Expected arity of %{expected_arity}, found: %{actual_arity}.",
+                  [expected_arity: 2, actual_arity: 0]},
+                 []
+               )
+
+      assert test_rule.(fn x -> x end, []) ==
+               Error.new(
+                 {"Expected arity of %{expected_arity}, found: %{actual_arity}.",
+                  [expected_arity: 2, actual_arity: 1]},
+                 []
+               )
+
       assert test_rule.(fn x, y -> x + y end, []) == []
 
       assert test_rule.(fn x, y, z -> x + y + z end, []) ==
-               Error.new("Expected arity of 2, found: 3.", [])
+               Error.new(
+                 {"Expected arity of %{expected_arity}, found: %{actual_arity}.",
+                  [expected_arity: 2, actual_arity: 3]},
+                 []
+               )
     end
   end
 end

@@ -276,10 +276,14 @@ To define a custom rule, you must use the `rule(predicate, error_message)` funct
 * `error_message` defines the error message when the predicate didn't pass, and
   can be either:
   * A string, which is returned as such.
-  * A function with one parameter (the value) and returning the error string.
+  * A `{template, opts}` tuple. The template is a string and opts is a keyword list.
+    The interpolated variables will be replaced using values in the keyword list. This
+    is not useful yet, but will be used for translation later.
+  * A function with one parameter (the value) and returning the error string or
+    template tuple.
   * A function with two parameters (the value and the context) and returning
-    the error string. The context is the list of field names (or indices for
-    lists) defining *where* the error is located.
+    the error string or template tuple. The context is the list of field names
+    (or indices for lists) defining *where* the error is located.
 
 Example:
 
@@ -287,7 +291,7 @@ Example:
 def max_length(n) do
   rule(
     fn value -> length(value) <= n end,
-    fn value -> "The length is #{length(value)}, but the maximum is #{n}" end
+    fn value -> {"The length is %{length}, but the maximum is %{max}", length: length(value), max: n} end
   )
 end
 ```
