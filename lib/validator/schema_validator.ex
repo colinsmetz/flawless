@@ -99,7 +99,20 @@ defmodule Validator.SchemaValidator do
   end
 
   defp checks_schema() do
-    list(function(arity: 2))
+    list(check_schema())
+  end
+
+  defp check_schema() do
+    fn
+      %_{} ->
+        structure(%Validator.Rule{
+          predicate: function(arity: 1),
+          message: value()
+        })
+
+      _else ->
+        function(arity: 1)
+    end
   end
 
   defp cast_from_schema() do
