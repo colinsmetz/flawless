@@ -103,10 +103,16 @@ defmodule Validator.SchemaValidator do
   end
 
   defp check_schema() do
-    structure(%Validator.Rule{
-      predicate: function(arity: 1),
-      message: value()
-    })
+    fn
+      %_{} ->
+        structure(%Validator.Rule{
+          predicate: function(arity: 1),
+          message: value()
+        })
+
+      _else ->
+        function(arity: 1)
+    end
   end
 
   defp cast_from_schema() do

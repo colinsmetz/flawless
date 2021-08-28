@@ -20,7 +20,7 @@ defmodule Validator.Rule do
     }
   end
 
-  @spec evaluate(Validator.Rule.t(), any, list()) :: [] | Validator.Error.t()
+  @spec evaluate(Validator.Rule.t() | function(), any, list()) :: [] | Validator.Error.t()
   def evaluate(%__MODULE__{predicate: predicate, message: error_message} = _rule, data, context) do
     cond do
       predicate.(data) -> []
@@ -34,11 +34,24 @@ defmodule Validator.Rule do
       error -> Validator.Error.new(error, context)
     end
   rescue
-    _ ->
-      Validator.Error.new(
-        "An exception was raised while evaluating a rule on that element, so it is likely incorrect.",
-        context
-      )
+    _ -> error_on_exception(context)
+  end
+
+  def evaluate(predicate, data, context) do
+    if predicate.(data) do
+      []
+    else
+      Validator.Error.new("The predicate failed.", context)
+    end
+  rescue
+    _ -> error_on_exception(context)
+  end
+
+  defp error_on_exception(context) do
+    Validator.Error.new(
+      "An exception was raised while evaluating a rule on that element, so it is likely incorrect.",
+      context
+    )
   end
 
   @spec one_of(list) :: t()

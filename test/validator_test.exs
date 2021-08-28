@@ -334,6 +334,11 @@ defmodule ValidatorTest do
                Error.new("Cannot be cast to number.", [])
              ]
     end
+
+    test "accepts basic functions as rules" do
+      assert validate(100, number(check: &(&1 > 0))) == []
+      assert validate(-4, number(check: &(&1 > 0))) == [Error.new("The predicate failed.", [])]
+    end
   end
 
   describe "lists" do
@@ -929,7 +934,9 @@ defmodule ValidatorTest do
 
       assert Validator.validate(value, schema) == [
                Error.new("Unexpected fields: [\"file_max_age_days\", \"options\"].", []),
-               Error.new("Missing required fields: \"struct\" (struct), \"truc\" (string).", ["bim"]),
+               Error.new("Missing required fields: \"struct\" (struct), \"truc\" (string).", [
+                 "bim"
+               ]),
                Error.new("Expected type: string, got: 28.", ["brands", 1]),
                Error.new("Field 'a' is a key but is not required", ["fields", 0]),
                Error.new("Unexpected fields: [\"tru\"].", ["fields", 1]),

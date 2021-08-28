@@ -65,6 +65,13 @@ defmodule Validator.RuleTest do
                  []
                )
     end
+
+    test "can evaluate a direct predicate function, with a generic error message" do
+      test_rule = fn x -> x > 0 end
+
+      assert evaluate(test_rule, 10, []) == []
+      assert evaluate(test_rule, -4, []) == Error.new("The predicate failed.", [])
+    end
   end
 
   describe "predefined rule" do
