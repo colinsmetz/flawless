@@ -58,11 +58,13 @@ defmodule Validator.SchemaValidatorTest do
     end
 
     test "it detects errors in invalid schemas" do
+      bad_check = fn -> 0 end
+
       schema = %{
         "name" => string(required: :maybe, cast_from: :nothing),
         "projects" => [string(), string()],
         "profile" => %{
-          "tags" => list(string(), checks: [fn -> 0 end])
+          "tags" => list(string(), checks: [bad_check])
         },
         "process" => self()
       }
@@ -74,7 +76,12 @@ defmodule Validator.SchemaValidatorTest do
                ),
                Error.new("Expected type: boolean, got: :maybe.", ["name", :required]),
                Error.new("Value does not match any of the possible schemas.", ["process"]),
-               Error.new("Expected arity of 2, found: 0.", ["profile", "tags", :checks, 0]),
+               Error.new("Expected type: struct, got: #{inspect(bad_check)}.", [
+                 "profile",
+                 "tags",
+                 :checks,
+                 0
+               ]),
                Error.new("Maximum length of 1 required (current: 2).", ["projects"])
              ]
     end

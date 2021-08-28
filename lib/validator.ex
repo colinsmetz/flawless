@@ -11,6 +11,7 @@ defmodule Validator do
   alias Validator.Error
   alias Validator.Helpers
   alias Validator.Types
+  alias Validator.Rule
 
   @type spec_type() ::
           Validator.ValueSpec.t()
@@ -232,7 +233,7 @@ defmodule Validator do
        when value_module == module do
     top_level_errors =
       spec.checks
-      |> Enum.map(fn check -> check.(struct, context) end)
+      |> Enum.map(&Rule.evaluate(&1, struct, context))
 
     sub_errors = validate_map(Map.from_struct(struct), Map.from_struct(schema), context)
 
@@ -261,7 +262,7 @@ defmodule Validator do
   defp validate_value(value, spec, context) do
     top_level_errors =
       spec.checks
-      |> Enum.map(fn check -> check.(value, context) end)
+      |> Enum.map(&Rule.evaluate(&1, value, context))
 
     sub_errors =
       case spec.schema do
@@ -279,7 +280,7 @@ defmodule Validator do
   defp validate_list(list, spec, context) when is_list(list) do
     top_level_errors =
       spec.checks
-      |> Enum.map(fn check -> check.(list, context) end)
+      |> Enum.map(&Rule.evaluate(&1, list, context))
 
     items_errors =
       list
@@ -304,7 +305,7 @@ defmodule Validator do
        when is_tuple(tuple) and tuple_size(tuple) == tuple_size(spec.elem_types) do
     top_level_errors =
       spec.checks
-      |> Enum.map(fn check -> check.(tuple, context) end)
+      |> Enum.map(&Rule.evaluate(&1, tuple, context))
 
     elem_errors =
       tuple

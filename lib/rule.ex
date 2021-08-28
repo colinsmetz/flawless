@@ -1,5 +1,5 @@
 defmodule Validator.Rule do
-  @type t() :: (any, list -> [] | Validator.Error.t())
+  defstruct predicate: nil, message: ""
 
   @type predicate() :: (any -> boolean())
   @type error_function() ::
@@ -7,29 +7,38 @@ defmodule Validator.Rule do
           | (any -> Validator.Error.t_message())
           | (any, list -> Validator.Error.t_message())
 
-  @spec rule(predicate(), error_function()) :: t()
+  @type t() :: %__MODULE__{
+          predicate: function(),
+          message: error_function()
+        }
+
+  @spec rule(predicate(), error_function()) :: Validator.Rule.t()
   def rule(predicate, error_message) do
-    fn value, context ->
-      try do
-        cond do
-          predicate.(value) -> []
-          is_binary(error_message) -> error_message
-          is_tuple(error_message) -> error_message
-          is_function(error_message, 1) -> error_message.(value)
-          is_function(error_message, 2) -> error_message.(value, context)
-        end
-        |> case do
-          [] -> []
-          error -> Validator.Error.new(error, context)
-        end
-      rescue
-        _ ->
-          Validator.Error.new(
-            "An exception was raised while evaluating a rule on that element, so it is likely incorrect.",
-            context
-          )
-      end
+    %__MODULE__{
+      predicate: predicate,
+      message: error_message
+    }
+  end
+
+  @spec evaluate(Validator.Rule.t(), any, list()) :: [] | Validator.Error.t()
+  def evaluate(%__MODULE__{predicate: predicate, message: error_message} = _rule, data, context) do
+    cond do
+      predicate.(data) -> []
+      is_binary(error_message) -> error_message
+      is_tuple(error_message) -> error_message
+      is_function(error_message, 1) -> error_message.(data)
+      is_function(error_message, 2) -> error_message.(data, context)
     end
+    |> case do
+      [] -> []
+      error -> Validator.Error.new(error, context)
+    end
+  rescue
+    _ ->
+      Validator.Error.new(
+        "An exception was raised while evaluating a rule on that element, so it is likely incorrect.",
+        context
+      )
   end
 
   @spec one_of(list) :: t()
