@@ -3,7 +3,7 @@ defmodule Validator.RuleTest do
   alias Validator.Error
   import Validator.Rule
 
-  describe "rule/2" do
+  describe "rule/2 and evaluate/3" do
     test "returns a valid rule with a simple string error" do
       test_rule =
         rule(
@@ -71,6 +71,24 @@ defmodule Validator.RuleTest do
 
       assert evaluate(test_rule, 10, []) == []
       assert evaluate(test_rule, -4, []) == Error.new("The predicate failed.", [])
+    end
+
+    test "can use :ok/:error functions as predicates" do
+      predicate = fn
+        x when x > 0 -> {:ok, x}
+        x when x == 0 -> :error
+        x when x < 0 -> {:error, "cannot be negative"}
+      end
+
+      test_rule = rule(predicate)
+
+      assert evaluate(test_rule, 10, []) == []
+      assert evaluate(test_rule, 0, []) == Error.new("The predicate failed.", [])
+      assert evaluate(test_rule, -10, []) == Error.new("cannot be negative", [])
+
+      assert evaluate(predicate, 10, []) == []
+      assert evaluate(predicate, 0, []) == Error.new("The predicate failed.", [])
+      assert evaluate(predicate, -10, []) == Error.new("cannot be negative", [])
     end
   end
 

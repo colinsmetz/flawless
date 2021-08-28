@@ -1,5 +1,5 @@
 defmodule Validator.Rule do
-  defstruct predicate: nil, message: ""
+  defstruct predicate: nil, message: nil
 
   @type predicate() :: (any -> boolean())
   @type error_function() ::
@@ -9,11 +9,11 @@ defmodule Validator.Rule do
 
   @type t() :: %__MODULE__{
           predicate: function(),
-          message: error_function()
+          message: error_function() | nil
         }
 
-  @spec rule(predicate(), error_function()) :: Validator.Rule.t()
-  def rule(predicate, error_message) do
+  @spec rule(predicate(), error_function() | nil) :: Validator.Rule.t()
+  def rule(predicate, error_message \\ nil) do
     %__MODULE__{
       predicate: predicate,
       message: error_message
@@ -22,29 +22,49 @@ defmodule Validator.Rule do
 
   @spec evaluate(Validator.Rule.t() | function(), any, list()) :: [] | Validator.Error.t()
   def evaluate(%__MODULE__{predicate: predicate, message: error_message} = _rule, data, context) do
-    cond do
-      predicate.(data) -> []
-      is_binary(error_message) -> error_message
-      is_tuple(error_message) -> error_message
-      is_function(error_message, 1) -> error_message.(data)
-      is_function(error_message, 2) -> error_message.(data, context)
-    end
-    |> case do
-      [] -> []
-      error -> Validator.Error.new(error, context)
+    do_evaluate(predicate, error_message, data, context)
+  end
+
+  def evaluate(predicate, data, context) do
+    do_evaluate(predicate, nil, data, context)
+  end
+
+  defp do_evaluate(predicate, error_message, data, context) do
+    case predicate_result(predicate, data) do
+      :ok ->
+        []
+
+      {:error, error} ->
+        Validator.Error.new(error, context)
+
+      :error ->
+        error_message
+        |> evaluate_error_message(data, context)
+        |> Validator.Error.new(context)
     end
   rescue
     _ -> error_on_exception(context)
   end
 
-  def evaluate(predicate, data, context) do
-    if predicate.(data) do
-      []
-    else
-      Validator.Error.new("The predicate failed.", context)
+  def predicate_result(predicate, data) do
+    case predicate.(data) do
+      true -> :ok
+      false -> :error
+      :ok -> :ok
+      :error -> :error
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, error}
     end
-  rescue
-    _ -> error_on_exception(context)
+  end
+
+  defp evaluate_error_message(error_message, data, context) do
+    cond do
+      is_nil(error_message) -> "The predicate failed."
+      is_binary(error_message) -> error_message
+      is_tuple(error_message) -> error_message
+      is_function(error_message, 1) -> error_message.(data)
+      is_function(error_message, 2) -> error_message.(data, context)
+    end
   end
 
   defp error_on_exception(context) do
