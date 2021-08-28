@@ -421,7 +421,7 @@ defmodule ValidatorTest do
       }
 
       assert validate(value, schema) == [
-               Error.new(~s(Missing required fields: ["age", "valid"].), [])
+               Error.new(~s/Missing required fields: "age" (number), "valid" (boolean)./, [])
              ]
     end
 
@@ -807,7 +807,7 @@ defmodule ValidatorTest do
 
       assert validate(%{}, schema) == [
                Error.new(
-                 "Missing required fields: [\"config\", \"coordinates\", \"products\"].",
+                 "Missing required fields: \"config\" (map), \"coordinates\" (tuple), \"products\" (list).",
                  []
                )
              ]
@@ -816,7 +816,7 @@ defmodule ValidatorTest do
                %{"config" => %{}, "products" => [100], "coordinates" => {1.0, 2.0}},
                schema
              ) == [
-               Error.new("Missing required fields: [\"min\"].", ["config"]),
+               Error.new("Missing required fields: \"min\" (number).", ["config"]),
                Error.new("Invalid tuple size (expected: 3, received: 2).", ["coordinates"]),
                Error.new("Expected type: map, got: 100.", ["products", 0])
              ]
@@ -929,11 +929,11 @@ defmodule ValidatorTest do
 
       assert Validator.validate(value, schema) == [
                Error.new("Unexpected fields: [\"file_max_age_days\", \"options\"].", []),
-               Error.new("Missing required fields: [\"struct\", \"truc\"].", ["bim"]),
+               Error.new("Missing required fields: \"struct\" (struct), \"truc\" (string).", ["bim"]),
                Error.new("Expected type: string, got: 28.", ["brands", 1]),
                Error.new("Field 'a' is a key but is not required", ["fields", 0]),
                Error.new("Unexpected fields: [\"tru\"].", ["fields", 1]),
-               Error.new("Missing required fields: [\"id\"].", ["fields", 1, "meta"]),
+               Error.new("Missing required fields: \"id\" (any).", ["fields", 1, "meta"]),
                Error.new("Invalid value: \"yml\". Valid options: [\"csv\", \"xml\"]", ["format"]),
                Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"].", ["polling"]),
                Error.new("Slice size must be longer than 100", ["polling", "slice_size"]),
@@ -1014,7 +1014,7 @@ defmodule ValidatorTest do
       }
 
       assert validate(%{a: %{c: "d"}}, schema) == [
-               Error.new("Missing required fields: [:b].", [:a]),
+               Error.new("Missing required fields: :b (number).", [:a]),
                Error.new("Expected type: number, got: \"d\".", [:a, :c])
              ]
 

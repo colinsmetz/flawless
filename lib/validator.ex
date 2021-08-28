@@ -17,8 +17,14 @@ defmodule Validator do
           Validator.ValueSpec.t()
           | Validator.ListSpec.t()
           | Validator.TupleSpec.t()
+          | Validator.StructSpec.t()
+          | Validator.LiteralSpec.t()
           | map()
           | list()
+          | tuple()
+          | atom()
+          | number()
+          | binary()
 
   defmodule ValueSpec do
     @moduledoc """
@@ -397,11 +403,31 @@ defmodule Validator do
       [
         Error.new(
           {"Missing required fields: %{missing_fields}.",
-           missing_fields: inspect(missing_fields)},
+           missing_fields: show_fields_with_type(schema, missing_fields)},
           context
         )
       ]
     end
+  end
+
+  defp show_fields_with_type(schema, fields) do
+    fields
+    |> Enum.map(fn field ->
+      type =
+        schema
+        |> Map.get(field)
+        |> case do
+          %module{type: type}
+          when module in [ValueSpec, ListSpec, TupleSpec, StructSpec, LiteralSpec] ->
+            type
+
+          value ->
+            Types.type_of(value)
+        end
+
+      "#{inspect(field)} (#{type})"
+    end)
+    |> Enum.join(", ")
   end
 
   defp required_field?(field) when is_list(field), do: false
