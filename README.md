@@ -378,6 +378,23 @@ Now our value would match the schema, while the schema remains precise.
 
 Note that any additional check will be performed on the *converted* value.
 
+#### Use a custom converter
+
+If the built-in conversions do not match your need, you can provide a custom converter.
+It should return `{:ok, converted_value}` on success, and `:error` or `{:error, _}` otherwise.
+
+Example:
+
+```elixir
+schema = map(
+  %{"value" => number()},
+  cast_from: {:string, with: &Jason.decode/2}
+)
+
+validate(~s({"value": 17}), schema)
+# OK
+```
+
 ### Recursive data structures
 
 For recursive data structures, you can use 0-arity functions that return a

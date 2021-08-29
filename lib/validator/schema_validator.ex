@@ -117,7 +117,8 @@ defmodule Validator.SchemaValidator do
 
   defp cast_from_schema() do
     fn
-      l when is_list(l) -> list(type_schema())
+      l when is_list(l) -> list(&cast_from_schema/0)
+      {_type, [with: _converter]} -> {type_schema(), list({:with, function()}, length: 1)}
       _ -> type_schema()
     end
   end

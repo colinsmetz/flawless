@@ -184,13 +184,28 @@ defmodule Validator do
     possible_casts =
       cast_from
       |> List.wrap()
-      |> Enum.filter(&Types.has_type?(value, &1))
+      |> Enum.filter(fn
+        {type, with: _converter} -> Types.has_type?(value, type)
+        type when is_atom(type) -> Types.has_type?(value, type)
+      end)
 
     cond do
-      Types.has_type?(value, type) -> {:ok, value}
-      possible_casts != [] -> Types.cast(value, List.first(possible_casts), type)
-      spec_module != LiteralSpec -> {:error, "Expected type: #{type}, got: #{inspect(value)}."}
-      true -> {:ok, value}
+      Types.has_type?(value, type) ->
+        {:ok, value}
+
+      possible_casts != [] ->
+        possible_casts
+        |> List.first()
+        |> case do
+          {from, with: converter} -> Types.cast_with(value, from, converter)
+          from when is_atom(from) -> Types.cast(value, from, type)
+        end
+
+      spec_module != LiteralSpec ->
+        {:error, "Expected type: #{type}, got: #{inspect(value)}."}
+
+      true ->
+        {:ok, value}
     end
   end
 

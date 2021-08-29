@@ -770,6 +770,21 @@ defmodule ValidatorTest do
       assert validate("100", schema) == []
       assert validate("101", schema) == [Error.new("Expected literal value 100, got: 101.", [])]
     end
+
+    test "can be used with custom converter" do
+      from_hexadecimal = fn hexa ->
+        case Integer.parse(hexa, 16) do
+          {val, _} -> {:ok, val}
+          :error -> :error
+        end
+      end
+
+      schema = number(cast_from: {:string, with: from_hexadecimal})
+
+      assert validate(10, schema) == []
+      assert validate("6A23D", schema) == []
+      assert validate("hey", schema) == [Error.new("Cannot be cast to string.", [])]
+    end
   end
 
   describe "defvalidator macro" do

@@ -66,9 +66,15 @@ defmodule Validator.Types do
 
   @spec cast(any, t(), t()) :: {:ok, any} | {:error, String.t()}
   def cast(value, from, to) do
-    case do_cast(value, from, to) do
+    cast_with(value, to, &do_cast(&1, from, to))
+  end
+
+  @spec cast_with(any, t(), (any -> any)) :: {:error, String.t()} | {:ok, any}
+  def cast_with(value, output_type, converter) do
+    case converter.(value) do
       {:ok, value} -> {:ok, value}
-      :error -> {:error, "Cannot be cast to #{to}."}
+      :error -> {:error, "Cannot be cast to #{output_type}."}
+      {:error, _} -> {:error, "Cannot be cast to #{output_type}."}
     end
   end
 
