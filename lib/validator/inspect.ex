@@ -122,3 +122,11 @@ defimpl Inspect, for: Validator.AnyOtherKey do
     "any_key()"
   end
 end
+
+defimpl Inspect, for: Validator.OptionalKey do
+  alias Validator.OptionalKey
+
+  def inspect(%OptionalKey{key: key}, _opts) do
+    "maybe(#{inspect(key)})"
+  end
+end

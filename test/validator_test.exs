@@ -413,11 +413,11 @@ defmodule ValidatorTest do
 
     test "detect missing required fields" do
       schema = %{
-        "name" => req_string(),
-        "age" => req_number(),
-        "address" => string(),
-        "score" => req_number(),
-        "valid" => req_boolean()
+        "name" => string(),
+        "age" => number(),
+        "score" => number(),
+        "valid" => boolean(),
+        maybe("address") => string()
       }
 
       value = %{
@@ -432,8 +432,8 @@ defmodule ValidatorTest do
 
     test "detect unexpected fields" do
       schema = %{
-        "x" => req_number(),
-        "y" => req_number()
+        "x" => number(),
+        "y" => number()
       }
 
       value = %{
@@ -455,8 +455,8 @@ defmodule ValidatorTest do
       schema =
         map(
           %{
-            "x" => req_number(checks: field_checks),
-            "y" => req_number(checks: field_checks)
+            "x" => number(checks: field_checks),
+            "y" => number(checks: field_checks)
           },
           checks: map_checks
         )
@@ -491,8 +491,8 @@ defmodule ValidatorTest do
 
     test "cannot validate structs" do
       schema = %{
-        a: req_number(),
-        b: req_number()
+        a: number(),
+        b: number()
       }
 
       assert validate(%TestModule{a: 1, b: 2}, schema) == [
@@ -810,19 +810,19 @@ defmodule ValidatorTest do
     test "it validates map, list and tuple fields" do
       schema = %{
         "config" =>
-          req_map(%{
-            "min" => req_number(),
-            "max" => number()
+          map(%{
+            "min" => number(),
+            maybe("max") => number()
           }),
-        "config_override" => %{},
+        maybe("config_override") => %{},
         "products" =>
-          req_list(%{
-            "product_id" => req_string(),
-            "price" => req_number()
+          list(%{
+            "product_id" => string(),
+            "price" => number()
           }),
-        "related_ids" => [string()],
-        "coordinates" => req_tuple({float(), float(), float()}),
-        "status" => {atom(), number()}
+        maybe("related_ids") => [string()],
+        "coordinates" => tuple({float(), float(), float()}),
+        maybe("status") => {atom(), number()}
       }
 
       assert validate(%{}, schema) == [
@@ -887,15 +887,15 @@ defmodule ValidatorTest do
 
     test "it validates very complex schema" do
       schema = %{
-        "format" => req_string(checks: [one_of(["csv", "xml"])]),
-        "regex" => req_string(),
-        "bim" => %{
-          "truc" => req_string(),
-          "struct" => req_structure(%M{x: number()})
+        "format" => string(checks: [one_of(["csv", "xml"])]),
+        "regex" => string(),
+        maybe("bim") => %{
+          "truc" => string(),
+          "struct" => structure(%M{x: number()})
         },
-        "polling" =>
+        maybe("polling") =>
           map(%{
-            "slice_size" =>
+            maybe("slice_size") =>
               value(
                 checks: [
                   rule(&(String.length(&1) > 100), "Slice size must be longer than 100")
@@ -906,24 +906,24 @@ defmodule ValidatorTest do
           list(
             map(
               %{
-                "name" => req_string(),
-                "type" => req_string(),
-                "is_key" => boolean(),
-                "is_required" => boolean(),
-                "meta" =>
+                "name" => string(),
+                "type" => string(),
+                maybe("is_key") => boolean(),
+                maybe("is_required") => boolean(),
+                maybe("meta") =>
                   map(%{
-                    "id" => req_value()
+                    "id" => value()
                   })
               },
               checks: [required_if_is_key()]
             ),
             checks: [rule(&(length(&1) > 0), "Fields must contain at least one item")]
           ),
-        "brands" => [string()],
-        "status" => req_atom(checks: [one_of([:ok, :error])]),
+        maybe("brands") => [string()],
+        "status" => atom(checks: [one_of([:ok, :error])]),
         "tuple_of_things" => {
           [string()],
-          %{"a" => string()}
+          %{maybe("a") => string()}
         }
       }
 
@@ -953,12 +953,12 @@ defmodule ValidatorTest do
                  "bim"
                ]),
                Error.new("Expected type: string, got: 28.", ["brands", 1]),
+               Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"].", ["polling"]),
+               Error.new("Slice size must be longer than 100", ["polling", "slice_size"]),
                Error.new("Field 'a' is a key but is not required", ["fields", 0]),
                Error.new("Unexpected fields: [\"tru\"].", ["fields", 1]),
                Error.new("Missing required fields: \"id\" (any).", ["fields", 1, "meta"]),
                Error.new("Invalid value: \"yml\". Valid options: [\"csv\", \"xml\"]", ["format"]),
-               Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"].", ["polling"]),
-               Error.new("Slice size must be longer than 100", ["polling", "slice_size"]),
                Error.new("Expected type: string, got: 9.", ["tuple_of_things", 0, 2])
              ]
     end
@@ -970,9 +970,9 @@ defmodule ValidatorTest do
 
     def tree_schema() do
       %{
-        value: number(max: 100),
-        left: &tree_schema/0,
-        right: &tree_schema/0
+        :value => number(max: 100),
+        maybe(:left) => &tree_schema/0,
+        maybe(:right) => &tree_schema/0
       }
     end
 

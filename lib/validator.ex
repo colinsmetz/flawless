@@ -118,6 +118,14 @@ defmodule Validator do
     @type t() :: %__MODULE__{}
   end
 
+  defmodule OptionalKey do
+    defstruct key: nil
+
+    @type t() :: %__MODULE__{
+            key: any()
+          }
+  end
+
   defmacro defvalidator(do: body) do
     quote do
       import Validator
@@ -222,6 +230,9 @@ defmodule Validator do
         {%AnyOtherKey{}, field} ->
           unexpected_fields(map, schema)
           |> Enum.map(&validate_map_field(map, &1, field, context))
+
+        {%OptionalKey{key: field_name}, field} ->
+          validate_map_field(map, field_name, field, context)
 
         {field_name, field} ->
           validate_map_field(map, field_name, field, context)
@@ -384,7 +395,15 @@ defmodule Validator do
   end
 
   defp unexpected_fields(map, schema) do
-    Map.keys(map) -- Map.keys(schema)
+    keys_from_schema =
+      schema
+      |> Map.keys()
+      |> Enum.map(fn
+        %OptionalKey{key: key} -> key
+        key -> key
+      end)
+
+    Map.keys(map) -- keys_from_schema
   end
 
   defp unexpected_fields_error(_map, %{%AnyOtherKey{} => _}, _context), do: []
@@ -405,12 +424,20 @@ defmodule Validator do
     end
   end
 
+  defp missing_fields(map, schema) do
+    schema
+    |> Enum.reject(fn {key, _} ->
+      match?(%OptionalKey{}, key) or match?(%AnyOtherKey{}, key)
+    end)
+    |> Enum.filter(fn {field_name, _field} ->
+      not (map |> Map.has_key?(field_name))
+      # map |> Map.get(field_name) |> is_nil() # and required_field?(field)
+    end)
+    |> Enum.map(fn {field_name, _} -> field_name end)
+  end
+
   defp missing_fields_error(map, schema, context) do
-    missing_fields =
-      for {field_name, field} <- schema,
-          is_nil(map |> Map.get(field_name)) and required_field?(field) do
-        field_name
-      end
+    missing_fields = missing_fields(map, schema)
 
     if missing_fields == [] do
       []

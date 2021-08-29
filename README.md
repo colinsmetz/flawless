@@ -145,6 +145,19 @@ function can be entirely ignored:
 }
 ```
 
+#### Optional fields
+
+By default, all keys defined in the maps are required. If you wish to define
+optional keys, use the `maybe` helper around the optional key name:
+
+```elixir
+%{
+  "name" => string(),
+  "age" => number(),
+  maybe("phone_number") => string(format: ~r/[0-9]+/)
+}
+```
+
 #### Accept non-defined fields
 
 By default, if the input map contains keys that were not defined in the schema,
@@ -465,8 +478,3 @@ actually defined using this library, and that schema validates itself.
 By default, validating a value against a schema will validate the schema first.
 If you wish to disable that behaviour (in particular if you can the function
 many times with the same schema), set the `check_schema` option to false.
-
-## Improvements
-
-* A field with a `nil` value is considered as present (the `required` constraint
-  will pass), should it?

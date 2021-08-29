@@ -1,5 +1,14 @@
 defmodule Validator.Helpers do
-  alias Validator.{ListSpec, ValueSpec, TupleSpec, AnyOtherKey, LiteralSpec, StructSpec}
+  alias Validator.{
+    ListSpec,
+    ValueSpec,
+    TupleSpec,
+    AnyOtherKey,
+    LiteralSpec,
+    StructSpec,
+    OptionalKey
+  }
+
   alias Validator.Rule
   alias Validator.Types
 
@@ -114,6 +123,8 @@ defmodule Validator.Helpers do
   def req_port(opts \\ []), do: required(&port/1, opts)
 
   def any_key(), do: %AnyOtherKey{}
+
+  def maybe(key), do: %OptionalKey{key: key}
 
   #######################
   #   BUILT-IN CHECKS   #
