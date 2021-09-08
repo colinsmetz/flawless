@@ -787,6 +787,56 @@ defmodule ValidatorTest do
     end
   end
 
+  describe "nullable option" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "a nil value is never accepted when nil is false, even it matches the type" do
+      assert validate(nil, literal(nil, nil: false)) == [Error.new("Value cannot be nil.", [])]
+      assert validate(nil, string(nil: false)) == [Error.new("Value cannot be nil.", [])]
+      assert validate(nil, atom(nil: false)) == [Error.new("Value cannot be nil.", [])]
+
+      assert validate(nil, value(in: [nil], nil: false)) == [
+               Error.new("Value cannot be nil.", [])
+             ]
+
+      assert validate(nil, map(%{}, nil: false)) == [Error.new("Value cannot be nil.", [])]
+
+      assert validate(%{"a" => nil, "b" => nil}, %{
+               "a" => atom(nil: false),
+               maybe("b") => string(nil: false)
+             }) == [
+               Error.new("Value cannot be nil.", ["b"]),
+               Error.new("Value cannot be nil.", ["a"])
+             ]
+
+      assert validate(nil, tuple({atom()}, nil: false)) == [Error.new("Value cannot be nil.", [])]
+    end
+
+    test "a nil value is always accepted when nil is true, whatever the type" do
+      assert validate(nil, literal(15, nil: true)) == []
+      assert validate(nil, string(nil: true)) == []
+      assert validate(nil, atom(nil: true)) == []
+      assert validate(nil, tuple({string(), string()}, nil: true)) == []
+      assert validate(%{"a" => nil}, %{"a" => port(nil: true)}) == []
+    end
+
+    test "a nil value is accepted if it matches the type and the option was not specified" do
+      assert validate(nil, nil) == []
+      assert validate(nil, literal(nil)) == []
+      assert validate(nil, atom()) == []
+      assert validate(nil, value()) == []
+    end
+
+    test "a nil value is not accepted for required fields in a map, when nothing was specified" do
+      assert validate(%{"a" => nil}, %{"a" => string()}) == [Error.new("Expected type: string, got: nil.", ["a"])]
+    end
+
+    test "a nil value is accepted for optional fields in a map, when nothing was specified" do
+      assert validate(%{"a" => nil}, %{maybe("a") => string()}) == []
+    end
+  end
+
   describe "defvalidator macro" do
     test "can be used to avoid importing globally all the helpers" do
       schema =
@@ -924,7 +974,8 @@ defmodule ValidatorTest do
         "tuple_of_things" => {
           [string()],
           %{maybe("a") => string()}
-        }
+        },
+        maybe("test") => string(nil: false)
       }
 
       value = %{
@@ -944,7 +995,8 @@ defmodule ValidatorTest do
         "file_max_age_days" => "67",
         "brands" => ["hey", 28],
         "status" => :ok,
-        "tuple_of_things" => {["x", "y", 9, "z"], %{}}
+        "tuple_of_things" => {["x", "y", 9, "z"], %{}},
+        "test" => nil
       }
 
       assert Validator.validate(value, schema) == [
@@ -955,6 +1007,7 @@ defmodule ValidatorTest do
                Error.new("Expected type: string, got: 28.", ["brands", 1]),
                Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"].", ["polling"]),
                Error.new("Slice size must be longer than 100", ["polling", "slice_size"]),
+               Error.new("Value cannot be nil.", ["test"]),
                Error.new("Field 'a' is a key but is not required", ["fields", 0]),
                Error.new("Unexpected fields: [\"tru\"].", ["fields", 1]),
                Error.new("Missing required fields: \"id\" (any).", ["fields", 1, "meta"]),

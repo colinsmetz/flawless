@@ -30,7 +30,8 @@ defmodule Validator.SchemaValidator do
         _ -> map_schema()
       end,
       type: type_schema(),
-      cast_from: cast_from_schema()
+      cast_from: cast_from_schema(),
+      nil: nil_schema()
     })
   end
 
@@ -41,7 +42,8 @@ defmodule Validator.SchemaValidator do
       module: atom(),
       schema: struct_schema(module),
       type: type_schema(),
-      cast_from: cast_from_schema()
+      cast_from: cast_from_schema(),
+      nil: nil_schema()
     })
   end
 
@@ -51,7 +53,8 @@ defmodule Validator.SchemaValidator do
       checks: checks_schema(),
       item_type: &schema_schema/0,
       type: :list,
-      cast_from: cast_from_schema()
+      cast_from: cast_from_schema(),
+      nil: nil_schema()
     })
   end
 
@@ -61,7 +64,8 @@ defmodule Validator.SchemaValidator do
       checks: checks_schema(),
       elem_types: list(&schema_schema/0, cast_from: :tuple),
       type: :tuple,
-      cast_from: cast_from_schema()
+      cast_from: cast_from_schema(),
+      nil: nil_schema()
     })
   end
 
@@ -71,7 +75,8 @@ defmodule Validator.SchemaValidator do
       required: boolean(),
       checks: checks_schema(),
       type: type_schema(),
-      cast_from: cast_from_schema()
+      cast_from: cast_from_schema(),
+      nil: nil_schema()
     })
   end
 
@@ -121,5 +126,9 @@ defmodule Validator.SchemaValidator do
       {_type, [with: _converter]} -> {type_schema(), list({:with, function()}, length: 1)}
       _ -> type_schema()
     end
+  end
+
+  defp nil_schema() do
+    atom(in: [:default, true, false])
   end
 end

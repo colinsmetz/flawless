@@ -32,14 +32,15 @@ defmodule Validator do
 
     The `schema` field is used when the value is a map, and is `nil` otherwise.
     """
-    defstruct required: false, checks: [], schema: nil, type: :any, cast_from: []
+    defstruct required: false, checks: [], schema: nil, type: :any, cast_from: [], nil: :default
 
     @type t() :: %__MODULE__{
             required: boolean(),
             checks: list(Validator.Rule.t()),
             schema: map() | nil,
             type: atom(),
-            cast_from: list(atom()) | atom()
+            cast_from: list(atom()) | atom(),
+            nil: :default | true | false
           }
   end
 
@@ -47,7 +48,13 @@ defmodule Validator do
     @moduledoc """
     Represents a struct.
     """
-    defstruct required: false, checks: [], schema: nil, module: nil, type: :any, cast_from: []
+    defstruct required: false,
+              checks: [],
+              schema: nil,
+              module: nil,
+              type: :any,
+              cast_from: [],
+              nil: :default
 
     @type t() :: %__MODULE__{
             required: boolean(),
@@ -55,7 +62,8 @@ defmodule Validator do
             schema: map() | nil,
             module: atom(),
             type: atom(),
-            cast_from: list(atom()) | atom()
+            cast_from: list(atom()) | atom(),
+            nil: :default | true | false
           }
   end
 
@@ -65,14 +73,20 @@ defmodule Validator do
 
     Each element must conform to the `item_type` definition.
     """
-    defstruct required: false, checks: [], item_type: nil, type: :list, cast_from: []
+    defstruct required: false,
+              checks: [],
+              item_type: nil,
+              type: :list,
+              cast_from: [],
+              nil: :default
 
     @type t() :: %__MODULE__{
             required: boolean(),
             checks: list(Validator.Rule.t()),
             item_type: Validator.spec_type(),
             type: atom(),
-            cast_from: list(atom()) | atom()
+            cast_from: list(atom()) | atom(),
+            nil: :default | true | false
           }
   end
 
@@ -83,14 +97,20 @@ defmodule Validator do
     Matching values are expected to be a tuple with the same
     size as elem_types, and matching the rule for each element.
     """
-    defstruct required: false, checks: [], elem_types: nil, type: :tuple, cast_from: []
+    defstruct required: false,
+              checks: [],
+              elem_types: nil,
+              type: :tuple,
+              cast_from: [],
+              nil: :default
 
     @type t() :: %__MODULE__{
             required: boolean(),
             checks: list(Validator.Rule.t()),
             elem_types: {Validator.spec_type()},
             type: atom(),
-            cast_from: list(atom()) | atom()
+            cast_from: list(atom()) | atom(),
+            nil: :default | true | false
           }
   end
 
@@ -101,14 +121,15 @@ defmodule Validator do
     Matching values are expected to be strictly equal to the value.
     """
 
-    defstruct value: nil, required: false, checks: [], type: :any, cast_from: []
+    defstruct value: nil, required: false, checks: [], type: :any, cast_from: [], nil: :default
 
     @type t() :: %__MODULE__{
             value: any(),
             required: boolean(),
             checks: list(Validator.Rule.t()),
             type: atom(),
-            cast_from: list(atom()) | atom()
+            cast_from: list(atom()) | atom(),
+            nil: :default | true | false
           }
   end
 
@@ -124,6 +145,19 @@ defmodule Validator do
     @type t() :: %__MODULE__{
             key: any()
           }
+  end
+
+  defmodule Context do
+    defstruct path: [], is_optional_field: false
+
+    @type t() :: %__MODULE__{
+            path: list(String.t()),
+            is_optional_field: boolean()
+          }
+
+    def add_to_path(context, path_element) do
+      %Context{context | path: context.path ++ [path_element]}
+    end
   end
 
   defmacro defvalidator(do: body) do
@@ -157,11 +191,33 @@ defmodule Validator do
     |> Error.evaluate_messages()
   end
 
-  defp do_validate(value, schema, context \\ []) do
-    case check_type_and_cast_if_needed(value, schema, context) do
-      {:ok, cast_value} -> dispatch_validation(cast_value, schema, context)
-      {:error, error} -> [Error.new(error, context)]
+  defp do_validate(value, schema, context \\ %Context{}) do
+    errors =
+      case check_type_and_cast_if_needed(value, schema, context) do
+        {:ok, cast_value} ->
+          dispatch_validation(cast_value, schema, %{context | is_optional_field: false})
+
+        {:error, error} ->
+          [Error.new(error, context)]
+      end
+
+    case {value, nil_opt(schema), errors} do
+      {nil, true, _} -> []
+      {nil, false, _} -> [Error.new("Value cannot be nil.", context)]
+      {nil, :default, []} -> []
+      {nil, :default, _errors} when context.is_optional_field -> []
+      {nil, :default, errors} -> errors
+      _ -> errors
     end
+  end
+
+  defp nil_opt(%module{nil: nil_opt})
+       when module in [ValueSpec, StructSpec, ListSpec, TupleSpec, LiteralSpec] do
+    nil_opt
+  end
+
+  defp nil_opt(_schema) do
+    :default
   end
 
   defp dispatch_validation(value, schema, context) do
@@ -232,7 +288,7 @@ defmodule Validator do
           |> Enum.map(&validate_map_field(map, &1, field, context))
 
         {%OptionalKey{key: field_name}, field} ->
-          validate_map_field(map, field_name, field, context)
+          validate_map_field(map, field_name, field, %{context | is_optional_field: true})
 
         {field_name, field} ->
           validate_map_field(map, field_name, field, context)
@@ -253,7 +309,7 @@ defmodule Validator do
   defp validate_map_field(map, field_name, field_schema, context) do
     case Map.fetch(map, field_name) do
       :error -> []
-      {:ok, value} -> do_validate(value, field_schema, context ++ [field_name])
+      {:ok, value} -> do_validate(value, field_schema, context |> Context.add_to_path(field_name))
     end
   end
 
@@ -318,7 +374,7 @@ defmodule Validator do
       list
       |> Enum.with_index()
       |> Enum.map(fn {value, index} ->
-        do_validate(value, spec.item_type, context ++ [index])
+        do_validate(value, spec.item_type, context |> Context.add_to_path(index))
       end)
       |> List.flatten()
 
@@ -345,7 +401,7 @@ defmodule Validator do
       |> Enum.zip(Tuple.to_list(spec.elem_types))
       |> Enum.with_index()
       |> Enum.map(fn {{value, elem_type}, index} ->
-        do_validate(value, elem_type, context ++ [index])
+        do_validate(value, elem_type, context |> Context.add_to_path(index))
       end)
       |> List.flatten()
 
@@ -471,10 +527,4 @@ defmodule Validator do
     end)
     |> Enum.join(", ")
   end
-
-  defp required_field?(field) when is_list(field), do: false
-  defp required_field?(field) when is_tuple(field), do: false
-  defp required_field?(field) when is_map(field), do: field |> Map.get(:required, false)
-  defp required_field?(field) when is_function(field), do: false
-  defp required_field?(_field), do: false
 end

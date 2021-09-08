@@ -37,7 +37,8 @@ defmodule Validator.Helpers do
       checks: extract_checks(opts, type),
       schema: opts |> Keyword.get(:schema, nil),
       type: type,
-      cast_from: opts |> Keyword.get(:cast_from, [])
+      cast_from: opts |> Keyword.get(:cast_from, []),
+      nil: opts |> Keyword.get(nil, :default)
     }
   end
 
@@ -46,7 +47,8 @@ defmodule Validator.Helpers do
       required: opts |> Keyword.get(:required, false),
       checks: extract_checks(opts, :list),
       item_type: item_type,
-      cast_from: opts |> Keyword.get(:cast_from, [])
+      cast_from: opts |> Keyword.get(:cast_from, []),
+      nil: opts |> Keyword.get(nil, :default)
     }
   end
 
@@ -55,7 +57,8 @@ defmodule Validator.Helpers do
       required: opts |> Keyword.get(:required, false),
       checks: extract_checks(opts, :tuple),
       elem_types: elem_types,
-      cast_from: opts |> Keyword.get(:cast_from, [])
+      cast_from: opts |> Keyword.get(:cast_from, []),
+      nil: opts |> Keyword.get(nil, :default)
     }
   end
 
@@ -73,7 +76,8 @@ defmodule Validator.Helpers do
       checks: extract_checks(opts, :struct),
       schema: schema,
       type: :struct,
-      cast_from: opts |> Keyword.get(:cast_from, [])
+      cast_from: opts |> Keyword.get(:cast_from, []),
+      nil: opts |> Keyword.get(nil, :default)
     }
   end
 
@@ -82,7 +86,8 @@ defmodule Validator.Helpers do
       value: value,
       required: opts |> Keyword.get(:required, false),
       cast_from: opts |> Keyword.get(:cast_from, []),
-      type: Types.type_of(value)
+      type: Types.type_of(value),
+      nil: opts |> Keyword.get(nil, :default)
     }
   end
 
