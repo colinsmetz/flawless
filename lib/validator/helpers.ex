@@ -1,16 +1,8 @@
 defmodule Validator.Helpers do
-  alias Validator.{
-    ListSpec,
-    ValueSpec,
-    TupleSpec,
-    AnyOtherKey,
-    LiteralSpec,
-    StructSpec,
-    OptionalKey
-  }
-
   alias Validator.Rule
   alias Validator.Types
+  alias Validator.Spec
+  alias Validator.{AnyOtherKey, OptionalKey}
 
   defp value_with_type(type, opts) do
     opts
@@ -25,34 +17,31 @@ defmodule Validator.Helpers do
     |> Enum.concat(built_in_checks(opts, type))
   end
 
+  defp build_spec(subspec, type, opts) do
+    %Spec{
+      checks: extract_checks(opts, type),
+      type: type,
+      cast_from: opts |> Keyword.get(:cast_from, []),
+      nil: opts |> Keyword.get(nil, :default),
+      for: subspec
+    }
+  end
+
   def value(opts \\ []) do
     type = opts |> Keyword.get(:type, :any)
 
-    %ValueSpec{
-      checks: extract_checks(opts, type),
-      schema: opts |> Keyword.get(:schema, nil),
-      type: type,
-      cast_from: opts |> Keyword.get(:cast_from, []),
-      nil: opts |> Keyword.get(nil, :default)
-    }
+    %Spec.Value{schema: opts |> Keyword.get(:schema, nil)}
+    |> build_spec(type, opts)
   end
 
   def list(item_type, opts \\ []) do
-    %ListSpec{
-      checks: extract_checks(opts, :list),
-      item_type: item_type,
-      cast_from: opts |> Keyword.get(:cast_from, []),
-      nil: opts |> Keyword.get(nil, :default)
-    }
+    %Spec.List{item_type: item_type}
+    |> build_spec(:list, opts)
   end
 
   def tuple(elem_types, opts \\ []) do
-    %TupleSpec{
-      checks: extract_checks(opts, :tuple),
-      elem_types: elem_types,
-      cast_from: opts |> Keyword.get(:cast_from, []),
-      nil: opts |> Keyword.get(nil, :default)
-    }
+    %Spec.Tuple{elem_types: elem_types}
+    |> build_spec(:tuple, opts)
   end
 
   def map(schema, opts \\ []) do
@@ -63,23 +52,15 @@ defmodule Validator.Helpers do
   end
 
   def structure(%module{} = schema, opts \\ []) do
-    %StructSpec{
-      module: module,
-      checks: extract_checks(opts, :struct),
-      schema: schema,
-      type: :struct,
-      cast_from: opts |> Keyword.get(:cast_from, []),
-      nil: opts |> Keyword.get(nil, :default)
-    }
+    %Spec.Struct{module: module, schema: schema}
+    |> build_spec(:struct, opts)
   end
 
   def literal(value, opts \\ []) do
-    %LiteralSpec{
-      value: value,
-      cast_from: opts |> Keyword.get(:cast_from, []),
-      type: Types.type_of(value),
-      nil: opts |> Keyword.get(nil, :default)
-    }
+    type = Types.type_of(value)
+
+    %Spec.Literal{value: value}
+    |> build_spec(type, opts)
   end
 
   def integer(opts \\ []), do: value_with_type(:integer, opts)

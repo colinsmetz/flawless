@@ -3,6 +3,10 @@ defmodule Validator.InspectTest do
   import Validator.Helpers
   import Validator.Rule
 
+  defmodule ForTest do
+    defstruct x: nil, y: nil
+  end
+
   test "can inspect complex schemas" do
     schema = %{
       "a" => number(),
@@ -12,6 +16,7 @@ defmodule Validator.InspectTest do
       "e" => list(string(), non_empty: true, no_duplicate: true),
       "f" => tuple({number(), atom()}),
       "g" => map(%{z: pid()}),
+      "h" => structure(%ForTest{x: string(), y: function()}),
       maybe("h") => atom(),
       any_key() => string()
     }
@@ -26,7 +31,8 @@ defmodule Validator.InspectTest do
              "d" => literal(19),
              "e" => list(string(), checks: #2),
              "f" => tuple({number(), atom()}),
-             "g" => map(%{z: pid()})
+             "g" => map(%{z: pid()}),
+             "h" => struct(%Validator.InspectTest.ForTest{x: string(), y: function()})
            }
            """
   end
