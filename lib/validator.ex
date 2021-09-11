@@ -32,10 +32,9 @@ defmodule Validator do
 
     The `schema` field is used when the value is a map, and is `nil` otherwise.
     """
-    defstruct required: false, checks: [], schema: nil, type: :any, cast_from: [], nil: :default
+    defstruct checks: [], schema: nil, type: :any, cast_from: [], nil: :default
 
     @type t() :: %__MODULE__{
-            required: boolean(),
             checks: list(Validator.Rule.t()),
             schema: map() | nil,
             type: atom(),
@@ -48,8 +47,7 @@ defmodule Validator do
     @moduledoc """
     Represents a struct.
     """
-    defstruct required: false,
-              checks: [],
+    defstruct checks: [],
               schema: nil,
               module: nil,
               type: :any,
@@ -57,7 +55,6 @@ defmodule Validator do
               nil: :default
 
     @type t() :: %__MODULE__{
-            required: boolean(),
             checks: list(Validator.Rule.t()),
             schema: map() | nil,
             module: atom(),
@@ -73,15 +70,13 @@ defmodule Validator do
 
     Each element must conform to the `item_type` definition.
     """
-    defstruct required: false,
-              checks: [],
+    defstruct checks: [],
               item_type: nil,
               type: :list,
               cast_from: [],
               nil: :default
 
     @type t() :: %__MODULE__{
-            required: boolean(),
             checks: list(Validator.Rule.t()),
             item_type: Validator.spec_type(),
             type: atom(),
@@ -97,15 +92,13 @@ defmodule Validator do
     Matching values are expected to be a tuple with the same
     size as elem_types, and matching the rule for each element.
     """
-    defstruct required: false,
-              checks: [],
+    defstruct checks: [],
               elem_types: nil,
               type: :tuple,
               cast_from: [],
               nil: :default
 
     @type t() :: %__MODULE__{
-            required: boolean(),
             checks: list(Validator.Rule.t()),
             elem_types: {Validator.spec_type()},
             type: atom(),
@@ -121,11 +114,10 @@ defmodule Validator do
     Matching values are expected to be strictly equal to the value.
     """
 
-    defstruct value: nil, required: false, checks: [], type: :any, cast_from: [], nil: :default
+    defstruct value: nil, checks: [], type: :any, cast_from: [], nil: :default
 
     @type t() :: %__MODULE__{
             value: any(),
-            required: boolean(),
             checks: list(Validator.Rule.t()),
             type: atom(),
             cast_from: list(atom()) | atom(),
@@ -487,7 +479,6 @@ defmodule Validator do
     end)
     |> Enum.filter(fn {field_name, _field} ->
       not (map |> Map.has_key?(field_name))
-      # map |> Map.get(field_name) |> is_nil() # and required_field?(field)
     end)
     |> Enum.map(fn {field_name, _} -> field_name end)
   end

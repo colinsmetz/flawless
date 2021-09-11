@@ -12,10 +12,6 @@ defmodule Validator.Helpers do
   alias Validator.Rule
   alias Validator.Types
 
-  defp required(value_fun, opts) do
-    opts |> Keyword.put(:required, true) |> value_fun.()
-  end
-
   defp value_with_type(type, opts) do
     opts
     |> Keyword.put(:type, type)
@@ -33,7 +29,6 @@ defmodule Validator.Helpers do
     type = opts |> Keyword.get(:type, :any)
 
     %ValueSpec{
-      required: opts |> Keyword.get(:required, false),
       checks: extract_checks(opts, type),
       schema: opts |> Keyword.get(:schema, nil),
       type: type,
@@ -44,7 +39,6 @@ defmodule Validator.Helpers do
 
   def list(item_type, opts \\ []) do
     %ListSpec{
-      required: opts |> Keyword.get(:required, false),
       checks: extract_checks(opts, :list),
       item_type: item_type,
       cast_from: opts |> Keyword.get(:cast_from, []),
@@ -54,7 +48,6 @@ defmodule Validator.Helpers do
 
   def tuple(elem_types, opts \\ []) do
     %TupleSpec{
-      required: opts |> Keyword.get(:required, false),
       checks: extract_checks(opts, :tuple),
       elem_types: elem_types,
       cast_from: opts |> Keyword.get(:cast_from, []),
@@ -72,7 +65,6 @@ defmodule Validator.Helpers do
   def structure(%module{} = schema, opts \\ []) do
     %StructSpec{
       module: module,
-      required: opts |> Keyword.get(:required, false),
       checks: extract_checks(opts, :struct),
       schema: schema,
       type: :struct,
@@ -84,51 +76,24 @@ defmodule Validator.Helpers do
   def literal(value, opts \\ []) do
     %LiteralSpec{
       value: value,
-      required: opts |> Keyword.get(:required, false),
       cast_from: opts |> Keyword.get(:cast_from, []),
       type: Types.type_of(value),
       nil: opts |> Keyword.get(nil, :default)
     }
   end
 
-  def req_value(opts \\ []), do: required(&value/1, opts)
-  def req_list(item_type, opts \\ []), do: required(&list(item_type, &1), opts)
-  def req_map(schema, opts \\ []), do: required(&map(schema, &1), opts)
-  def req_structure(schema, opts \\ []), do: required(&structure(schema, &1), opts)
-  def req_tuple(elem_types, opts \\ []), do: required(&tuple(elem_types, &1), opts)
-
   def integer(opts \\ []), do: value_with_type(:integer, opts)
-  def req_integer(opts \\ []), do: required(&integer/1, opts)
-
   def string(opts \\ []), do: value_with_type(:string, opts)
-  def req_string(opts \\ []), do: required(&string/1, opts)
-
   def float(opts \\ []), do: value_with_type(:float, opts)
-  def req_float(opts \\ []), do: required(&float/1, opts)
-
   def number(opts \\ []), do: value_with_type(:number, opts)
-  def req_number(opts \\ []), do: required(&number/1, opts)
-
   def boolean(opts \\ []), do: value_with_type(:boolean, opts)
-  def req_boolean(opts \\ []), do: required(&boolean/1, opts)
-
   def atom(opts \\ []), do: value_with_type(:atom, opts)
-  def req_atom(opts \\ []), do: required(&atom/1, opts)
-
   def pid(opts \\ []), do: value_with_type(:pid, opts)
-  def req_pid(opts \\ []), do: required(&pid/1, opts)
-
   def ref(opts \\ []), do: value_with_type(:ref, opts)
-  def req_ref(opts \\ []), do: required(&ref/1, opts)
-
   def function(opts \\ []), do: value_with_type(:function, opts)
-  def req_function(opts \\ []), do: required(&function/1, opts)
-
   def port(opts \\ []), do: value_with_type(:port, opts)
-  def req_port(opts \\ []), do: required(&port/1, opts)
 
   def any_key(), do: %AnyOtherKey{}
-
   def maybe(key), do: %OptionalKey{key: key}
 
   #######################

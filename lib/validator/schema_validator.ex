@@ -23,7 +23,6 @@ defmodule Validator.SchemaValidator do
 
   defp value_spec_schema() do
     structure(%Validator.ValueSpec{
-      required: boolean(),
       checks: checks_schema(),
       schema: fn
         nil -> nil
@@ -37,7 +36,6 @@ defmodule Validator.SchemaValidator do
 
   defp struct_spec_schema(module) do
     structure(%Validator.StructSpec{
-      required: boolean(),
       checks: checks_schema(),
       module: atom(),
       schema: struct_schema(module),
@@ -49,7 +47,6 @@ defmodule Validator.SchemaValidator do
 
   defp list_spec_schema() do
     structure(%Validator.ListSpec{
-      required: boolean(),
       checks: checks_schema(),
       item_type: &schema_schema/0,
       type: :list,
@@ -60,7 +57,6 @@ defmodule Validator.SchemaValidator do
 
   defp tuple_spec_schema() do
     structure(%Validator.TupleSpec{
-      required: boolean(),
       checks: checks_schema(),
       elem_types: list(&schema_schema/0, cast_from: :tuple),
       type: :tuple,
@@ -72,7 +68,6 @@ defmodule Validator.SchemaValidator do
   defp literal_spec_schema() do
     structure(%Validator.LiteralSpec{
       value: value(),
-      required: boolean(),
       checks: checks_schema(),
       type: type_schema(),
       cast_from: cast_from_schema(),

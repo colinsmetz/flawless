@@ -20,7 +20,6 @@ defimpl Inspect, for: Validator.ValueSpec do
   def inspect(
         %ValueSpec{
           type: type,
-          required: required,
           schema: schema,
           cast_from: cast_from,
           checks: checks
@@ -36,7 +35,6 @@ defimpl Inspect, for: Validator.ValueSpec do
       |> Enum.reject(&(&1 == nil))
 
     concat([
-      if(required, do: "req_", else: ""),
       "#{type}",
       function_args(params, opts)
     ])
@@ -66,7 +64,7 @@ defimpl Inspect, for: Validator.ListSpec do
   alias Validator.ListSpec
 
   def inspect(
-        %ListSpec{required: required, item_type: item_type, cast_from: cast_from, checks: checks},
+        %ListSpec{item_type: item_type, cast_from: cast_from, checks: checks},
         opts
       ) do
     params =
@@ -78,7 +76,6 @@ defimpl Inspect, for: Validator.ListSpec do
       |> Enum.reject(&(&1 == nil))
 
     concat([
-      if(required, do: "req_", else: ""),
       "list",
       function_args(params, opts)
     ])
@@ -92,7 +89,6 @@ defimpl Inspect, for: Validator.TupleSpec do
 
   def inspect(
         %TupleSpec{
-          required: required,
           elem_types: elem_types,
           cast_from: cast_from,
           checks: checks
@@ -108,7 +104,6 @@ defimpl Inspect, for: Validator.TupleSpec do
       |> Enum.reject(&(&1 == nil))
 
     concat([
-      if(required, do: "req_", else: ""),
       "tuple",
       function_args(params, opts)
     ])
