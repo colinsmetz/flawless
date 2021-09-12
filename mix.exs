@@ -12,7 +12,8 @@ defmodule Validator.MixProject do
       # Docs
       name: "Validator",
       docs: [
-        main: "readme", # The main page in the docs
+        # The main page in the docs
+        main: "readme",
         extras: ["README.md"]
       ]
     ]
