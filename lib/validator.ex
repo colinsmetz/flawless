@@ -169,7 +169,7 @@ defmodule Validator do
       |> Enum.map(fn
         {%AnyOtherKey{}, field} ->
           unexpected_fields(map, schema)
-          |> Enum.map(&validate_map_field(map, &1, field, context))
+          |> Enum.map(&validate_map_field(map, &1, field, %{context | is_optional_field: true}))
 
         {%OptionalKey{key: field_name}, field} ->
           validate_map_field(map, field_name, field, %{context | is_optional_field: true})

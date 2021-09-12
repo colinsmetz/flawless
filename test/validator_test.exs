@@ -721,6 +721,7 @@ defmodule ValidatorTest do
 
     test "a nil value is accepted for optional fields in a map, when nothing was specified" do
       assert validate(%{"a" => nil}, %{maybe("a") => string()}) == []
+      assert validate(%{"a" => nil}, %{any_key() => string()}) == []
     end
   end
 
