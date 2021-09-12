@@ -1,4 +1,8 @@
 defmodule Validator.Types do
+  @moduledoc """
+  Provides a number of helper functions to deal with types.
+  """
+
   @valid_types [
     :any,
     :string,

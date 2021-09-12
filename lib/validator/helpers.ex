@@ -1,4 +1,18 @@
 defmodule Validator.Helpers do
+  @moduledoc """
+
+  A series of helper functions to build schemas.
+
+  ## Common options
+
+  * `checks`: a list of checks.
+  * `check`: a single check. Can be repeated.
+  * `late_checks`: a list of checks to evaluate only if all other checks passed on that element.
+  * `late_check`: a single late check. Can be repeated.
+  * `nil`: whether the value is nillable.
+  * `cast_from`: the types from which it is allowed to cast the value to the expected type.
+
+  """
   alias Validator.Rule
   alias Validator.Types
   alias Validator.Spec

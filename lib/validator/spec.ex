@@ -1,6 +1,8 @@
 defmodule Validator.Spec do
   @moduledoc """
-  TODO
+  A structure for defining the spec of a schema element.
+
+  The `for` attribute allows to define type-specific specs.
   """
   defstruct checks: [], late_checks: [], type: :any, cast_from: [], nil: :default, for: nil
 

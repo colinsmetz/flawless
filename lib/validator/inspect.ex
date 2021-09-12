@@ -1,4 +1,3 @@
-
 defimpl Inspect, for: Validator.Spec do
   import Inspect.Algebra
   alias Validator.Spec

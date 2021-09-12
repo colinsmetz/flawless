@@ -24,12 +24,18 @@ defmodule Validator do
           | binary()
 
   defmodule AnyOtherKey do
+    @moduledoc """
+    Struct for representing any non-specified key in a map schema.
+    """
     defstruct []
 
     @type t() :: %__MODULE__{}
   end
 
   defmodule OptionalKey do
+    @moduledoc """
+    Struct for representing an optional key in a map schema.
+    """
     defstruct key: nil
 
     @type t() :: %__MODULE__{
@@ -38,6 +44,9 @@ defmodule Validator do
   end
 
   defmodule Context do
+    @moduledoc """
+    Struct used internally for validation.
+    """
     defstruct path: [], is_optional_field: false
 
     @type t() :: %__MODULE__{
@@ -45,6 +54,7 @@ defmodule Validator do
             is_optional_field: boolean()
           }
 
+    @doc false
     def add_to_path(context, path_element) do
       %Context{context | path: context.path ++ [path_element]}
     end

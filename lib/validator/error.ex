@@ -1,4 +1,8 @@
 defmodule Validator.Error do
+  @moduledoc """
+  Provides the Error struct, and helpers for building and converting errors.
+  """
+
   defstruct context: [], message: ""
 
   alias Validator.Context

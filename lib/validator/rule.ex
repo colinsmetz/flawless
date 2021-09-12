@@ -1,4 +1,8 @@
 defmodule Validator.Rule do
+  @moduledoc """
+  Provides helpers to build and evaluate rules. It also defines all the built-in rules.
+  """
+
   defstruct predicate: nil, message: nil
 
   alias Validator.Context

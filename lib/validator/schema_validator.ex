@@ -1,4 +1,7 @@
 defmodule Validator.SchemaValidator do
+  @moduledoc """
+  Defines a schema to validate that schemas are valid.
+  """
   import Validator.Helpers
 
   def schema_schema() do
