@@ -5,62 +5,51 @@ This is a library to help validate Elixir values against a specific schema.
 Example:
 
 ```elixir
-  map = %{
-    "format" => "yml",
-    "fields" => [
-      %{"name" => "a", "type" => "INT64", "is_key" => true, "is_required" => false},
-      %{"name" => "b", "type" => "STRING"}
-    ],
-    "polling" => %{
-      "slice_size" => "50MB",
-      "interval_seconds" => "12",
-      "timeout_ms" => "34567"
+schema = %{
+  "username" => string(max_length: 30),
+  "address" => map(
+    %{
+      "street" => string(),
+      "number" => integer(min: 0, cast_from: :string),
+      "zipcode" => string(),
+      "city" => string(),
+      "country" => string()
     },
-    "plop" => 14
-  }
+    check: valid_zipcode_for_country()
+  ),
+  "interests" => list(string(), min_length: 1),
+  maybe("nickname") => string(),
+  maybe("coordinates") => {float(), float()}
+}
 
-  schema = %{
-    "format" => req_string(checks: [one_of(["csv", "xml"])]),
-    "regex" => req_string(),
-    "polling" =>
-      map(%{
-        "slice_size" => value()
-      }),
-    "fields" =>
-      list(
-        map(
-          %{
-            "name" => req_string(),
-            "type" => req_string(),
-            "is_key" => boolean(),
-            "is_required" => boolean()
-          },
-          checks: [required_if_is_key()]
-        ),
-        checks: [rule(&length(&1) > 0, "Fields must contain at least one item")]
-      )
-  }
+value = %{
+  "username" => "Steve",
+  "address" => %{
+    "city" => "Brussels",
+    "number" => "10",
+    "street" => "Main street"
+  },
+  "interests" => ["programming", "music", :games],
+  "coordinates" => {1.2598, 8.95452},
+  "age" => 26
+}
 
-  Validator.validate(map, schema)
-```
+Validator.validate(value, schema)
 
-The `validate` call on the last line will return the list of errors found in the map:
+# Result:
 
-```elixir
 [
-  %Validator.Error{context: [], message: "Unexpected fields: [\"plop\"]"},
-  %Validator.Error{context: [], message: "Missing required fields: [\"regex\"]"},
   %Validator.Error{
-    context: ["fields", 0],
-    message: "Field 'a' is a key but is not required"
+    context: [],
+    message: "Unexpected fields: [\"age\"]."
   },
   %Validator.Error{
-    context: ["format"],
-    message: "Invalid value 'yml'. Valid options: [\"csv\", \"xml\"]"
+    context: ["address"],
+    message: "Missing required fields: \"country\" (string), \"zipcode\" (string)."
   },
   %Validator.Error{
-    context: ["polling"],
-    message: "Unexpected fields: [\"interval_seconds\", \"timeout_ms\"]"
+    context: ["interests", 2],
+    message: "Expected type: string, got: :games."
   }
 ]
 ```
@@ -68,7 +57,8 @@ The `validate` call on the last line will return the list of errors found in the
 ## How to use
 
 All types of elements support a few common options:
-* `required`: whether the element is required (false by default).
+* `nil`: whether the element is nullable (default to `false` except for optional
+  fields in maps).
 * `checks`: a list of rules that the element must pass.
 * `check`: similar to `checks` but for a single rule; can be passed multiple
   times.
@@ -79,12 +69,12 @@ All types of elements support a few common options:
 Example:
 
 ```elixir
-value(required: true, type: :string, checks: [one_of(["csv", "ftp"])])
+value(type: :string, checks: [one_of(["csv", "ftp"])])
 ```
 
 ### Basic elements
 
-Several helpers are provided to define basic elements:
+Several helpers are provided to define basic types:
 
 * `value()`: matches anything
 * `integer()`
@@ -98,35 +88,17 @@ Several helpers are provided to define basic elements:
 * `function()`
 * `port()`
 
-The type constraint will be added automatically to the `checks` when using
-specific type elements.
-
-Besides, to avoid repeating, `required: true`, a shortcut is provided
-for each of them:
-
-* `req_value()`
-* `req_integer()`
-* `req_float()`
-* `req_number()`
-* `req_string()`
-* `req_boolean()`
-* `req_atom()`
-* `req_pid()`
-* `req_ref()`
-* `req_function()`
-* `req_port()`
-
 ### Maps
 
-A map is defined using the `map(spec, opts)` and `req_map(spec, opts)`
-helpers. The spec is a map representing the expected map, e.g.
+A map is defined using the `map(schema, opts)` helper. The schema is a map
+representing the expected map, e.g.
 
 ```elixir
 map(
   %{
-    "first_name" => req_string(),
-    "last_name" => req_string(),
-    "age" => req_number()
+    "first_name" => string(),
+    "last_name" => string(),
+    "age" => number()
   },
   checks: [
     first_name_different_than_last_name()
@@ -134,14 +106,14 @@ map(
 )
 ```
 
-If you do not need to use the `required` or `checks` options, the `map()`
-function can be entirely ignored:
+If you do not need additional options like `checks`, the `map()` function can be
+entirely ignored:
 
 ```elixir
 %{
-  "first_name" => req_string(),
-  "last_name" => req_string(),
-  "age" => req_number()
+  "first_name" => string(),
+  "last_name" => string(),
+  "age" => number()
 }
 ```
 
@@ -158,38 +130,40 @@ optional keys, use the `maybe` helper around the optional key name:
 }
 ```
 
+**Note:** unless `nil` is explicitly set to `false`, the optional key is
+considered to be nillable.
+
 #### Accept non-defined fields
 
 By default, if the input map contains keys that were not defined in the schema,
 it will return an error. To avoid that, you should make sure to define *all*
 the potential keys that the map could have.
 
-If you still want to accept other non-defined keys, you can use the `any_key()`
-helper as a key in the map:
+If you want to accept other non-defined keys, you can use the `any_key()` helper
+as a key in the map:
 
 ```elixir
 %{
-  "id" => req_string(),
+  "id" => string(),
   any_key() => string()
 }
 ```
 
 This will make sure that the map contains a field named `id`, but also accept
-any other unexpected field in the map. Those extra fields should however comply
-with the associated schema (which could be `value()` to truly accept anything).
+any other unexpected key in the map. Those extra fields should however comply
+with the associated schema (`string()` in this case).
 
 ### Structs
 
-Structs function similarly to maps, with the `structure(spec, opts)` and
-`req_structure(spec, opts)` (unfortunately `struct` is already a function in
-`Kernel`).
+Structs function similarly to maps, with the `structure(spec, opts)` helper
+(unfortunately `struct` is already a function in `Kernel`).
 
 ```elixir
 structure(
   %User{
-    first_name: req_string(),
-    last_name: req_string(),
-    age: req_number()
+    first_name: string(),
+    last_name: string(),
+    age: number()
   },
   checks: [
     first_name_different_than_last_name()
@@ -205,16 +179,15 @@ otherwise with the `cast_from: :struct` option.
 
 ### Lists
 
-A list is defined using `list(item_spec, opts)` or `req_list(item_spec, opts)`.
-The constraint of `item_spec` will be checked for every element in the list.
-Example:
+A list is defined using `list(item_spec, opts)`. The constraint of `item_spec`
+will be checked for every element in the list. Example:
 
 ```elixir
 # A list of strings, which must have at least 2 items
 list(string(), checks: [min_length(2)])
 ```
 
-If the `required` or `checks` options are not used, you can use the shortcut
+If you do not need additional options like `checks`, you can use the shortcut
 `[spec]`:
 
 ```elixir
@@ -224,9 +197,9 @@ If the `required` or `checks` options are not used, you can use the shortcut
 
 ### Tuples
 
-A tuple is defined using `tuple(elem_specs, opts)` or `req_tuple(elem_specs, opts)`.
-The `elem_specs` is a tuple of the expected tuple size, and each of element of the
-tuple is the expected schema for the corresponding tuple element. Example:
+A tuple is defined using `tuple(elem_specs, opts)`. The `elem_specs` is a tuple
+of the expected tuple size, and each of element of the tuple is the expected
+schema for the corresponding tuple element. Example:
 
 ```elixir
 # A tuple of size 2, where the first element is an atom and the second one a string
@@ -234,7 +207,7 @@ tuple is the expected schema for the corresponding tuple element. Example:
 tuple({atom(), string()}, checks: [custom_rule()])
 ```
 
-If the `required` or `checks` options are not used, the `tuple()` function can be
+If you do not need additional options like `checks`, the `tuple()` function can be
 entirely ignored:
 
 ```elixir
@@ -273,8 +246,8 @@ schema2 = %{
 Several rules are predefined and can be used in `checks`:
 * `one_of(list)`: checks that the value is among a predefined set of elements
 
-The type helpers (`number()`, `req_string()`, etc.) also accept shortcut options
-for their supported built-in rules. For example, those are equivalent:
+The type helpers (`number()`, `string()`, etc.) also accept shortcut options for
+their supported built-in rules. For example, those are equivalent:
 
 ```elixir
 number(checks: [min(2), max(6)])
