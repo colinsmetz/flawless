@@ -159,6 +159,36 @@ defmodule Validator do
 
   defp check_type_and_cast_if_needed(value, _schema, _context), do: {:ok, value}
 
+  defp validate_spec(
+         value,
+         %Spec{checks: checks, late_checks: late_checks},
+         context,
+         get_sub_errors
+       ) do
+    top_level_errors =
+      checks
+      |> Enum.map(&Rule.evaluate(&1, value, context))
+      |> List.flatten()
+
+    sub_errors =
+      get_sub_errors.()
+      |> List.flatten()
+
+    late_checks_errors =
+      if top_level_errors == [] and sub_errors == [] do
+        late_checks |> Enum.map(&Rule.evaluate(&1, value, context))
+      else
+        []
+      end
+
+    [
+      top_level_errors,
+      sub_errors,
+      late_checks_errors
+    ]
+    |> List.flatten()
+  end
+
   defp validate_map(map, %{} = _schema, context) when is_struct(map) do
     [Error.new("Expected type: map, got: struct.", context)]
   end
@@ -203,17 +233,9 @@ defmodule Validator do
          context
        )
        when value_module == module do
-    top_level_errors =
-      spec.checks
-      |> Enum.map(&Rule.evaluate(&1, struct, context))
-
-    sub_errors = validate_map(Map.from_struct(struct), Map.from_struct(schema), context)
-
-    [
-      top_level_errors,
-      sub_errors
-    ]
-    |> List.flatten()
+    validate_spec(struct, spec, context, fn ->
+      validate_map(Map.from_struct(struct), Map.from_struct(schema), context)
+    end)
   end
 
   defp validate_struct(
@@ -236,41 +258,22 @@ defmodule Validator do
   end
 
   defp validate_value(value, spec, context) do
-    top_level_errors =
-      spec.checks
-      |> Enum.map(&Rule.evaluate(&1, value, context))
-
-    sub_errors =
+    validate_spec(value, spec, context, fn ->
       case spec.for.schema do
         nil -> []
         schema -> validate_map(value, schema, context)
       end
-
-    [
-      top_level_errors,
-      sub_errors
-    ]
-    |> List.flatten()
+    end)
   end
 
   defp validate_list(list, spec, context) when is_list(list) do
-    top_level_errors =
-      spec.checks
-      |> Enum.map(&Rule.evaluate(&1, list, context))
-
-    items_errors =
+    validate_spec(list, spec, context, fn ->
       list
       |> Enum.with_index()
       |> Enum.map(fn {value, index} ->
         do_validate(value, spec.for.item_type, context |> Context.add_to_path(index))
       end)
-      |> List.flatten()
-
-    [
-      top_level_errors,
-      items_errors
-    ]
-    |> List.flatten()
+    end)
   end
 
   defp validate_list(list, _spec, context) do
@@ -279,11 +282,7 @@ defmodule Validator do
 
   defp validate_tuple(tuple, spec, context)
        when is_tuple(tuple) and tuple_size(tuple) == tuple_size(spec.for.elem_types) do
-    top_level_errors =
-      spec.checks
-      |> Enum.map(&Rule.evaluate(&1, tuple, context))
-
-    elem_errors =
+    validate_spec(tuple, spec, context, fn ->
       tuple
       |> Tuple.to_list()
       |> Enum.zip(Tuple.to_list(spec.for.elem_types))
@@ -291,13 +290,7 @@ defmodule Validator do
       |> Enum.map(fn {{value, elem_type}, index} ->
         do_validate(value, elem_type, context |> Context.add_to_path(index))
       end)
-      |> List.flatten()
-
-    [
-      top_level_errors,
-      elem_errors
-    ]
-    |> List.flatten()
+    end)
   end
 
   defp validate_tuple(tuple, spec, context) when is_tuple(tuple) do

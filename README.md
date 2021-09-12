@@ -62,9 +62,13 @@ All types of elements support a few common options:
 * `checks`: a list of rules that the element must pass.
 * `check`: similar to `checks` but for a single rule; can be passed multiple
   times.
-* `type`: the type of the element (`:any` by default).
+* `late_checks`: similar to `checks`, but evaluated only if all other checks
+  passed for the element.
+* `late_check`: similar to `late_checks` but for a single rule; can be passed
+  multiple times.
 * `cast_from`: a type or list of types, to cast the value to the expected type
   before validating, if necessary (see [Casting](#casting) section below).
+* `type`: the type of the element (`:any` by default). Usually not set directly.
 
 Example:
 
@@ -241,7 +245,52 @@ schema2 = %{
 }
 ```
 
-### Rules
+### Checks
+
+#### Late checks
+
+Late checks are defined with `late_checks` or `late_check`. Those rules are
+evaluated *only if the element is otherwise valid*, i.e., if the `checks` passed
+and the sub-schemas were valid (in case of lists, maps, tuples, etc.).
+
+This is useful if you have rules that make sense only if some preconditions are met.
+Let's say you have a map with a few number fields, and you'd like to make sure that
+the sum of all values is lower than some threshold. You could do:
+
+```elixir
+sum_lower_than_threshold = rule(
+  fn map -> map["math_credits"] + map["english_credits"] < 15 end,
+  "The sum of credits must be lower than 15." 
+)
+
+schema = map(
+  %{"math_credits" => number(), "english_credits" => number()},
+  check: sum_lower_than_threshold
+)
+```
+
+If a well-formed input is passed, this is fine. But let's say it is not:
+
+```elixir
+value = %{"math" => 17}
+validate(value, schema)
+
+# Result:
+[
+  %Validator.Error{
+    context: [],
+    message: "An exception was raised while evaluating a rule on that element, so it is likely incorrect."
+  },
+  # ...
+]
+```
+
+The `sum_lower_than_threshold` was evaluated, but since the fields do not exist,
+it resulted in an exception and a generic error message. If you replace `check` by
+`late_check`, you can make sure the rule will be evaluated only when the input is
+sufficiently well-formed.
+
+#### Built-in rules
 
 Several rules are predefined and can be used in `checks`:
 * `one_of(list)`: checks that the value is among a predefined set of elements

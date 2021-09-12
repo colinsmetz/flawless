@@ -234,6 +234,52 @@ defmodule ValidatorTest do
     end
   end
 
+  describe "late checks" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "are not evaluated if other checks failed" do
+      assert validate("ho", string(min_length: 3, late_checks: [one_of(["plop"])])) == [
+               Error.new("Minimum length of 3 required (current: 2).", [])
+             ]
+
+      assert validate(
+               %{"a" => 18, "b" => "19"},
+               map(
+                 %{"a" => string(), "b" => string()},
+                 late_checks: [rule(&(&1["a"] == &1["b"]), "a must be equal to b")]
+               )
+             ) == [Error.new("Expected type: string, got: 18.", ["a"])]
+    end
+
+    test "are evaluated if the value is otherwise valid" do
+      assert validate("hoot", string(min_length: 3, late_checks: [one_of(["plop"])])) == [
+               Error.new("Invalid value: \"hoot\". Valid options: [\"plop\"]", [])
+             ]
+
+      assert validate(
+               %{"a" => "y", "b" => "x"},
+               map(
+                 %{"a" => string(), "b" => string()},
+                 late_checks: [rule(&(&1["a"] == &1["b"]), "a must be equal to b")]
+               )
+             ) == [Error.new("a must be equal to b", [])]
+    end
+
+    test "can be set with :late_checks or multiple :late_check" do
+      assert validate(
+               0,
+               integer(late_checks: [min(10), min(100)], late_check: min(25), late_check: min(17))
+             ) ==
+               [
+                 Error.new("Must be greater than or equal to 10.", []),
+                 Error.new("Must be greater than or equal to 100.", []),
+                 Error.new("Must be greater than or equal to 25.", []),
+                 Error.new("Must be greater than or equal to 17.", [])
+               ]
+    end
+  end
+
   describe "lists" do
     import Validator.Helpers
     import Validator.Rule

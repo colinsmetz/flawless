@@ -2,10 +2,11 @@ defmodule Validator.Spec do
   @moduledoc """
   TODO
   """
-  defstruct checks: [], type: :any, cast_from: [], nil: :default, for: nil
+  defstruct checks: [], late_checks: [], type: :any, cast_from: [], nil: :default, for: nil
 
   @type t() :: %__MODULE__{
           checks: list(Validator.Rule.t()),
+          late_checks: list(Validator.Rule.t()),
           type: atom(),
           cast_from: list(atom()) | atom(),
           nil: :default | true | false,

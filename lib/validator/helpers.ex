@@ -17,9 +17,16 @@ defmodule Validator.Helpers do
     |> Enum.concat(built_in_checks(opts, type))
   end
 
+  defp extract_late_checks(opts) do
+    opts
+    |> Keyword.get(:late_checks, [])
+    |> Enum.concat(Keyword.get_values(opts, :late_check))
+  end
+
   defp build_spec(subspec, type, opts) do
     %Spec{
       checks: extract_checks(opts, type),
+      late_checks: extract_late_checks(opts),
       type: type,
       cast_from: opts |> Keyword.get(:cast_from, []),
       nil: opts |> Keyword.get(nil, :default),
