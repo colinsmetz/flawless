@@ -3,11 +3,7 @@ defmodule Validator.SchemaValidator do
 
   def schema_schema() do
     fn
-      %Validator.ValueSpec{} -> value_spec_schema()
-      %Validator.ListSpec{} -> list_spec_schema()
-      %Validator.TupleSpec{} -> tuple_spec_schema()
-      %Validator.LiteralSpec{} -> literal_spec_schema()
-      %Validator.StructSpec{module: module} -> struct_spec_schema(module)
+      %Validator.Spec{} -> spec_schema()
       [] -> literal([])
       l when is_list(l) -> list_schema()
       t when is_tuple(t) -> tuple_schema()
@@ -21,57 +17,53 @@ defmodule Validator.SchemaValidator do
     end
   end
 
-  defp value_spec_schema() do
-    structure(%Validator.ValueSpec{
-      required: boolean(),
+  defp spec_schema() do
+    structure(%Validator.Spec{
       checks: checks_schema(),
+      type: type_schema(),
+      cast_from: cast_from_schema(),
+      nil: nil_schema(),
+      for: fn
+        %Validator.Spec.Value{} -> value_spec_schema()
+        %Validator.Spec.List{} -> list_spec_schema()
+        %Validator.Spec.Tuple{} -> tuple_spec_schema()
+        %Validator.Spec.Literal{} -> literal_spec_schema()
+        %Validator.Spec.Struct{module: module} -> struct_spec_schema(module)
+      end
+    })
+  end
+
+  defp value_spec_schema() do
+    structure(%Validator.Spec.Value{
       schema: fn
         nil -> nil
         _ -> map_schema()
-      end,
-      type: type_schema(),
-      cast_from: cast_from_schema()
+      end
     })
   end
 
   defp struct_spec_schema(module) do
-    structure(%Validator.StructSpec{
-      required: boolean(),
-      checks: checks_schema(),
+    structure(%Validator.Spec.Struct{
       module: atom(),
-      schema: struct_schema(module),
-      type: type_schema(),
-      cast_from: cast_from_schema()
+      schema: struct_schema(module)
     })
   end
 
   defp list_spec_schema() do
-    structure(%Validator.ListSpec{
-      required: boolean(),
-      checks: checks_schema(),
-      item_type: &schema_schema/0,
-      type: :list,
-      cast_from: cast_from_schema()
+    structure(%Validator.Spec.List{
+      item_type: &schema_schema/0
     })
   end
 
   defp tuple_spec_schema() do
-    structure(%Validator.TupleSpec{
-      required: boolean(),
-      checks: checks_schema(),
-      elem_types: list(&schema_schema/0, cast_from: :tuple),
-      type: :tuple,
-      cast_from: cast_from_schema()
+    structure(%Validator.Spec.Tuple{
+      elem_types: list(&schema_schema/0, cast_from: :tuple)
     })
   end
 
   defp literal_spec_schema() do
-    structure(%Validator.LiteralSpec{
-      value: value(),
-      required: boolean(),
-      checks: checks_schema(),
-      type: type_schema(),
-      cast_from: cast_from_schema()
+    structure(%Validator.Spec.Literal{
+      value: value()
     })
   end
 
@@ -121,5 +113,9 @@ defmodule Validator.SchemaValidator do
       {_type, [with: _converter]} -> {type_schema(), list({:with, function()}, length: 1)}
       _ -> type_schema()
     end
+  end
+
+  defp nil_schema() do
+    atom(in: [:default, true, false])
   end
 end

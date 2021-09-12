@@ -12,13 +12,10 @@ defmodule Validator do
   alias Validator.Helpers
   alias Validator.Types
   alias Validator.Rule
+  alias Validator.Spec
 
   @type spec_type() ::
-          Validator.ValueSpec.t()
-          | Validator.ListSpec.t()
-          | Validator.TupleSpec.t()
-          | Validator.StructSpec.t()
-          | Validator.LiteralSpec.t()
+          Validator.Spec.t()
           | map()
           | list()
           | tuple()
@@ -26,96 +23,31 @@ defmodule Validator do
           | number()
           | binary()
 
-  defmodule ValueSpec do
-    @moduledoc """
-    Represents a simple value or a map.
-
-    The `schema` field is used when the value is a map, and is `nil` otherwise.
-    """
-    defstruct required: false, checks: [], schema: nil, type: :any, cast_from: []
-
-    @type t() :: %__MODULE__{
-            required: boolean(),
-            checks: list(Validator.Rule.t()),
-            schema: map() | nil,
-            type: atom(),
-            cast_from: list(atom()) | atom()
-          }
-  end
-
-  defmodule StructSpec do
-    @moduledoc """
-    Represents a struct.
-    """
-    defstruct required: false, checks: [], schema: nil, module: nil, type: :any, cast_from: []
-
-    @type t() :: %__MODULE__{
-            required: boolean(),
-            checks: list(Validator.Rule.t()),
-            schema: map() | nil,
-            module: atom(),
-            type: atom(),
-            cast_from: list(atom()) | atom()
-          }
-  end
-
-  defmodule ListSpec do
-    @moduledoc """
-    Represents a list of elements.
-
-    Each element must conform to the `item_type` definition.
-    """
-    defstruct required: false, checks: [], item_type: nil, type: :list, cast_from: []
-
-    @type t() :: %__MODULE__{
-            required: boolean(),
-            checks: list(Validator.Rule.t()),
-            item_type: Validator.spec_type(),
-            type: atom(),
-            cast_from: list(atom()) | atom()
-          }
-  end
-
-  defmodule TupleSpec do
-    @moduledoc """
-    Represents a tuple.
-
-    Matching values are expected to be a tuple with the same
-    size as elem_types, and matching the rule for each element.
-    """
-    defstruct required: false, checks: [], elem_types: nil, type: :tuple, cast_from: []
-
-    @type t() :: %__MODULE__{
-            required: boolean(),
-            checks: list(Validator.Rule.t()),
-            elem_types: {Validator.spec_type()},
-            type: atom(),
-            cast_from: list(atom()) | atom()
-          }
-  end
-
-  defmodule LiteralSpec do
-    @moduledoc """
-    Represents a literal constant.
-
-    Matching values are expected to be strictly equal to the value.
-    """
-
-    defstruct value: nil, required: false, checks: [], type: :any, cast_from: []
-
-    @type t() :: %__MODULE__{
-            value: any(),
-            required: boolean(),
-            checks: list(Validator.Rule.t()),
-            type: atom(),
-            cast_from: list(atom()) | atom()
-          }
-  end
-
   defmodule AnyOtherKey do
     defstruct []
 
     @type t() :: %__MODULE__{}
+  end
+
+  defmodule OptionalKey do
+    defstruct key: nil
+
+    @type t() :: %__MODULE__{
+            key: any()
+          }
+  end
+
+  defmodule Context do
+    defstruct path: [], is_optional_field: false
+
+    @type t() :: %__MODULE__{
+            path: list(String.t()),
+            is_optional_field: boolean()
+          }
+
+    def add_to_path(context, path_element) do
+      %Context{context | path: context.path ++ [path_element]}
+    end
   end
 
   defmacro defvalidator(do: body) do
@@ -149,23 +81,39 @@ defmodule Validator do
     |> Error.evaluate_messages()
   end
 
-  defp do_validate(value, schema, context \\ []) do
-    case check_type_and_cast_if_needed(value, schema, context) do
-      {:ok, cast_value} -> dispatch_validation(cast_value, schema, context)
-      {:error, error} -> [Error.new(error, context)]
+  defp do_validate(value, schema, context \\ %Context{}) do
+    errors =
+      case check_type_and_cast_if_needed(value, schema, context) do
+        {:ok, cast_value} ->
+          dispatch_validation(cast_value, schema, %{context | is_optional_field: false})
+
+        {:error, error} ->
+          [Error.new(error, context)]
+      end
+
+    case {value, nil_opt(schema), errors} do
+      {nil, true, _} -> []
+      {nil, false, _} -> [Error.new("Value cannot be nil.", context)]
+      {nil, :default, []} -> []
+      {nil, :default, _errors} when context.is_optional_field -> []
+      {nil, :default, errors} -> errors
+      _ -> errors
     end
   end
 
+  defp nil_opt(%Spec{nil: nil_opt}), do: nil_opt
+  defp nil_opt(_schema), do: :default
+
   defp dispatch_validation(value, schema, context) do
     case schema do
-      %ListSpec{} -> validate_list(value, schema, context)
+      %Spec{for: %Spec.List{}} -> validate_list(value, schema, context)
       [item_type] -> validate_list(value, Helpers.list(item_type), context)
       [] -> validate_list(value, Helpers.list(Helpers.value()), context)
-      %TupleSpec{} -> validate_tuple(value, schema, context)
+      %Spec{for: %Spec.Tuple{}} -> validate_tuple(value, schema, context)
       tuple when is_tuple(tuple) -> validate_tuple(value, Helpers.tuple(tuple), context)
-      %ValueSpec{} -> validate_value(value, schema, context)
-      %LiteralSpec{} -> validate_literal(value, schema, context)
-      %StructSpec{} -> validate_struct(value, schema, context)
+      %Spec{for: %Spec.Value{}} -> validate_value(value, schema, context)
+      %Spec{for: %Spec.Literal{}} -> validate_literal(value, schema, context)
+      %Spec{for: %Spec.Struct{}} -> validate_struct(value, schema, context)
       %_{} -> validate_struct(value, Helpers.structure(schema), context)
       %{} -> validate_map(value, schema, context)
       func when is_function(func, 0) -> do_validate(value, func.(), context)
@@ -178,7 +126,7 @@ defmodule Validator do
 
   defp check_type_and_cast_if_needed(
          value,
-         %spec_module{type: type, cast_from: cast_from},
+         %Spec{type: type, cast_from: cast_from, for: %subspec{}},
          _context
        ) do
     possible_casts =
@@ -201,7 +149,7 @@ defmodule Validator do
           from when is_atom(from) -> Types.cast(value, from, type)
         end
 
-      spec_module != LiteralSpec ->
+      subspec != Spec.Literal ->
         {:error, "Expected type: #{type}, got: #{inspect(value)}."}
 
       true ->
@@ -221,7 +169,10 @@ defmodule Validator do
       |> Enum.map(fn
         {%AnyOtherKey{}, field} ->
           unexpected_fields(map, schema)
-          |> Enum.map(&validate_map_field(map, &1, field, context))
+          |> Enum.map(&validate_map_field(map, &1, field, %{context | is_optional_field: true}))
+
+        {%OptionalKey{key: field_name}, field} ->
+          validate_map_field(map, field_name, field, %{context | is_optional_field: true})
 
         {field_name, field} ->
           validate_map_field(map, field_name, field, context)
@@ -242,13 +193,13 @@ defmodule Validator do
   defp validate_map_field(map, field_name, field_schema, context) do
     case Map.fetch(map, field_name) do
       :error -> []
-      {:ok, value} -> do_validate(value, field_schema, context ++ [field_name])
+      {:ok, value} -> do_validate(value, field_schema, context |> Context.add_to_path(field_name))
     end
   end
 
   defp validate_struct(
          %value_module{} = struct,
-         %StructSpec{module: module, schema: schema} = spec,
+         %Spec{for: %Spec.Struct{module: module, schema: schema}} = spec,
          context
        )
        when value_module == module do
@@ -265,7 +216,11 @@ defmodule Validator do
     |> List.flatten()
   end
 
-  defp validate_struct(%value_module{} = _struct, %StructSpec{module: module}, context)
+  defp validate_struct(
+         %value_module{} = _struct,
+         %Spec{for: %Spec.Struct{module: module}},
+         context
+       )
        when value_module != module do
     [
       Error.new(
@@ -286,7 +241,7 @@ defmodule Validator do
       |> Enum.map(&Rule.evaluate(&1, value, context))
 
     sub_errors =
-      case spec.schema do
+      case spec.for.schema do
         nil -> []
         schema -> validate_map(value, schema, context)
       end
@@ -307,7 +262,7 @@ defmodule Validator do
       list
       |> Enum.with_index()
       |> Enum.map(fn {value, index} ->
-        do_validate(value, spec.item_type, context ++ [index])
+        do_validate(value, spec.for.item_type, context |> Context.add_to_path(index))
       end)
       |> List.flatten()
 
@@ -323,7 +278,7 @@ defmodule Validator do
   end
 
   defp validate_tuple(tuple, spec, context)
-       when is_tuple(tuple) and tuple_size(tuple) == tuple_size(spec.elem_types) do
+       when is_tuple(tuple) and tuple_size(tuple) == tuple_size(spec.for.elem_types) do
     top_level_errors =
       spec.checks
       |> Enum.map(&Rule.evaluate(&1, tuple, context))
@@ -331,10 +286,10 @@ defmodule Validator do
     elem_errors =
       tuple
       |> Tuple.to_list()
-      |> Enum.zip(Tuple.to_list(spec.elem_types))
+      |> Enum.zip(Tuple.to_list(spec.for.elem_types))
       |> Enum.with_index()
       |> Enum.map(fn {{value, elem_type}, index} ->
-        do_validate(value, elem_type, context ++ [index])
+        do_validate(value, elem_type, context |> Context.add_to_path(index))
       end)
       |> List.flatten()
 
@@ -346,7 +301,7 @@ defmodule Validator do
   end
 
   defp validate_tuple(tuple, spec, context) when is_tuple(tuple) do
-    expected_size = tuple_size(spec.elem_types)
+    expected_size = tuple_size(spec.for.elem_types)
     actual_size = tuple_size(tuple)
 
     [
@@ -370,13 +325,13 @@ defmodule Validator do
   end
 
   defp validate_literal(value, spec, context) do
-    if value == spec.value do
+    if value == spec.for.value do
       []
     else
       [
         Error.new(
           {"Expected literal value %{expected_value}, got: %{value}.",
-           expected_value: inspect(spec.value), value: inspect(value)},
+           expected_value: inspect(spec.for.value), value: inspect(value)},
           context
         )
       ]
@@ -384,7 +339,15 @@ defmodule Validator do
   end
 
   defp unexpected_fields(map, schema) do
-    Map.keys(map) -- Map.keys(schema)
+    keys_from_schema =
+      schema
+      |> Map.keys()
+      |> Enum.map(fn
+        %OptionalKey{key: key} -> key
+        key -> key
+      end)
+
+    Map.keys(map) -- keys_from_schema
   end
 
   defp unexpected_fields_error(_map, %{%AnyOtherKey{} => _}, _context), do: []
@@ -405,12 +368,19 @@ defmodule Validator do
     end
   end
 
+  defp missing_fields(map, schema) do
+    schema
+    |> Enum.reject(fn {key, _} ->
+      match?(%OptionalKey{}, key) or match?(%AnyOtherKey{}, key)
+    end)
+    |> Enum.filter(fn {field_name, _field} ->
+      not (map |> Map.has_key?(field_name))
+    end)
+    |> Enum.map(fn {field_name, _} -> field_name end)
+  end
+
   defp missing_fields_error(map, schema, context) do
-    missing_fields =
-      for {field_name, field} <- schema,
-          is_nil(map |> Map.get(field_name)) and required_field?(field) do
-        field_name
-      end
+    missing_fields = missing_fields(map, schema)
 
     if missing_fields == [] do
       []
@@ -432,8 +402,7 @@ defmodule Validator do
         schema
         |> Map.get(field)
         |> case do
-          %module{type: type}
-          when module in [ValueSpec, ListSpec, TupleSpec, StructSpec, LiteralSpec] ->
+          %Spec{type: type} ->
             type
 
           value ->
@@ -444,10 +413,4 @@ defmodule Validator do
     end)
     |> Enum.join(", ")
   end
-
-  defp required_field?(field) when is_list(field), do: false
-  defp required_field?(field) when is_tuple(field), do: false
-  defp required_field?(field) when is_map(field), do: field |> Map.get(:required, false)
-  defp required_field?(field) when is_function(field), do: false
-  defp required_field?(_field), do: false
 end

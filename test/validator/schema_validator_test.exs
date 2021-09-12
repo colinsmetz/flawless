@@ -15,10 +15,10 @@ defmodule Validator.SchemaValidatorTest do
 
     test "it successfully validates complex schemas" do
       schema = %{
-        "format" => req_string(checks: [one_of(["csv", "xml"])]),
-        "regex" => req_string(),
+        "format" => string(checks: [one_of(["csv", "xml"])]),
+        "regex" => string(),
         "bim" => %{
-          "truc" => req_string()
+          "truc" => string()
         },
         "polling" =>
           map(%{
@@ -33,13 +33,13 @@ defmodule Validator.SchemaValidatorTest do
           list(
             map(
               %{
-                "name" => req_string(),
-                "type" => req_string(),
+                "name" => string(),
+                "type" => string(),
                 "is_key" => boolean(),
                 "is_required" => boolean(),
                 "meta" =>
                   map(%{
-                    "id" => req_value()
+                    "id" => value()
                   })
               },
               checks: []
@@ -47,7 +47,7 @@ defmodule Validator.SchemaValidatorTest do
             checks: [rule(&(length(&1) > 0), "Fields must contain at least one item")]
           ),
         "brands" => [string()],
-        "status" => req_atom(checks: [one_of([:ok, :error])]),
+        "status" => atom(checks: [one_of([:ok, :error])]),
         "tuple_of_things" => {
           [string()],
           %{"a" => string()}
@@ -59,7 +59,7 @@ defmodule Validator.SchemaValidatorTest do
 
     test "it detects errors in invalid schemas" do
       schema = %{
-        "name" => string(required: :maybe, cast_from: :nothing),
+        "name" => string(nil: :maybe, cast_from: :nothing),
         "projects" => [string(), string()],
         "profile" => %{
           "tags" => list(string(), checks: [fn -> 0 end])
@@ -72,7 +72,10 @@ defmodule Validator.SchemaValidatorTest do
                  "Invalid value: :nothing. Valid options: [:any, :string, :number, :integer, :float, :boolean, :atom, :pid, :ref, :function, :port, :list, :tuple, :map, :struct]",
                  ["name", :cast_from]
                ),
-               Error.new("Expected type: boolean, got: :maybe.", ["name", :required]),
+               Error.new("Invalid value: :maybe. Valid options: [:default, true, false]", [
+                 "name",
+                 nil
+               ]),
                Error.new("Value does not match any of the possible schemas.", ["process"]),
                Error.new("Expected arity of 1, found: 0.", ["profile", "tags", :checks, 0]),
                Error.new("Maximum length of 1 required (current: 2).", ["projects"])

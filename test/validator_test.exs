@@ -13,22 +13,10 @@ defmodule ValidatorTest do
       assert validate("hey", value()) == []
     end
 
-    test "req_value/1 expects any value" do
-      assert validate(123, req_value()) == []
-      assert validate(true, req_value()) == []
-      assert validate("hey", req_value()) == []
-    end
-
     test "boolean/1 expects a boolean value" do
       assert validate(123, boolean()) == [Error.new("Expected type: boolean, got: 123.", [])]
       assert validate(true, boolean()) == []
       assert validate(false, boolean()) == []
-    end
-
-    test "req_boolean/1 expects a boolean value" do
-      assert validate(123, req_boolean()) == [Error.new("Expected type: boolean, got: 123.", [])]
-      assert validate(true, req_boolean()) == []
-      assert validate(false, req_boolean()) == []
     end
 
     test "number/1 expects a number value" do
@@ -38,15 +26,6 @@ defmodule ValidatorTest do
 
       assert validate(123, number()) == []
       assert validate(1.44, number()) == []
-    end
-
-    test "req_number/1 expects a number value" do
-      assert validate("hello", req_number()) == [
-               Error.new("Expected type: number, got: \"hello\".", [])
-             ]
-
-      assert validate(123, req_number()) == []
-      assert validate(1.44, req_number()) == []
     end
 
     test "float/1 expects a float value" do
@@ -61,18 +40,6 @@ defmodule ValidatorTest do
       assert validate(1.44, float()) == []
     end
 
-    test "req_float/1 expects a float value" do
-      assert validate("hello", req_float()) == [
-               Error.new("Expected type: float, got: \"hello\".", [])
-             ]
-
-      assert validate(123, req_float()) == [
-               Error.new("Expected type: float, got: 123.", [])
-             ]
-
-      assert validate(1.44, req_float()) == []
-    end
-
     test "integer/1 expects an integer value" do
       assert validate("hello", integer()) == [
                Error.new("Expected type: integer, got: \"hello\".", [])
@@ -85,28 +52,10 @@ defmodule ValidatorTest do
       assert validate(123, integer()) == []
     end
 
-    test "req_integer/1 expects an integer value" do
-      assert validate("hello", req_integer()) == [
-               Error.new("Expected type: integer, got: \"hello\".", [])
-             ]
-
-      assert validate(1.44, req_integer()) == [
-               Error.new("Expected type: integer, got: 1.44.", [])
-             ]
-
-      assert validate(123, req_integer()) == []
-    end
-
     test "string/1 expects a string value" do
       assert validate(123, string()) == [Error.new("Expected type: string, got: 123.", [])]
       assert validate(true, string()) == [Error.new("Expected type: string, got: true.", [])]
       assert validate("hello", string()) == []
-    end
-
-    test "req_string/1 expects a string value" do
-      assert validate(123, req_string()) == [Error.new("Expected type: string, got: 123.", [])]
-      assert validate(true, req_string()) == [Error.new("Expected type: string, got: true.", [])]
-      assert validate("hello", req_string()) == []
     end
 
     test "atom/1 expects an atom value" do
@@ -119,16 +68,6 @@ defmodule ValidatorTest do
       assert validate(:test, atom()) == []
     end
 
-    test "req_atom/1 expects an atom value" do
-      assert validate(123, req_atom()) == [Error.new("Expected type: atom, got: 123.", [])]
-
-      assert validate("hello", req_atom()) == [
-               Error.new("Expected type: atom, got: \"hello\".", [])
-             ]
-
-      assert validate(:test, req_atom()) == []
-    end
-
     test "pid/1 expects a pid value" do
       assert validate(:c.pid(0, 1, 2), pid()) == []
       assert validate(self(), pid()) == []
@@ -136,23 +75,10 @@ defmodule ValidatorTest do
       assert validate(123, pid()) == [Error.new("Expected type: pid, got: 123.", [])]
     end
 
-    test "req_pid/1 expects a pid value" do
-      assert validate(:c.pid(0, 1, 2), req_pid()) == []
-      assert validate(self(), req_pid()) == []
-      assert validate("self", req_pid()) == [Error.new("Expected type: pid, got: \"self\".", [])]
-      assert validate(123, req_pid()) == [Error.new("Expected type: pid, got: 123.", [])]
-    end
-
     test "ref/1 expects a ref value" do
       assert validate(make_ref(), ref()) == []
       assert validate("self", ref()) == [Error.new("Expected type: ref, got: \"self\".", [])]
       assert validate(123, ref()) == [Error.new("Expected type: ref, got: 123.", [])]
-    end
-
-    test "req_ref/1 expects a ref value" do
-      assert validate(make_ref(), req_ref()) == []
-      assert validate("self", req_ref()) == [Error.new("Expected type: ref, got: \"self\".", [])]
-      assert validate(123, req_ref()) == [Error.new("Expected type: ref, got: 123.", [])]
     end
 
     test "function/1 expects a function value" do
@@ -166,37 +92,14 @@ defmodule ValidatorTest do
       assert validate(123, function()) == [Error.new("Expected type: function, got: 123.", [])]
     end
 
-    test "req_function/1 expects a function value" do
-      assert validate(fn -> 1 end, req_function()) == []
-      assert validate(&(&1 + &2), req_function()) == []
-
-      assert validate("fn", req_function()) == [
-               Error.new("Expected type: function, got: \"fn\".", [])
-             ]
-
-      assert validate(123, req_function()) == [
-               Error.new("Expected type: function, got: 123.", [])
-             ]
-    end
-
     test "port/1 expects a port value" do
       assert validate(Port.list() |> Enum.at(0), port()) == []
       assert validate("self", port()) == [Error.new("Expected type: port, got: \"self\".", [])]
       assert validate(123, port()) == [Error.new("Expected type: port, got: 123.", [])]
     end
 
-    test "req_port/1 expects a port value" do
-      assert validate(Port.list() |> Enum.at(0), req_port()) == []
-
-      assert validate("self", req_port()) == [
-               Error.new("Expected type: port, got: \"self\".", [])
-             ]
-
-      assert validate(123, req_port()) == [Error.new("Expected type: port, got: 123.", [])]
-    end
-
-    test "number/1, req_number/1, integer/1 and req_integer/1 have shortcut rules" do
-      for rule_func <- [&number/1, &req_number/1, &integer/1, &req_integer/1] do
+    test "number/1 and integer/1 have shortcut rules" do
+      for rule_func <- [&number/1, &integer/1] do
         assert validate(0, rule_func.(min: 2, max: 10)) == [
                  Error.new("Must be greater than or equal to 2.", [])
                ]
@@ -215,77 +118,67 @@ defmodule ValidatorTest do
       end
     end
 
-    test "float/1 and req_float/1 have shortcut rules" do
-      for rule_func <- [&float/1, &req_float/1] do
-        assert validate(0.0, rule_func.(min: 2.0, max: 10.0)) == [
-                 Error.new("Must be greater than or equal to 2.0.", [])
-               ]
+    test "float/1 has shortcut rules" do
+      assert validate(0.0, float(min: 2.0, max: 10.0)) == [
+               Error.new("Must be greater than or equal to 2.0.", [])
+             ]
 
-        assert validate(100.0, rule_func.(min: 2.0, max: 10.0)) == [
-                 Error.new("Must be less than or equal to 10.0.", [])
-               ]
+      assert validate(100.0, float(min: 2.0, max: 10.0)) == [
+               Error.new("Must be less than or equal to 10.0.", [])
+             ]
 
-        assert validate(2.0, rule_func.(in: [1.0, 3.0, 5.0])) == [
-                 Error.new("Invalid value: 2.0. Valid options: [1.0, 3.0, 5.0]", [])
-               ]
+      assert validate(2.0, float(in: [1.0, 3.0, 5.0])) == [
+               Error.new("Invalid value: 2.0. Valid options: [1.0, 3.0, 5.0]", [])
+             ]
 
-        assert validate(7.0, rule_func.(between: [1.0, 5.0])) == [
-                 Error.new("Must be between 1.0 and 5.0.", [])
-               ]
-      end
+      assert validate(7.0, float(between: [1.0, 5.0])) == [
+               Error.new("Must be between 1.0 and 5.0.", [])
+             ]
     end
 
-    test "string/1 and req_string/1 have shortcut rules" do
-      for rule_func <- [&string/1, &req_string/1] do
-        assert validate("hey", rule_func.(min_length: 5)) == [
-                 Error.new("Minimum length of 5 required (current: 3).", [])
-               ]
+    test "string/1 has shortcut rules" do
+      assert validate("hey", string(min_length: 5)) == [
+               Error.new("Minimum length of 5 required (current: 3).", [])
+             ]
 
-        assert validate("validation", rule_func.(max_length: 5)) == [
-                 Error.new("Maximum length of 5 required (current: 10).", [])
-               ]
+      assert validate("validation", string(max_length: 5)) == [
+               Error.new("Maximum length of 5 required (current: 10).", [])
+             ]
 
-        assert validate("hey", rule_func.(length: 5)) == [
-                 Error.new("Expected length of 5 (current: 3).", [])
-               ]
+      assert validate("hey", string(length: 5)) == [
+               Error.new("Expected length of 5 (current: 3).", [])
+             ]
 
-        assert validate("", rule_func.(non_empty: true, in: ["plop"], format: ~r/plop/)) == [
-                 Error.new("Invalid value: \"\". Valid options: [\"plop\"]", []),
-                 Error.new("Value cannot be empty.", []),
-                 Error.new("Value \"\" does not match regex ~r/plop/.", [])
-               ]
-      end
+      assert validate("", string(non_empty: true, in: ["plop"], format: ~r/plop/)) == [
+               Error.new("Invalid value: \"\". Valid options: [\"plop\"]", []),
+               Error.new("Value cannot be empty.", []),
+               Error.new("Value \"\" does not match regex ~r/plop/.", [])
+             ]
     end
 
-    test "boolean/1 and req_boolean/1 have shortcut rules" do
-      for rule_func <- [&boolean/1, &req_boolean/1] do
-        assert validate(true, rule_func.(in: [false])) == [
-                 Error.new("Invalid value: true. Valid options: [false]", [])
-               ]
-      end
+    test "boolean/1 has shortcut rules" do
+      assert validate(true, boolean(in: [false])) == [
+               Error.new("Invalid value: true. Valid options: [false]", [])
+             ]
     end
 
-    test "atom/1 and req_atom/1 have shortcut rules" do
-      for rule_func <- [&atom/1, &req_atom/1] do
-        assert validate(:hola, rule_func.(in: [:abc, :def])) == [
-                 Error.new("Invalid value: :hola. Valid options: [:abc, :def]", [])
-               ]
-      end
+    test "atom/1 has shortcut rules" do
+      assert validate(:hola, atom(in: [:abc, :def])) == [
+               Error.new("Invalid value: :hola. Valid options: [:abc, :def]", [])
+             ]
     end
 
-    test "function/1 and req_atom/1 have shortcut rules" do
-      for rule_func <- [&function/1, &req_function/1] do
-        assert validate(&Enum.count/1, rule_func.(in: [&Enum.sum/1, &List.first/1])) == [
-                 Error.new(
-                   "Invalid value: &Enum.count/1. Valid options: [&Enum.sum/1, &List.first/1]",
-                   []
-                 )
-               ]
+    test "function/1 has shortcut rules" do
+      assert validate(&Enum.count/1, function(in: [&Enum.sum/1, &List.first/1])) == [
+               Error.new(
+                 "Invalid value: &Enum.count/1. Valid options: [&Enum.sum/1, &List.first/1]",
+                 []
+               )
+             ]
 
-        assert validate(fn -> 0 end, rule_func.(arity: 1)) == [
-                 Error.new("Expected arity of 1, found: 0.", [])
-               ]
-      end
+      assert validate(fn -> 0 end, function(arity: 1)) == [
+               Error.new("Expected arity of 1, found: 0.", [])
+             ]
     end
   end
 
@@ -382,28 +275,26 @@ defmodule ValidatorTest do
     end
 
     test "have shortcut rules" do
-      for rule_func <- [&list/2, &req_list/2] do
-        assert validate([1, 2, 3], rule_func.(number(), min_length: 5)) == [
-                 Error.new("Minimum length of 5 required (current: 3).", [])
-               ]
+      assert validate([1, 2, 3], list(number(), min_length: 5)) == [
+               Error.new("Minimum length of 5 required (current: 3).", [])
+             ]
 
-        assert validate([1, 2, 3, 4], rule_func.(number(), max_length: 3)) == [
-                 Error.new("Maximum length of 3 required (current: 4).", [])
-               ]
+      assert validate([1, 2, 3, 4], list(number(), max_length: 3)) == [
+               Error.new("Maximum length of 3 required (current: 4).", [])
+             ]
 
-        assert validate([1, 2, 3], rule_func.(number(), length: 5)) == [
-                 Error.new("Expected length of 5 (current: 3).", [])
-               ]
+      assert validate([1, 2, 3], list(number(), length: 5)) == [
+               Error.new("Expected length of 5 (current: 3).", [])
+             ]
 
-        assert validate([], rule_func.(number(), non_empty: true, in: [[1, 2]])) == [
-                 Error.new("Invalid value: []. Valid options: [[1, 2]]", []),
-                 Error.new("Value cannot be empty.", [])
-               ]
+      assert validate([], list(number(), non_empty: true, in: [[1, 2]])) == [
+               Error.new("Invalid value: []. Valid options: [[1, 2]]", []),
+               Error.new("Value cannot be empty.", [])
+             ]
 
-        assert validate([1, 1, 2], rule_func.(number(), no_duplicate: true)) == [
-                 Error.new("The list should not contain duplicates (duplicates found: [1]).", [])
-               ]
-      end
+      assert validate([1, 1, 2], list(number(), no_duplicate: true)) == [
+               Error.new("The list should not contain duplicates (duplicates found: [1]).", [])
+             ]
     end
   end
 
@@ -413,11 +304,11 @@ defmodule ValidatorTest do
 
     test "detect missing required fields" do
       schema = %{
-        "name" => req_string(),
-        "age" => req_number(),
-        "address" => string(),
-        "score" => req_number(),
-        "valid" => req_boolean()
+        "name" => string(),
+        "age" => number(),
+        "score" => number(),
+        "valid" => boolean(),
+        maybe("address") => string()
       }
 
       value = %{
@@ -432,8 +323,8 @@ defmodule ValidatorTest do
 
     test "detect unexpected fields" do
       schema = %{
-        "x" => req_number(),
-        "y" => req_number()
+        "x" => number(),
+        "y" => number()
       }
 
       value = %{
@@ -455,8 +346,8 @@ defmodule ValidatorTest do
       schema =
         map(
           %{
-            "x" => req_number(checks: field_checks),
-            "y" => req_number(checks: field_checks)
+            "x" => number(checks: field_checks),
+            "y" => number(checks: field_checks)
           },
           checks: map_checks
         )
@@ -478,11 +369,9 @@ defmodule ValidatorTest do
     end
 
     test "have shortcut rules" do
-      for rule_func <- [&map/2, &req_map/2] do
-        assert validate(%{}, rule_func.(%{}, in: [%{c: 3}])) == [
-                 Error.new("Invalid value: %{}. Valid options: [%{c: 3}]", [])
-               ]
-      end
+      assert validate(%{}, map(%{}, in: [%{c: 3}])) == [
+               Error.new("Invalid value: %{}. Valid options: [%{c: 3}]", [])
+             ]
     end
 
     defmodule TestModule do
@@ -491,8 +380,8 @@ defmodule ValidatorTest do
 
     test "cannot validate structs" do
       schema = %{
-        a: req_number(),
-        b: req_number()
+        a: number(),
+        b: number()
       }
 
       assert validate(%TestModule{a: 1, b: 2}, schema) == [
@@ -538,8 +427,8 @@ defmodule ValidatorTest do
       schema =
         structure(
           %TestStructA{
-            a: req_number(checks: field_checks),
-            b: req_number(checks: field_checks)
+            a: number(checks: field_checks),
+            b: number(checks: field_checks)
           },
           checks: map_checks
         )
@@ -585,17 +474,15 @@ defmodule ValidatorTest do
     end
 
     test "have shortcut rules" do
-      for rule_func <- [&structure/2, &req_structure/2] do
-        assert validate(
-                 %TestStructA{},
-                 rule_func.(%TestStructA{}, in: [%TestStructA{a: 3, b: 4}])
-               ) == [
-                 Error.new(
-                   "Invalid value: %ValidatorTest.TestStructA{a: nil, b: nil}. Valid options: [%ValidatorTest.TestStructA{a: 3, b: 4}]",
-                   []
-                 )
-               ]
-      end
+      assert validate(
+               %TestStructA{},
+               structure(%TestStructA{}, in: [%TestStructA{a: 3, b: 4}])
+             ) == [
+               Error.new(
+                 "Invalid value: %ValidatorTest.TestStructA{a: nil, b: nil}. Valid options: [%ValidatorTest.TestStructA{a: 3, b: 4}]",
+                 []
+               )
+             ]
     end
   end
 
@@ -658,11 +545,9 @@ defmodule ValidatorTest do
     end
 
     test "have shortcut rules" do
-      for rule_func <- [&tuple/2, &req_tuple/2] do
-        assert validate({}, rule_func.({}, in: [{1, 2}])) == [
-                 Error.new("Invalid value: {}. Valid options: [{1, 2}]", [])
-               ]
-      end
+      assert validate({}, tuple({}, in: [{1, 2}])) == [
+               Error.new("Invalid value: {}. Valid options: [{1, 2}]", [])
+             ]
     end
   end
 
@@ -787,13 +672,66 @@ defmodule ValidatorTest do
     end
   end
 
+  describe "nullable option" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "a nil value is never accepted when nil is false, even it matches the type" do
+      assert validate(nil, literal(nil, nil: false)) == [Error.new("Value cannot be nil.", [])]
+      assert validate(nil, string(nil: false)) == [Error.new("Value cannot be nil.", [])]
+      assert validate(nil, atom(nil: false)) == [Error.new("Value cannot be nil.", [])]
+
+      assert validate(nil, value(in: [nil], nil: false)) == [
+               Error.new("Value cannot be nil.", [])
+             ]
+
+      assert validate(nil, map(%{}, nil: false)) == [Error.new("Value cannot be nil.", [])]
+
+      assert validate(%{"a" => nil, "b" => nil}, %{
+               "a" => atom(nil: false),
+               maybe("b") => string(nil: false)
+             }) == [
+               Error.new("Value cannot be nil.", ["b"]),
+               Error.new("Value cannot be nil.", ["a"])
+             ]
+
+      assert validate(nil, tuple({atom()}, nil: false)) == [Error.new("Value cannot be nil.", [])]
+    end
+
+    test "a nil value is always accepted when nil is true, whatever the type" do
+      assert validate(nil, literal(15, nil: true)) == []
+      assert validate(nil, string(nil: true)) == []
+      assert validate(nil, atom(nil: true)) == []
+      assert validate(nil, tuple({string(), string()}, nil: true)) == []
+      assert validate(%{"a" => nil}, %{"a" => port(nil: true)}) == []
+    end
+
+    test "a nil value is accepted if it matches the type and the option was not specified" do
+      assert validate(nil, nil) == []
+      assert validate(nil, literal(nil)) == []
+      assert validate(nil, atom()) == []
+      assert validate(nil, value()) == []
+    end
+
+    test "a nil value is not accepted for required fields in a map, when nothing was specified" do
+      assert validate(%{"a" => nil}, %{"a" => string()}) == [
+               Error.new("Expected type: string, got: nil.", ["a"])
+             ]
+    end
+
+    test "a nil value is accepted for optional fields in a map, when nothing was specified" do
+      assert validate(%{"a" => nil}, %{maybe("a") => string()}) == []
+      assert validate(%{"a" => nil}, %{any_key() => string()}) == []
+    end
+  end
+
   describe "defvalidator macro" do
     test "can be used to avoid importing globally all the helpers" do
       schema =
         defvalidator do
           %{
-            "name" => req_string(checks: [rule(&(&1 != ""), "is empty")]),
-            "gender" => req_string(checks: [one_of(["male", "female", "other"])])
+            "name" => string(checks: [rule(&(&1 != ""), "is empty")]),
+            "gender" => string(checks: [one_of(["male", "female", "other"])])
           }
         end
 
@@ -810,19 +748,19 @@ defmodule ValidatorTest do
     test "it validates map, list and tuple fields" do
       schema = %{
         "config" =>
-          req_map(%{
-            "min" => req_number(),
-            "max" => number()
+          map(%{
+            "min" => number(),
+            maybe("max") => number()
           }),
-        "config_override" => %{},
+        maybe("config_override") => %{},
         "products" =>
-          req_list(%{
-            "product_id" => req_string(),
-            "price" => req_number()
+          list(%{
+            "product_id" => string(),
+            "price" => number()
           }),
-        "related_ids" => [string()],
-        "coordinates" => req_tuple({float(), float(), float()}),
-        "status" => {atom(), number()}
+        maybe("related_ids") => [string()],
+        "coordinates" => tuple({float(), float(), float()}),
+        maybe("status") => {atom(), number()}
       }
 
       assert validate(%{}, schema) == [
@@ -887,15 +825,15 @@ defmodule ValidatorTest do
 
     test "it validates very complex schema" do
       schema = %{
-        "format" => req_string(checks: [one_of(["csv", "xml"])]),
-        "regex" => req_string(),
-        "bim" => %{
-          "truc" => req_string(),
-          "struct" => req_structure(%M{x: number()})
+        "format" => string(checks: [one_of(["csv", "xml"])]),
+        "regex" => string(),
+        maybe("bim") => %{
+          "truc" => string(),
+          "struct" => structure(%M{x: number()})
         },
-        "polling" =>
+        maybe("polling") =>
           map(%{
-            "slice_size" =>
+            maybe("slice_size") =>
               value(
                 checks: [
                   rule(&(String.length(&1) > 100), "Slice size must be longer than 100")
@@ -906,25 +844,26 @@ defmodule ValidatorTest do
           list(
             map(
               %{
-                "name" => req_string(),
-                "type" => req_string(),
-                "is_key" => boolean(),
-                "is_required" => boolean(),
-                "meta" =>
+                "name" => string(),
+                "type" => string(),
+                maybe("is_key") => boolean(),
+                maybe("is_required") => boolean(),
+                maybe("meta") =>
                   map(%{
-                    "id" => req_value()
+                    "id" => value()
                   })
               },
               checks: [required_if_is_key()]
             ),
             checks: [rule(&(length(&1) > 0), "Fields must contain at least one item")]
           ),
-        "brands" => [string()],
-        "status" => req_atom(checks: [one_of([:ok, :error])]),
+        maybe("brands") => [string()],
+        "status" => atom(checks: [one_of([:ok, :error])]),
         "tuple_of_things" => {
           [string()],
-          %{"a" => string()}
-        }
+          %{maybe("a") => string()}
+        },
+        maybe("test") => string(nil: false)
       }
 
       value = %{
@@ -944,7 +883,8 @@ defmodule ValidatorTest do
         "file_max_age_days" => "67",
         "brands" => ["hey", 28],
         "status" => :ok,
-        "tuple_of_things" => {["x", "y", 9, "z"], %{}}
+        "tuple_of_things" => {["x", "y", 9, "z"], %{}},
+        "test" => nil
       }
 
       assert Validator.validate(value, schema) == [
@@ -953,12 +893,13 @@ defmodule ValidatorTest do
                  "bim"
                ]),
                Error.new("Expected type: string, got: 28.", ["brands", 1]),
+               Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"].", ["polling"]),
+               Error.new("Slice size must be longer than 100", ["polling", "slice_size"]),
+               Error.new("Value cannot be nil.", ["test"]),
                Error.new("Field 'a' is a key but is not required", ["fields", 0]),
                Error.new("Unexpected fields: [\"tru\"].", ["fields", 1]),
                Error.new("Missing required fields: \"id\" (any).", ["fields", 1, "meta"]),
                Error.new("Invalid value: \"yml\". Valid options: [\"csv\", \"xml\"]", ["format"]),
-               Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"].", ["polling"]),
-               Error.new("Slice size must be longer than 100", ["polling", "slice_size"]),
                Error.new("Expected type: string, got: 9.", ["tuple_of_things", 0, 2])
              ]
     end
@@ -970,9 +911,9 @@ defmodule ValidatorTest do
 
     def tree_schema() do
       %{
-        value: number(max: 100),
-        left: &tree_schema/0,
-        right: &tree_schema/0
+        :value => number(max: 100),
+        maybe(:left) => &tree_schema/0,
+        maybe(:right) => &tree_schema/0
       }
     end
 
@@ -1030,7 +971,7 @@ defmodule ValidatorTest do
     test "fail with the correct errors if select match is invalid" do
       schema = %{
         a: fn
-          %{} -> %{b: req_number(), c: number()}
+          %{} -> %{:b => number(), maybe(:c) => number()}
           [_ | _] -> list(number())
         end
       }
@@ -1049,7 +990,7 @@ defmodule ValidatorTest do
     test "fail with the correct error if nothing matched in the function" do
       schema = %{
         a: fn
-          %{} -> %{b: req_number(), c: number()}
+          %{} -> %{:b => number(), maybe(:c) => number()}
           [_ | _] -> list(number())
         end
       }

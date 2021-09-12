@@ -1,6 +1,8 @@
 defmodule Validator.Rule do
   defstruct predicate: nil, message: nil
 
+  alias Validator.Context
+
   @type predicate() :: (any -> boolean())
   @type error_function() ::
           Validator.Error.t_message()
@@ -20,7 +22,7 @@ defmodule Validator.Rule do
     }
   end
 
-  @spec evaluate(Validator.Rule.t() | function(), any, list()) :: [] | Validator.Error.t()
+  @spec evaluate(Validator.Rule.t() | function(), any, Context.t()) :: [] | Validator.Error.t()
   def evaluate(%__MODULE__{predicate: predicate, message: error_message} = _rule, data, context) do
     do_evaluate(predicate, error_message, data, context)
   end

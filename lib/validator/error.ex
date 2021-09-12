@@ -1,6 +1,8 @@
 defmodule Validator.Error do
   defstruct context: [], message: ""
 
+  alias Validator.Context
+
   @type t_message :: String.t() | {String.t(), Keyword.t()}
 
   @type t() :: %__MODULE__{
@@ -8,11 +10,15 @@ defmodule Validator.Error do
           message: t_message
         }
 
-  @spec new(t_message, list()) :: t()
-  def new(message, context) when is_list(context) do
+  @spec new(t_message, Context.t() | list()) :: t()
+  def new(message, %Context{} = context) do
+    new(message, context.path)
+  end
+
+  def new(message, path) when is_list(path) do
     %__MODULE__{
       message: message,
-      context: context
+      context: path
     }
   end
 
@@ -35,8 +41,8 @@ defmodule Validator.Error do
     end)
   end
 
-  @spec invalid_type_error(Validator.Types.t(), any, list) :: Validator.Error.t()
-  def invalid_type_error(expected_type, value, context) do
+  @spec invalid_type_error(Validator.Types.t(), any, Context.t()) :: Validator.Error.t()
+  def invalid_type_error(expected_type, value, %Context{} = context) do
     new(
       {"Expected type: %{expected_type}, got: %{value}.",
        expected_type: expected_type, value: inspect(value)},

@@ -12,18 +12,17 @@ defmodule Validator.Inspect do
   def cast_from(cast_from, opts), do: ["cast_from: ", to_doc(cast_from, opts)]
 end
 
-defimpl Inspect, for: Validator.ValueSpec do
+defimpl Inspect, for: Validator.Spec do
   import Inspect.Algebra
   import Validator.Inspect
-  alias Validator.ValueSpec
+  alias Validator.Spec
 
   def inspect(
-        %ValueSpec{
+        %Spec{
           type: type,
-          required: required,
-          schema: schema,
           cast_from: cast_from,
-          checks: checks
+          checks: checks,
+          for: %Spec.Value{schema: schema}
         },
         opts
       ) do
@@ -36,19 +35,12 @@ defimpl Inspect, for: Validator.ValueSpec do
       |> Enum.reject(&(&1 == nil))
 
     concat([
-      if(required, do: "req_", else: ""),
       "#{type}",
       function_args(params, opts)
     ])
   end
-end
 
-defimpl Inspect, for: Validator.LiteralSpec do
-  import Inspect.Algebra
-  import Validator.Inspect
-  alias Validator.LiteralSpec
-
-  def inspect(%LiteralSpec{value: value, cast_from: cast_from}, opts) do
+  def inspect(%Spec{for: %Spec.Literal{value: value}, cast_from: cast_from}, opts) do
     params =
       [
         [to_doc(value, opts)],
@@ -58,15 +50,9 @@ defimpl Inspect, for: Validator.LiteralSpec do
 
     concat(["literal", function_args(params, opts)])
   end
-end
-
-defimpl Inspect, for: Validator.ListSpec do
-  import Inspect.Algebra
-  import Validator.Inspect
-  alias Validator.ListSpec
 
   def inspect(
-        %ListSpec{required: required, item_type: item_type, cast_from: cast_from, checks: checks},
+        %Spec{for: %Spec.List{item_type: item_type}, cast_from: cast_from, checks: checks},
         opts
       ) do
     params =
@@ -78,22 +64,14 @@ defimpl Inspect, for: Validator.ListSpec do
       |> Enum.reject(&(&1 == nil))
 
     concat([
-      if(required, do: "req_", else: ""),
       "list",
       function_args(params, opts)
     ])
   end
-end
-
-defimpl Inspect, for: Validator.TupleSpec do
-  import Inspect.Algebra
-  import Validator.Inspect
-  alias Validator.TupleSpec
 
   def inspect(
-        %TupleSpec{
-          required: required,
-          elem_types: elem_types,
+        %Spec{
+          for: %Spec.Tuple{elem_types: elem_types},
           cast_from: cast_from,
           checks: checks
         },
@@ -108,8 +86,30 @@ defimpl Inspect, for: Validator.TupleSpec do
       |> Enum.reject(&(&1 == nil))
 
     concat([
-      if(required, do: "req_", else: ""),
       "tuple",
+      function_args(params, opts)
+    ])
+  end
+
+  def inspect(
+        %Spec{
+          type: type,
+          cast_from: cast_from,
+          checks: checks,
+          for: %Spec.Struct{schema: schema, module: _module}
+        },
+        opts
+      ) do
+    params =
+      [
+        [to_doc(schema, opts)],
+        checks(checks, opts),
+        cast_from(cast_from, opts)
+      ]
+      |> Enum.reject(&(&1 == nil))
+
+    concat([
+      "#{type}",
       function_args(params, opts)
     ])
   end
@@ -120,5 +120,13 @@ defimpl Inspect, for: Validator.AnyOtherKey do
 
   def inspect(%AnyOtherKey{}, _opts) do
     "any_key()"
+  end
+end
+
+defimpl Inspect, for: Validator.OptionalKey do
+  alias Validator.OptionalKey
+
+  def inspect(%OptionalKey{key: key}, _opts) do
+    "maybe(#{inspect(key)})"
   end
 end

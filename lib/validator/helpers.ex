@@ -1,11 +1,8 @@
 defmodule Validator.Helpers do
-  alias Validator.{ListSpec, ValueSpec, TupleSpec, AnyOtherKey, LiteralSpec, StructSpec}
   alias Validator.Rule
   alias Validator.Types
-
-  defp required(value_fun, opts) do
-    opts |> Keyword.put(:required, true) |> value_fun.()
-  end
+  alias Validator.Spec
+  alias Validator.{AnyOtherKey, OptionalKey}
 
   defp value_with_type(type, opts) do
     opts
@@ -20,34 +17,31 @@ defmodule Validator.Helpers do
     |> Enum.concat(built_in_checks(opts, type))
   end
 
+  defp build_spec(subspec, type, opts) do
+    %Spec{
+      checks: extract_checks(opts, type),
+      type: type,
+      cast_from: opts |> Keyword.get(:cast_from, []),
+      nil: opts |> Keyword.get(nil, :default),
+      for: subspec
+    }
+  end
+
   def value(opts \\ []) do
     type = opts |> Keyword.get(:type, :any)
 
-    %ValueSpec{
-      required: opts |> Keyword.get(:required, false),
-      checks: extract_checks(opts, type),
-      schema: opts |> Keyword.get(:schema, nil),
-      type: type,
-      cast_from: opts |> Keyword.get(:cast_from, [])
-    }
+    %Spec.Value{schema: opts |> Keyword.get(:schema, nil)}
+    |> build_spec(type, opts)
   end
 
   def list(item_type, opts \\ []) do
-    %ListSpec{
-      required: opts |> Keyword.get(:required, false),
-      checks: extract_checks(opts, :list),
-      item_type: item_type,
-      cast_from: opts |> Keyword.get(:cast_from, [])
-    }
+    %Spec.List{item_type: item_type}
+    |> build_spec(:list, opts)
   end
 
   def tuple(elem_types, opts \\ []) do
-    %TupleSpec{
-      required: opts |> Keyword.get(:required, false),
-      checks: extract_checks(opts, :tuple),
-      elem_types: elem_types,
-      cast_from: opts |> Keyword.get(:cast_from, [])
-    }
+    %Spec.Tuple{elem_types: elem_types}
+    |> build_spec(:tuple, opts)
   end
 
   def map(schema, opts \\ []) do
@@ -58,62 +52,30 @@ defmodule Validator.Helpers do
   end
 
   def structure(%module{} = schema, opts \\ []) do
-    %StructSpec{
-      module: module,
-      required: opts |> Keyword.get(:required, false),
-      checks: extract_checks(opts, :struct),
-      schema: schema,
-      type: :struct,
-      cast_from: opts |> Keyword.get(:cast_from, [])
-    }
+    %Spec.Struct{module: module, schema: schema}
+    |> build_spec(:struct, opts)
   end
 
   def literal(value, opts \\ []) do
-    %LiteralSpec{
-      value: value,
-      required: opts |> Keyword.get(:required, false),
-      cast_from: opts |> Keyword.get(:cast_from, []),
-      type: Types.type_of(value)
-    }
+    type = Types.type_of(value)
+
+    %Spec.Literal{value: value}
+    |> build_spec(type, opts)
   end
 
-  def req_value(opts \\ []), do: required(&value/1, opts)
-  def req_list(item_type, opts \\ []), do: required(&list(item_type, &1), opts)
-  def req_map(schema, opts \\ []), do: required(&map(schema, &1), opts)
-  def req_structure(schema, opts \\ []), do: required(&structure(schema, &1), opts)
-  def req_tuple(elem_types, opts \\ []), do: required(&tuple(elem_types, &1), opts)
-
   def integer(opts \\ []), do: value_with_type(:integer, opts)
-  def req_integer(opts \\ []), do: required(&integer/1, opts)
-
   def string(opts \\ []), do: value_with_type(:string, opts)
-  def req_string(opts \\ []), do: required(&string/1, opts)
-
   def float(opts \\ []), do: value_with_type(:float, opts)
-  def req_float(opts \\ []), do: required(&float/1, opts)
-
   def number(opts \\ []), do: value_with_type(:number, opts)
-  def req_number(opts \\ []), do: required(&number/1, opts)
-
   def boolean(opts \\ []), do: value_with_type(:boolean, opts)
-  def req_boolean(opts \\ []), do: required(&boolean/1, opts)
-
   def atom(opts \\ []), do: value_with_type(:atom, opts)
-  def req_atom(opts \\ []), do: required(&atom/1, opts)
-
   def pid(opts \\ []), do: value_with_type(:pid, opts)
-  def req_pid(opts \\ []), do: required(&pid/1, opts)
-
   def ref(opts \\ []), do: value_with_type(:ref, opts)
-  def req_ref(opts \\ []), do: required(&ref/1, opts)
-
   def function(opts \\ []), do: value_with_type(:function, opts)
-  def req_function(opts \\ []), do: required(&function/1, opts)
-
   def port(opts \\ []), do: value_with_type(:port, opts)
-  def req_port(opts \\ []), do: required(&port/1, opts)
 
   def any_key(), do: %AnyOtherKey{}
+  def maybe(key), do: %OptionalKey{key: key}
 
   #######################
   #   BUILT-IN CHECKS   #
