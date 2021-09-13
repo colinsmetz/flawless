@@ -124,6 +124,7 @@ defmodule Validator.Helpers do
   end
 
   defdelegate datetime(opts \\ []), to: Validator.Types.DateTime
+  defdelegate naive_datetime(opts \\ []), to: Validator.Types.NaiveDateTime
   defdelegate date(opts \\ []), to: Validator.Types.Date
   defdelegate time(opts \\ []), to: Validator.Types.Time
 
