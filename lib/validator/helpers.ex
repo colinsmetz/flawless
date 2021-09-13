@@ -72,8 +72,15 @@ defmodule Validator.Helpers do
     |> value()
   end
 
-  def structure(%module{} = schema, opts \\ []) do
+  def structure(schema_or_module, opts \\ [])
+
+  def structure(%module{} = schema, opts) do
     %Spec.Struct{module: module, schema: schema}
+    |> build_spec(:struct, opts)
+  end
+
+  def structure(module, opts) when is_atom(module) do
+    %Spec.Struct{module: module, schema: nil}
     |> build_spec(:struct, opts)
   end
 

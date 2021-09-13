@@ -530,6 +530,26 @@ defmodule ValidatorTest do
                )
              ]
     end
+
+    test "can be validated based on module only for opaque structs" do
+      assert validate(DateTime.utc_now(), structure(DateTime)) == []
+
+      assert validate(1..2, structure(DateTime)) == [
+               Error.new("Expected struct of type: DateTime, got struct of type: Range.", [])
+             ]
+
+      assert validate(1, structure(DateTime)) == [Error.new("Expected type: struct, got: 1.", [])]
+    end
+
+    test "opaque structs still accept other options" do
+      assert validate(
+               1_464_096_368,
+               structure(DateTime,
+                 cast_from: {:integer, with: &DateTime.from_unix/1},
+                 check: rule(&(&1.year == 2015), &"year should be 2015, but it is #{&1.year}")
+               )
+             ) == [Error.new("year should be 2015, but it is 2016", [])]
+    end
   end
 
   describe "tuples" do

@@ -244,7 +244,11 @@ defmodule Validator do
        )
        when value_module == module do
     validate_spec(struct, spec, context, fn ->
-      validate_map(Map.from_struct(struct), Map.from_struct(schema), context)
+      if schema == nil do
+        []
+      else
+        validate_map(Map.from_struct(struct), Map.from_struct(schema), context)
+      end
     end)
   end
 

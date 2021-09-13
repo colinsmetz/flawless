@@ -83,10 +83,13 @@ defmodule Validator.SchemaValidator do
   end
 
   defp struct_schema(module) do
-    structure(%{
-      any_key() => &schema_schema/0,
-      __struct__: module
-    })
+    structure(
+      %{
+        any_key() => &schema_schema/0,
+        __struct__: module
+      },
+      nil: true
+    )
   end
 
   defp type_schema() do

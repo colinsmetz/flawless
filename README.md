@@ -181,6 +181,16 @@ necessary.
 **Note:** a struct will never match a classic `map` schema, unless you specify
 otherwise with the `cast_from: :struct` option.
 
+#### Opaque structs
+
+If you don't know the internal fields of the struct, or only care about matching
+the struct type, you can pass only the module:
+
+```elixir
+validate(DateTime.utc_now(), structure(DateTime))
+# Result: []
+```
+
 ### Lists
 
 A list is defined using `list(item_spec, opts)`. The constraint of `item_spec`
