@@ -92,6 +92,13 @@ Several helpers are provided to define basic types:
 * `function()`
 * `port()`
 
+The following Elixir structs also have helpers:
+
+* `datetime()` ([DateTime](https://hexdocs.pm/elixir/DateTime.html))
+* `naive_datetime()` ([NaiveDateTime](https://hexdocs.pm/elixir/NaiveDateTime.html))
+* `date()` ([Date](https://hexdocs.pm/elixir/Date.html))
+* `time()` ([Time](https://hexdocs.pm/elixir/Time.html))
+
 ### Maps
 
 A map is defined using the `map(schema, opts)` helper. The schema is a map
