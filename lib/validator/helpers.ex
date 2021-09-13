@@ -105,6 +105,24 @@ defmodule Validator.Helpers do
   def any_key(), do: %AnyOtherKey{}
   def maybe(key), do: %OptionalKey{key: key}
 
+  def opaque_struct_type(module, user_opts, opts \\ []) do
+    converter = Keyword.get(opts, :converter, nil)
+    shortcut_rules = Keyword.get(opts, :shortcut_rules, [])
+    checks = built_in_checks(user_opts, shortcut_rules) ++ Keyword.get(user_opts, :checks, [])
+
+    cast_from =
+      user_opts
+      |> Keyword.get(:cast_from, [])
+      |> List.wrap()
+      |> Enum.map(fn
+        type when is_nil(converter) -> type
+        {_, with: _converter} = type -> type
+        type -> {type, with: &converter.(&1, type)}
+      end)
+
+    structure(module, Keyword.merge(user_opts, checks: checks, cast_from: cast_from))
+  end
+
   #######################
   #   BUILT-IN CHECKS   #
   #######################

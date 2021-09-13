@@ -155,7 +155,7 @@ defmodule Validator do
         possible_casts
         |> List.first()
         |> case do
-          {from, with: converter} -> Types.cast_with(value, from, converter)
+          {_from, with: converter} -> Types.cast_with(value, type, converter)
           from when is_atom(from) -> Types.cast(value, from, type)
         end
 

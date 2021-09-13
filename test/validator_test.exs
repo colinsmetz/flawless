@@ -734,7 +734,7 @@ defmodule ValidatorTest do
 
       assert validate(10, schema) == []
       assert validate("6A23D", schema) == []
-      assert validate("hey", schema) == [Error.new("Cannot be cast to string.", [])]
+      assert validate("hey", schema) == [Error.new("Cannot be cast to number.", [])]
     end
   end
 
