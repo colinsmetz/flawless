@@ -125,6 +125,7 @@ defmodule Validator.Helpers do
 
   defdelegate datetime(opts \\ []), to: Validator.Types.DateTime
   defdelegate date(opts \\ []), to: Validator.Types.Date
+  defdelegate time(opts \\ []), to: Validator.Types.Time
 
   #######################
   #   BUILT-IN CHECKS   #
