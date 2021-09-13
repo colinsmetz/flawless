@@ -136,7 +136,7 @@ defmodule Validator do
 
   defp check_type_and_cast_if_needed(
          value,
-         %Spec{type: type, cast_from: cast_from, for: %subspec{}},
+         %Spec{type: type, cast_from: cast_from, for: subspec},
          _context
        ) do
     possible_casts =
@@ -147,6 +147,11 @@ defmodule Validator do
         type when is_atom(type) -> Types.has_type?(value, type)
       end)
 
+    exact_type = case subspec do
+      %Spec.Struct{module: module} -> inspect(module)
+      _ -> type
+    end
+
     cond do
       Types.has_type?(value, type) ->
         {:ok, value}
@@ -155,12 +160,12 @@ defmodule Validator do
         possible_casts
         |> List.first()
         |> case do
-          {_from, with: converter} -> Types.cast_with(value, type, converter)
-          from when is_atom(from) -> Types.cast(value, from, type)
+          {_from, with: converter} -> Types.cast_with(value, exact_type, converter)
+          from when is_atom(from) -> Types.cast(value, from, exact_type)
         end
 
-      subspec != Spec.Literal ->
-        {:error, "Expected type: #{type}, got: #{inspect(value)}."}
+      not match?(%Spec.Literal{}, subspec) ->
+        {:error, "Expected type: #{exact_type}, got: #{inspect(value)}."}
 
       true ->
         {:ok, value}

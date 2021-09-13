@@ -13,7 +13,7 @@ defmodule Validator.DateTimeTest do
              ]
 
       assert validate("2015-01-23T23:50:07Z", datetime()) == [
-               Error.new("Expected type: struct, got: \"2015-01-23T23:50:07Z\".", [])
+               Error.new("Expected type: DateTime, got: \"2015-01-23T23:50:07Z\".", [])
              ]
     end
 
@@ -21,7 +21,7 @@ defmodule Validator.DateTimeTest do
       assert validate("2015-01-23T23:50:07Z", datetime(cast_from: :string)) == []
 
       assert validate("2015", datetime(cast_from: :string)) == [
-               Error.new("Cannot be cast to struct.", [])
+               Error.new("Cannot be cast to DateTime.", [])
              ]
     end
 
@@ -29,13 +29,13 @@ defmodule Validator.DateTimeTest do
       assert validate(1_596_324_872, datetime(cast_from: :integer)) == []
 
       assert validate(-5_000_000_000_000, datetime(cast_from: :integer)) == [
-               Error.new("Cannot be cast to struct.", [])
+               Error.new("Cannot be cast to DateTime.", [])
              ]
     end
 
     test "cannot cast from other types" do
       assert validate(:"2015-01-23T23:50:07Z", datetime(cast_from: :atom)) == [
-               Error.new("Cannot be cast to struct.", [])
+               Error.new("Cannot be cast to DateTime.", [])
              ]
     end
 

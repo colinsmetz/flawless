@@ -538,7 +538,7 @@ defmodule ValidatorTest do
                Error.new("Expected struct of type: DateTime, got struct of type: Range.", [])
              ]
 
-      assert validate(1, structure(DateTime)) == [Error.new("Expected type: struct, got: 1.", [])]
+      assert validate(1, structure(DateTime)) == [Error.new("Expected type: DateTime, got: 1.", [])]
     end
 
     test "opaque structs still accept other options" do
