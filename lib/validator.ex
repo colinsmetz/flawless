@@ -147,10 +147,11 @@ defmodule Validator do
         type when is_atom(type) -> Types.has_type?(value, type)
       end)
 
-    exact_type = case subspec do
-      %Spec.Struct{module: module} -> inspect(module)
-      _ -> type
-    end
+    exact_type =
+      case subspec do
+        %Spec.Struct{module: module} -> inspect(module)
+        _ -> type
+      end
 
     cond do
       Types.has_type?(value, type) ->

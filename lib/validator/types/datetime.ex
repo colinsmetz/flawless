@@ -1,4 +1,4 @@
-defmodule Validator.DateTime do
+defmodule Validator.Types.DateTime do
   alias Validator.Helpers
   alias Validator.Rule
 

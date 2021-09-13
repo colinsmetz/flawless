@@ -123,6 +123,9 @@ defmodule Validator.Helpers do
     structure(module, Keyword.merge(user_opts, checks: checks, cast_from: cast_from))
   end
 
+  defdelegate datetime(opts \\ []), to: Validator.Types.DateTime
+  defdelegate date(opts \\ []), to: Validator.Types.Date
+
   #######################
   #   BUILT-IN CHECKS   #
   #######################

@@ -1,7 +1,7 @@
-defmodule Validator.DateTimeTest do
+defmodule Validator.Types.DateTimeTest do
   use ExUnit.Case, async: true
   alias Validator.Error
-  import Validator.DateTime
+  import Validator.Helpers
   import Validator, only: [validate: 2]
 
   describe "datetime helper" do
