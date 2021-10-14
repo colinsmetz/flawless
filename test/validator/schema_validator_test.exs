@@ -68,17 +68,17 @@ defmodule Validator.SchemaValidatorTest do
       }
 
       assert validate_schema(schema) == [
-               Error.new(
-                 "Invalid value: :nothing. Valid options: [:any, :string, :number, :integer, :float, :boolean, :atom, :pid, :ref, :function, :port, :list, :tuple, :map, :struct]",
-                 ["name", :cast_from]
-               ),
+               Error.new("Maximum length of 1 required (current: 2).", ["projects"]),
+               Error.new("Expected arity of 1, found: 0.", ["profile", "tags", :checks, 0]),
+               Error.new("Value does not match any of the possible schemas.", ["process"]),
                Error.new("Invalid value: :maybe. Valid options: [:default, true, false]", [
                  "name",
                  nil
                ]),
-               Error.new("Value does not match any of the possible schemas.", ["process"]),
-               Error.new("Expected arity of 1, found: 0.", ["profile", "tags", :checks, 0]),
-               Error.new("Maximum length of 1 required (current: 2).", ["projects"])
+               Error.new(
+                 "Invalid value: :nothing. Valid options: [:any, :string, :number, :integer, :float, :boolean, :atom, :pid, :ref, :function, :port, :list, :tuple, :map, :struct]",
+                 ["name", :cast_from]
+               )
              ]
     end
   end

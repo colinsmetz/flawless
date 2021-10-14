@@ -13,6 +13,7 @@ defmodule Validator do
   alias Validator.Types
   alias Validator.Rule
   alias Validator.Spec
+  alias Validator.Utils.Enum, as: EnumUtils
 
   @type spec_type() ::
           Validator.Spec.t()
@@ -47,11 +48,12 @@ defmodule Validator do
     @moduledoc """
     Struct used internally for validation.
     """
-    defstruct path: [], is_optional_field: false
+    defstruct path: [], is_optional_field: false, stop_early: false
 
     @type t() :: %__MODULE__{
             path: list(String.t()),
-            is_optional_field: boolean()
+            is_optional_field: boolean(),
+            stop_early: boolean()
           }
 
     @doc false
@@ -74,14 +76,17 @@ defmodule Validator do
   def validate(value, schema, opts \\ []) do
     check_schema = opts |> Keyword.get(:check_schema, true)
     group_errors = opts |> Keyword.get(:group_errors, true)
+    stop_early = opts |> Keyword.get(:stop_early, false)
+
+    context = %Context{stop_early: stop_early}
 
     if check_schema do
       case validate_schema(schema) do
-        [] -> do_validate(value, schema)
+        [] -> do_validate(value, schema, context)
         errors -> raise "Invalid schema: #{inspect(errors)}"
       end
     else
-      do_validate(value, schema)
+      do_validate(value, schema, context)
     end
     |> Error.evaluate_messages()
     |> then(fn errors ->
@@ -191,8 +196,12 @@ defmodule Validator do
       |> List.flatten()
 
     sub_errors =
-      get_sub_errors.()
-      |> List.flatten()
+      if top_level_errors != [] and context.stop_early do
+        []
+      else
+        get_sub_errors.()
+        |> List.flatten()
+      end
 
     late_checks_errors =
       if top_level_errors == [] and sub_errors == [] do
@@ -216,10 +225,13 @@ defmodule Validator do
   defp validate_map(map, %{} = schema, context) when is_map(map) do
     field_errors =
       schema
-      |> Enum.map(fn
+      |> EnumUtils.collect_errors(context.stop_early, fn
         {%AnyOtherKey{}, field} ->
           unexpected_fields(map, schema)
-          |> Enum.map(&validate_map_field(map, &1, field, %{context | is_optional_field: true}))
+          |> EnumUtils.collect_errors(
+            context.stop_early,
+            &validate_map_field(map, &1, field, %{context | is_optional_field: true})
+          )
 
         {%OptionalKey{key: field_name}, field} ->
           validate_map_field(map, field_name, field, %{context | is_optional_field: true})
@@ -294,7 +306,7 @@ defmodule Validator do
     validate_spec(list, spec, context, fn ->
       list
       |> Enum.with_index()
-      |> Enum.map(fn {value, index} ->
+      |> EnumUtils.collect_errors(context.stop_early, fn {value, index} ->
         do_validate(value, spec.for.item_type, context |> Context.add_to_path(index))
       end)
     end)
@@ -311,9 +323,12 @@ defmodule Validator do
       |> Tuple.to_list()
       |> Enum.zip(Tuple.to_list(spec.for.elem_types))
       |> Enum.with_index()
-      |> Enum.map(fn {{value, elem_type}, index} ->
-        do_validate(value, elem_type, context |> Context.add_to_path(index))
-      end)
+      |> EnumUtils.collect_errors(
+        context.stop_early,
+        fn {{value, elem_type}, index} ->
+          do_validate(value, elem_type, context |> Context.add_to_path(index))
+        end
+      )
     end)
   end
 

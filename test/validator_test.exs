@@ -278,7 +278,11 @@ defmodule ValidatorTest do
     test "can be set with :late_checks or multiple :late_check" do
       assert validate(
                0,
-               integer(late_checks: [min(10), min(100)], late_check: min(25), late_check: min(17)),
+               integer(
+                 late_checks: [min(10), min(100)],
+                 late_check: min(25),
+                 late_check: min(17)
+               ),
                group_errors: false
              ) ==
                [
@@ -1126,9 +1130,69 @@ defmodule ValidatorTest do
              ]
 
       assert validate(value, schema, group_errors: false) == [
-               Error.new("Expected type: number, got: \"hello\".", ["my", "other_path"]),
                Error.new("Minimum length of 3 required (current: 2).", ["my", "path"]),
-               Error.new("Invalid value: \"hi\". Valid options: [\"words\"]", ["my", "path"])
+               Error.new("Invalid value: \"hi\". Valid options: [\"words\"]", ["my", "path"]),
+               Error.new("Expected type: number, got: \"hello\".", ["my", "other_path"])
+             ]
+    end
+
+    test "stop_early only returns the first errors found when it is true" do
+      schema = list(string(), length: 4)
+      value = [1, 2, 3]
+
+      assert validate(value, schema, stop_early: false) == [
+               Error.new("Expected length of 4 (current: 3).", []),
+               Error.new("Expected type: string, got: 1.", [0]),
+               Error.new("Expected type: string, got: 2.", [1]),
+               Error.new("Expected type: string, got: 3.", [2])
+             ]
+
+      assert validate(value, schema, stop_early: true) == [
+               Error.new("Expected length of 4 (current: 3).", [])
+             ]
+    end
+
+    test "stop_early stops early on lists" do
+      schema = list(string())
+      value = [1, 2, 3]
+
+      assert validate(value, schema, stop_early: false) == [
+               Error.new("Expected type: string, got: 1.", [0]),
+               Error.new("Expected type: string, got: 2.", [1]),
+               Error.new("Expected type: string, got: 3.", [2])
+             ]
+
+      assert validate(value, schema, stop_early: true) == [
+               Error.new("Expected type: string, got: 1.", [0])
+             ]
+    end
+
+    test "stop_early stops early on maps" do
+      schema = %{"a" => string(), "b" => string()}
+      value = %{"a" => 1, "b" => 2}
+
+      assert validate(value, schema, stop_early: false) == [
+               Error.new("Expected type: string, got: 1.", ["a"]),
+               Error.new("Expected type: string, got: 2.", ["b"])
+             ]
+
+      assert validate(value, schema, stop_early: true) == [
+               Error.new("Expected type: string, got: 1.", ["a"])
+             ]
+    end
+
+    test "stop_early stops early on tuples" do
+      schema = {string(), string(), string()}
+      value = {1, 2, 3}
+
+      assert validate(value, schema, stop_early: false) == [
+               Error.new("Expected type: string, got: 1.", [0]),
+               Error.new("Expected type: string, got: 2.", [1]),
+               Error.new("Expected type: string, got: 3.", [2])
+             ]
+
+      assert validate(value, schema, stop_early: true) == [
+               Error.new("Expected type: string, got: 1.", [0])
              ]
     end
   end
