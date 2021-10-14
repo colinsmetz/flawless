@@ -73,6 +73,7 @@ defmodule Validator do
   @spec validate(any, spec_type(), Keyword.t()) :: list(Error.t())
   def validate(value, schema, opts \\ []) do
     check_schema = opts |> Keyword.get(:check_schema, true)
+    group_errors = opts |> Keyword.get(:group_errors, true)
 
     if check_schema do
       case validate_schema(schema) do
@@ -83,6 +84,9 @@ defmodule Validator do
       do_validate(value, schema)
     end
     |> Error.evaluate_messages()
+    |> then(fn errors ->
+      if group_errors, do: Error.group_by_path(errors), else: errors
+    end)
   end
 
   @spec validate_schema(any) :: list(Error.t())

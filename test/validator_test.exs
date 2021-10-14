@@ -1,7 +1,7 @@
 defmodule ValidatorTest do
   use ExUnit.Case, async: true
   doctest Validator
-  import Validator, only: [defvalidator: 1, validate: 2]
+  import Validator, only: [defvalidator: 1, validate: 2, validate: 3]
   alias Validator.Error
 
   describe "basic types" do
@@ -150,9 +150,14 @@ defmodule ValidatorTest do
              ]
 
       assert validate("", string(non_empty: true, in: ["plop"], format: ~r/plop/)) == [
-               Error.new("Invalid value: \"\". Valid options: [\"plop\"]", []),
-               Error.new("Value cannot be empty.", []),
-               Error.new("Value \"\" does not match regex ~r/plop/.", [])
+               Error.new(
+                 [
+                   "Invalid value: \"\". Valid options: [\"plop\"]",
+                   "Value cannot be empty.",
+                   "Value \"\" does not match regex ~r/plop/."
+                 ],
+                 []
+               )
              ]
     end
 
@@ -200,8 +205,7 @@ defmodule ValidatorTest do
       checks = [rule(&(&1 < 100), "bigger than 100"), rule(&(&1 < 1000), "bigger than 1000")]
 
       assert validate(1001, integer(checks: checks)) == [
-               Error.new("bigger than 100", []),
-               Error.new("bigger than 1000", [])
+               Error.new(["bigger than 100", "bigger than 1000"], [])
              ]
 
       assert validate(101, integer(checks: checks)) == [Error.new("bigger than 100", [])]
@@ -211,10 +215,15 @@ defmodule ValidatorTest do
     test "can be set with :checks or multiple :check" do
       assert validate(0, integer(checks: [min(10), min(100)], check: min(25), check: min(17))) ==
                [
-                 Error.new("Must be greater than or equal to 10.", []),
-                 Error.new("Must be greater than or equal to 100.", []),
-                 Error.new("Must be greater than or equal to 25.", []),
-                 Error.new("Must be greater than or equal to 17.", [])
+                 Error.new(
+                   [
+                     "Must be greater than or equal to 10.",
+                     "Must be greater than or equal to 100.",
+                     "Must be greater than or equal to 25.",
+                     "Must be greater than or equal to 17."
+                   ],
+                   []
+                 )
                ]
     end
 
@@ -269,7 +278,8 @@ defmodule ValidatorTest do
     test "can be set with :late_checks or multiple :late_check" do
       assert validate(
                0,
-               integer(late_checks: [min(10), min(100)], late_check: min(25), late_check: min(17))
+               integer(late_checks: [min(10), min(100)], late_check: min(25), late_check: min(17)),
+               group_errors: false
              ) ==
                [
                  Error.new("Must be greater than or equal to 10.", []),
@@ -334,8 +344,13 @@ defmodule ValidatorTest do
              ]
 
       assert validate([], list(number(), non_empty: true, in: [[1, 2]])) == [
-               Error.new("Invalid value: []. Valid options: [[1, 2]]", []),
-               Error.new("Value cannot be empty.", [])
+               Error.new(
+                 [
+                   "Invalid value: []. Valid options: [[1, 2]]",
+                   "Value cannot be empty."
+                 ],
+                 []
+               )
              ]
 
       assert validate([1, 1, 2], list(number(), no_duplicate: true)) == [
@@ -759,8 +774,8 @@ defmodule ValidatorTest do
                "a" => atom(nil: false),
                maybe("b") => string(nil: false)
              }) == [
-               Error.new("Value cannot be nil.", ["b"]),
-               Error.new("Value cannot be nil.", ["a"])
+               Error.new("Value cannot be nil.", ["a"]),
+               Error.new("Value cannot be nil.", ["b"])
              ]
 
       assert validate(nil, tuple({atom()}, nil: false)) == [Error.new("Value cannot be nil.", [])]
@@ -961,13 +976,13 @@ defmodule ValidatorTest do
                  "bim"
                ]),
                Error.new("Expected type: string, got: 28.", ["brands", 1]),
-               Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"].", ["polling"]),
-               Error.new("Slice size must be longer than 100", ["polling", "slice_size"]),
-               Error.new("Value cannot be nil.", ["test"]),
                Error.new("Field 'a' is a key but is not required", ["fields", 0]),
                Error.new("Unexpected fields: [\"tru\"].", ["fields", 1]),
                Error.new("Missing required fields: \"id\" (any).", ["fields", 1, "meta"]),
                Error.new("Invalid value: \"yml\". Valid options: [\"csv\", \"xml\"]", ["format"]),
+               Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"].", ["polling"]),
+               Error.new("Slice size must be longer than 100", ["polling", "slice_size"]),
+               Error.new("Value cannot be nil.", ["test"]),
                Error.new("Expected type: string, got: 9.", ["tuple_of_things", 0, 2])
              ]
     end
@@ -1065,6 +1080,55 @@ defmodule ValidatorTest do
 
       assert validate(%{a: 14}, schema) == [
                Error.new("Value does not match any of the possible schemas.", [:a])
+             ]
+    end
+  end
+
+  describe "options" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "group_errors groups errors for the same path" do
+      schema = %{
+        "my" => %{
+          "path" => string(min_length: 3, in: ["words"]),
+          "other_path" => number(min: 2)
+        }
+      }
+
+      value = %{
+        "my" => %{
+          "path" => "hi",
+          "other_path" => "hello"
+        }
+      }
+
+      assert validate(value, schema) == [
+               Error.new("Expected type: number, got: \"hello\".", ["my", "other_path"]),
+               Error.new(
+                 [
+                   "Minimum length of 3 required (current: 2).",
+                   "Invalid value: \"hi\". Valid options: [\"words\"]"
+                 ],
+                 ["my", "path"]
+               )
+             ]
+
+      assert validate(value, schema, group_errors: true) == [
+               Error.new("Expected type: number, got: \"hello\".", ["my", "other_path"]),
+               Error.new(
+                 [
+                   "Minimum length of 3 required (current: 2).",
+                   "Invalid value: \"hi\". Valid options: [\"words\"]"
+                 ],
+                 ["my", "path"]
+               )
+             ]
+
+      assert validate(value, schema, group_errors: false) == [
+               Error.new("Expected type: number, got: \"hello\".", ["my", "other_path"]),
+               Error.new("Minimum length of 3 required (current: 2).", ["my", "path"]),
+               Error.new("Invalid value: \"hi\". Valid options: [\"words\"]", ["my", "path"])
              ]
     end
   end

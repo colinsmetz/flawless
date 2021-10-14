@@ -7,7 +7,7 @@ defmodule Validator.Error do
 
   alias Validator.Context
 
-  @type t_message :: String.t() | {String.t(), Keyword.t()}
+  @type t_message :: String.t() | {String.t(), Keyword.t()} | list(String.t())
 
   @type t() :: %__MODULE__{
           context: list(),
@@ -52,5 +52,15 @@ defmodule Validator.Error do
        expected_type: expected_type, value: inspect(value)},
       context
     )
+  end
+
+  @spec group_by_path(list(t())) :: list(t())
+  def group_by_path(errors) when is_list(errors) do
+    errors
+    |> Enum.group_by(& &1.context, & &1.message)
+    |> Enum.map(fn
+      {context, [message]} -> new(message, context)
+      {context, messages} -> new(messages, context)
+    end)
   end
 end
