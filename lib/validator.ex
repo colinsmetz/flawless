@@ -62,6 +62,9 @@ defmodule Validator do
     end
   end
 
+  @doc """
+  TODO
+  """
   defmacro defvalidator(do: body) do
     quote do
       import Validator
@@ -72,6 +75,9 @@ defmodule Validator do
     end
   end
 
+  @doc """
+  TODO
+  """
   @spec validate(any, spec_type(), Keyword.t()) :: list(Error.t())
   def validate(value, schema, opts \\ []) do
     check_schema = opts |> Keyword.get(:check_schema, true)
@@ -94,6 +100,9 @@ defmodule Validator do
     end)
   end
 
+  @doc """
+  TODO
+  """
   @spec validate_schema(any) :: list(Error.t())
   def validate_schema(schema) do
     do_validate(schema, Validator.SchemaValidator.schema_schema())
