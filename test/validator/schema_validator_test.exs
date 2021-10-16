@@ -1,6 +1,6 @@
 defmodule Validator.SchemaValidatorTest do
   use ExUnit.Case, async: true
-  doctest Validator
+  doctest Validator.SchemaValidator
   import Validator, only: [validate_schema: 1]
   alias Validator.SchemaValidator
   alias Validator.Error

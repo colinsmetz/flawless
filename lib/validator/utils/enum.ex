@@ -12,4 +12,22 @@ defmodule Validator.Utils.Enum do
       end
     end)
   end
+
+  @spec maybe_add_errors(list(Validator.Error.t()), boolean(), function()) ::
+          list(Validator.Error.t())
+  def maybe_add_errors([], _stop_early, collect_func) do
+    collect_func.()
+  end
+
+  def maybe_add_errors(errors, false = _stop_early, collect_func) do
+    [
+      errors,
+      collect_func.()
+    ]
+    |> List.flatten()
+  end
+
+  def maybe_add_errors(errors, true = _stop_early, _collect_func) do
+    errors
+  end
 end
