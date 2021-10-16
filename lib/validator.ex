@@ -62,7 +62,10 @@ defmodule Validator do
   end
 
   @doc """
-  TODO
+  Macro to create a schema.
+
+  It doesn't do much except importing all the helpers locally to avoid importing
+  them in a larger scope.
   """
   defmacro defvalidator(do: body) do
     quote do
@@ -87,7 +90,7 @@ defmodule Validator do
     against the same schema. Defaults to `true`.
   - `group_errors` - (boolean) If true, error messages associated to the same path
     in the value will be grouped into a list of messages in a single `Validator.Error`.
-    Defaults to `true'.
+    Defaults to `true`.
   - `stop_early` - (boolean) If true, the validation will try and stop at the first
     primitive element in error. It allows to potentially reduce drastically the
     number of errors as well as processing time in case of large data structures, and
@@ -144,7 +147,7 @@ defmodule Validator do
   end
 
   @doc """
-  TODO
+  Checks whether a schema is valid, and returns a list of errors.
   """
   @spec validate_schema(any) :: list(Error.t())
   def validate_schema(schema) do
