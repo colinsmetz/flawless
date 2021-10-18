@@ -1,8 +1,7 @@
 defmodule Validator do
   @moduledoc """
-  Validator is a library meant for validating JSON-like data structures, i.e. ones
-  that contain maps, arrays or single values. The validation is done by providing
-  the `validate` function with a value and a schema.
+  Validator is a library meant for validating Elixir data structures. The validation
+  is done by providing the `validate` function with a value and a schema.
 
   Schemas can be defined with the helper of the `defvalidator` macro, whose main
   purpose is to import helpers locally.
@@ -62,6 +61,12 @@ defmodule Validator do
     end
   end
 
+  @doc """
+  Macro to create a schema.
+
+  It doesn't do much except importing all the helpers locally to avoid importing
+  them in a larger scope.
+  """
   defmacro defvalidator(do: body) do
     quote do
       import Validator
@@ -72,6 +77,53 @@ defmodule Validator do
     end
   end
 
+  @doc """
+  Validates Elixir data against a schema and returns the list of errors.
+
+  ## Options
+
+  - `check_schema` - (boolean) Whether or not the schema should be checked with
+    [`validate_schema/1`](#validate_schema/1) before validating the value. This is
+    useful to avoid potential exceptions or incoherent messages if the schema has
+    no sense, but it adds an extra processing cost. Consider disabling the option
+    if you can validate the schema separately and you have to validate many values
+    against the same schema. Defaults to `true`.
+  - `group_errors` - (boolean) If true, error messages associated to the same path
+    in the value will be grouped into a list of messages in a single `Validator.Error`.
+    Defaults to `true`.
+  - `stop_early` - (boolean) If true, the validation will try and stop at the first
+    primitive element in error. It allows to potentially reduce drastically the
+    number of errors as well as processing time in case of large data structures, and
+    if you do not care about having *all* the errors at once. Defaults to `false`.
+
+  ## Examples
+      iex> import Validator.Helpers
+      iex> Validator.validate("hello", string())
+      []
+      iex> Validator.validate("hello", number())
+      [%Validator.Error{context: [], message: "Expected type: number, got: \\"hello\\"."}]
+      iex> Validator.validate(
+      ...>   %{"name" => 1234, "age" => "Steve"},
+      ...>   %{"name" => string(), "age" => number(), "city" => string()}
+      ...> )
+      [
+        %Validator.Error{context: [], message: "Missing required fields: \\"city\\" (string)."},
+        %Validator.Error{context: ["age"], message: "Expected type: number, got: \\"Steve\\"."},
+        %Validator.Error{context: ["name"], message: "Expected type: string, got: 1234."}
+      ]
+
+      # Stop early
+      iex> import Validator.Helpers
+      iex> Validator.validate(
+      ...>   %{"name" => 1234, "age" => "Steve"},
+      ...>   %{"name" => string(), "age" => number(), "city" => string()},
+      ...>   stop_early: true
+      ...> )
+      [
+        %Validator.Error{context: [], message: "Missing required fields: \\"city\\" (string)."}
+      ]
+
+  """
   @spec validate(any, spec_type(), Keyword.t()) :: list(Error.t())
   def validate(value, schema, opts \\ []) do
     check_schema = opts |> Keyword.get(:check_schema, true)
@@ -94,6 +146,9 @@ defmodule Validator do
     end)
   end
 
+  @doc """
+  Checks whether a schema is valid, and returns a list of errors.
+  """
   @spec validate_schema(any) :: list(Error.t())
   def validate_schema(schema) do
     do_validate(schema, Validator.SchemaValidator.schema_schema())
@@ -190,32 +245,18 @@ defmodule Validator do
          context,
          get_sub_errors
        ) do
-    top_level_errors =
+    []
+    |> EnumUtils.maybe_add_errors(context.stop_early, fn ->
+      # Top-level errors
       checks
       |> Enum.map(&Rule.evaluate(&1, value, context))
       |> List.flatten()
-
-    sub_errors =
-      if top_level_errors != [] and context.stop_early do
-        []
-      else
-        get_sub_errors.()
-        |> List.flatten()
-      end
-
-    late_checks_errors =
-      if top_level_errors == [] and sub_errors == [] do
-        late_checks |> Enum.map(&Rule.evaluate(&1, value, context))
-      else
-        []
-      end
-
-    [
-      top_level_errors,
-      sub_errors,
-      late_checks_errors
-    ]
-    |> List.flatten()
+    end)
+    |> EnumUtils.maybe_add_errors(context.stop_early, get_sub_errors)
+    |> EnumUtils.maybe_add_errors(true, fn ->
+      # Late checks
+      late_checks |> Enum.map(&Rule.evaluate(&1, value, context))
+    end)
   end
 
   defp validate_map(map, %{} = _schema, context) when is_struct(map) do
@@ -223,33 +264,38 @@ defmodule Validator do
   end
 
   defp validate_map(map, %{} = schema, context) when is_map(map) do
-    field_errors =
-      schema
-      |> EnumUtils.collect_errors(context.stop_early, fn
-        {%AnyOtherKey{}, field} ->
-          unexpected_fields(map, schema)
-          |> EnumUtils.collect_errors(
-            context.stop_early,
-            &validate_map_field(map, &1, field, %{context | is_optional_field: true})
-          )
-
-        {%OptionalKey{key: field_name}, field} ->
-          validate_map_field(map, field_name, field, %{context | is_optional_field: true})
-
-        {field_name, field} ->
-          validate_map_field(map, field_name, field, context)
-      end)
-
-    [
-      unexpected_fields_error(map, schema, context),
-      missing_fields_error(map, schema, context),
-      field_errors
-    ]
-    |> List.flatten()
+    []
+    |> EnumUtils.maybe_add_errors(context.stop_early, fn ->
+      unexpected_fields_error(map, schema, context)
+    end)
+    |> EnumUtils.maybe_add_errors(context.stop_early, fn ->
+      missing_fields_error(map, schema, context)
+    end)
+    |> EnumUtils.maybe_add_errors(context.stop_early, fn ->
+      validate_map_fields(map, schema, context)
+    end)
   end
 
   defp validate_map(map, _spec, context) do
     [Error.invalid_type_error(:map, map, context)]
+  end
+
+  defp validate_map_fields(map, %{} = schema, context) do
+    schema
+    |> EnumUtils.collect_errors(context.stop_early, fn
+      {%AnyOtherKey{}, field} ->
+        unexpected_fields(map, schema)
+        |> EnumUtils.collect_errors(
+          context.stop_early,
+          &validate_map_field(map, &1, field, %{context | is_optional_field: true})
+        )
+
+      {%OptionalKey{key: field_name}, field} ->
+        validate_map_field(map, field_name, field, %{context | is_optional_field: true})
+
+      {field_name, field} ->
+        validate_map_field(map, field_name, field, context)
+    end)
   end
 
   defp validate_map_field(map, field_name, field_schema, context) do

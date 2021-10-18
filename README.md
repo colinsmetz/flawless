@@ -1,51 +1,40 @@
 # Validator
 
-This is a library to help validate Elixir values against a specific schema.
+Validator is an Elixir library to help validate user input against a schema.
 
-Example:
 
 ```elixir
-schema = %{
-  "username" => string(max_length: 30),
-  "address" => map(
-    %{
-      "street" => string(),
-      "number" => integer(min: 0, cast_from: :string),
-      "zipcode" => string(),
-      "city" => string(),
-      "country" => string()
-    },
-    check: valid_zipcode_for_country()
-  ),
-  "interests" => list(string(), min_length: 1),
-  maybe("nickname") => string(),
-  maybe("coordinates") => {float(), float()}
-}
+iex> import Validator.Helpers
 
-value = %{
-  "username" => "Steve",
-  "address" => %{
-    "city" => "Brussels",
-    "number" => "10",
-    "street" => "Main street"
-  },
-  "interests" => ["programming", "music", :games],
-  "coordinates" => {1.2598, 8.95452},
-  "age" => 26
-}
+iex> schema = %{
+...>   "username" => string(max_length: 30),
+...>   "address" => %{
+...>     "street" => string(),
+...>     "number" => integer(min: 0, cast_from: :string),
+...>     "city" => string(),
+...>   },
+...>   maybe("interests") => list(string(), min_length: 1)
+...> }
 
-Validator.validate(value, schema)
+iex> value = %{
+...>   "address" => %{
+...>     "country" => "Belgium",
+...>     "number" => "10",
+...>     "street" => "Main street",
+...>     "city" => "Brussels"
+...>   },
+...>   "interests" => ["programming", "music", :games]
+...> }
 
-# Result:
-
+iex> Validator.validate(value, schema)
 [
   %Validator.Error{
     context: [],
-    message: "Unexpected fields: [\"age\"]."
+    message: "Missing required fields: \"username\" (string)."
   },
   %Validator.Error{
     context: ["address"],
-    message: "Missing required fields: \"country\" (string), \"zipcode\" (string)."
+    message: "Unexpected fields: [\"country\"]."
   },
   %Validator.Error{
     context: ["interests", 2],
@@ -54,450 +43,264 @@ Validator.validate(value, schema)
 ]
 ```
 
-## How to use
+## Why another validation library?
 
-All types of elements support a few common options:
-* `nil`: whether the element is nullable (default to `false` except for optional
-  fields in maps).
-* `checks`: a list of rules that the element must pass.
-* `check`: similar to `checks` but for a single rule; can be passed multiple
-  times.
-* `late_checks`: similar to `checks`, but evaluated only if all other checks
-  passed for the element.
-* `late_check`: similar to `late_checks` but for a single rule; can be passed
-  multiple times.
-* `cast_from`: a type or list of types, to cast the value to the expected type
-  before validating, if necessary (see [Casting](#casting) section below).
-* `type`: the type of the element (`:any` by default). Usually not set directly.
+There are already a lot of validation libraries in Elixir. So why write another
+one?
 
-Example:
+When I looked for other libraries, I found that there were a few recurrent
+issues. Namely, poor error messages (not very suitable for user-facing
+applications), and a cumbersome or inconsistent syntax. While they all have
+their qualities, I wanted to try out something that was more to my taste.
+
+As much as possible, this library tries to be:
+
+- **Consistent:** all the helpers provide the same set of common options.
+- **General:** some validation rules might be harder to define than others, but
+  it avoids imposing any restriction.
+- **Readable:** a lot of helpers and shortcuts are provided to make the schemas
+  as simple as possible. The syntax is similar to the syntax of typespecs (when
+  it makes sense) and should feel natural if you're used to it.
+- **User-friendly:** useful errors are returned with clear messages and context,
+  so that it should be easy for a user to understand how to fix the input.
+- **Modular:** schemas are normal Elixir objects and can be easily combined
+  together. No restricting syntax or macro is imposed.
+
+## Schema definition
+
+This section is only an overview. For details, see the dedicated
+[Schema definition](guides/schema_definition.md) page.
+
+### Helpers
+
+Schemas are built using helper functions, that internally create more complex
+structures used during validation. Every data type (string, number, map, list,
+etc.) has its own helper function.
+
+All helpers support a few common options:
+
+- `checks` / `check` - See [Checks](#checks)
+- `late_checks` / `late_check` - See [Checks](#checks)
+- `nil` - See [Nullable values](#nullable-values)
+- `cast_from` - See [Casting](#casting)
+
+The `value()` helper is the only helper without a specific type. It can be used
+to match literally anything.
+
+### Checks
+
+Every element can define a series of checks. Each check will evaluate a predicate
+on the value and return an error message if it didn't pass. A few built-in rules
+are available in `Validator.Rule` though shortcuts are also available for them.
+
+It is also possible to define your own rules easily using the `rule/2` helper or
+a simple function that returns an `:ok`/`:error` tuple. For more information, see
+the [Custom checks](guides/custom_checks.md) page.
+
+Late checks allow to evaluate rules *after all other checks have passed*. This
+is useful if the rule should only be evaluated on well-formed data.
 
 ```elixir
-value(type: :string, checks: [one_of(["csv", "ftp"])])
+# An integer between 0 and 10
+integer(checks: [between(0, 10)])
+
+# Accepts only "yes", true, or 1
+value(check: one_of(["yes", true, 1]))
+
+# A number that is different from 0
+number(check: rule(&(&1 != 0), "The number should be different from zero."))
+
+# The late check never fails because we're sure keys a and b exist
+map(
+  %{a: number(), b: number()},
+  late_check: rule(fn x -> x.a > x.b end, "a must be bigger than b.")
+)
 ```
 
-### Basic elements
+### Primitive types
 
-Several helpers are provided to define basic types:
+Validator supports all primitive Elixir types with the functions `integer/1`,
+`float/1`, `number/1`, `string/1`, `boolean/1`, `atom/1`, `pid/1`, `ref/1`,
+`function/1` and `port/1`. Each of them supports specific options, which are
+shortcuts to avoid lengthy `checks`.
 
-* `value()`: matches anything
-* `integer()`
-* `float()`
-* `number()`
-* `string()`
-* `boolean()`
-* `atom()`
-* `pid()`
-* `ref()`
-* `function()`
-* `port()`
+```elixir
+# A non-empty string
+string(non_empty: true)
 
-The following Elixir structs also have helpers:
+# An integer between 0 and 100
+integer(min: 0, max: 100)
+```
 
-* `datetime()` ([DateTime](https://hexdocs.pm/elixir/DateTime.html))
-* `naive_datetime()` ([NaiveDateTime](https://hexdocs.pm/elixir/NaiveDateTime.html))
-* `date()` ([Date](https://hexdocs.pm/elixir/Date.html))
-* `time()` ([Time](https://hexdocs.pm/elixir/Time.html))
+### Nullable values
+
+Every element supports the `nil` boolean option. When it is `true`, the element
+can be `nil` even if that doesn't match any of the other constraints.
+
+It is `false` by default, except for optional keys in maps.
 
 ### Maps
 
-A map is defined using the `map(schema, opts)` helper. The schema is a map
-representing the expected map, e.g.
+Maps are defined using `map/2` or directly with a map if no options are
+necessary. By default, all keys are *required*, but optional keys can be defined
+with the `maybe/1` helper. Non-specified keys are by default forbidden, but it
+can be changed by adding the `any_key()` key in the map.
 
 ```elixir
 map(
   %{
-    "first_name" => string(),
-    "last_name" => string(),
-    "age" => number()
+    # Define two required keys
+    "id" => integer(),
+    "name" => string(),
+
+    # Define one optional field
+    maybe("age") => integer(),
+
+    # Accept any other key as long as the values are strings
+    any_key() => string()
   },
-  checks: [
-    first_name_different_than_last_name()
-  ]
+  nil: false
 )
-```
 
-If you do not need additional options like `checks`, the `map()` function can be
-entirely ignored:
-
-```elixir
+# If we drop the `nil` option, we can ignore the `map()` function
 %{
-  "first_name" => string(),
-  "last_name" => string(),
-  "age" => number()
-}
-```
-
-#### Optional fields
-
-By default, all keys defined in the maps are required. If you wish to define
-optional keys, use the `maybe` helper around the optional key name:
-
-```elixir
-%{
+  "id" => integer(),
   "name" => string(),
-  "age" => number(),
-  maybe("phone_number") => string(format: ~r/[0-9]+/)
-}
-```
-
-**Note:** unless `nil` is explicitly set to `false`, the optional key is
-considered to be nillable.
-
-#### Accept non-defined fields
-
-By default, if the input map contains keys that were not defined in the schema,
-it will return an error. To avoid that, you should make sure to define *all*
-the potential keys that the map could have.
-
-If you want to accept other non-defined keys, you can use the `any_key()` helper
-as a key in the map:
-
-```elixir
-%{
-  "id" => string(),
+  maybe("age") => integer(),
   any_key() => string()
 }
 ```
 
-This will make sure that the map contains a field named `id`, but also accept
-any other unexpected key in the map. Those extra fields should however comply
-with the associated schema (`string()` in this case).
-
 ### Structs
 
-Structs function similarly to maps, with the `structure(spec, opts)` helper
-(unfortunately `struct` is already a function in `Kernel`).
+Structs work similarly to map but with the `structure/2` helper:
 
 ```elixir
 structure(
-  %User{
-    first_name: string(),
-    last_name: string(),
-    age: number()
-  },
-  checks: [
-    first_name_different_than_last_name()
-  ]
+  %Profile{id: integer(), username: string(), created_at: datetime()}
 )
+
+# Or just
+%Profile{id: integer(), username: string(), created_at: datetime()}
 ```
 
-Again, the `structure` function can be entirely omitted if options are not
-necessary.
-
-**Note:** a struct will never match a classic `map` schema, unless you specify
-otherwise with the `cast_from: :struct` option.
-
-#### Opaque structs
-
-If you don't know the internal fields of the struct, or only care about matching
-the struct type, you can pass only the module:
+Opaque structs can be checked by specifying only the module:
 
 ```elixir
-validate(DateTime.utc_now(), structure(DateTime))
-# Result: []
+structure(Profile)
 ```
 
 ### Lists
 
-A list is defined using `list(item_spec, opts)`. The constraint of `item_spec`
-will be checked for every element in the list. Example:
+Lists are validated by providing a schema that every item must conform to:
 
 ```elixir
-# A list of strings, which must have at least 2 items
-list(string(), checks: [min_length(2)])
-```
+# A list of strings with at least two elements
+list(string(), min_length: 2)
 
-If you do not need additional options like `checks`, you can use the shortcut
-`[spec]`:
-
-```elixir
-# A list of string
-[string()]
+# A list of numbers (shortcut)
+[number()]
 ```
 
 ### Tuples
 
-A tuple is defined using `tuple(elem_specs, opts)`. The `elem_specs` is a tuple
-of the expected tuple size, and each of element of the tuple is the expected
-schema for the corresponding tuple element. Example:
+Tuples are validated by providing a schema for each element:
 
 ```elixir
-# A tuple of size 2, where the first element is an atom and the second one a string
-# The entire tuple must conform to `custom_rule`.
-tuple({atom(), string()}, checks: [custom_rule()])
-```
+# A two-element tuple with an atom and a string
+tuple({atom(), string()})
 
-If you do not need additional options like `checks`, the `tuple()` function can be
-entirely ignored:
-
-```elixir
-# A tuple of size 2, where the first element is an atom and the second one a string
-{atom(), string()}
+# A three-element tuple with three floats (shortcut)
+{float(), float(), float()}
 ```
 
 ### Literals
 
-If you need to match against a specific value, use `literal(value)`. It will
-match only if the value is exactly the expected one.
-
-The schema `literal(10)` would actually be equivalent to `integer(in: [10])`,
-but it has the advantage of being more explicit and provide a better error
-message.
-
-For strings, atoms and numbers, the `literal()` function can even be ignored.
-For example, those two schemas would be equivalent:
+Literal values (constants) are validated using the `literal/2` helper
+or the value itself for numbers, atoms and strings:
 
 ```elixir
-schema1 = %{
-  "a" => literal(88),
-  "b" => literal(:ok),
-  "c" => literal("hello")
-}
+# Match the list `[1, 2, 3]`
+literal([1, 2, 3])
 
-schema2 = %{
-  "a" => 88,
-  "b" => :ok,
-  "c" => "hello"
-}
+# Match an {:ok, string} tuple (two alternatives)
+{literal(:ok), string()}
+{:ok, string()}
 ```
 
-### Checks
+### Date & Time
 
-#### Late checks
-
-Late checks are defined with `late_checks` or `late_check`. Those rules are
-evaluated *only if the element is otherwise valid*, i.e., if the `checks` passed
-and the sub-schemas were valid (in case of lists, maps, tuples, etc.).
-
-This is useful if you have rules that make sense only if some preconditions are met.
-Let's say you have a map with a few number fields, and you'd like to make sure that
-the sum of all values is lower than some threshold. You could do:
+Elixir has 4 built-in structs for date and time. They can be checked with the
+`date()`, `time()`, `datetime()` and `naive_datetime()` helpers:
 
 ```elixir
-sum_lower_than_threshold = rule(
-  fn map -> map["math_credits"] + map["english_credits"] < 15 end,
-  "The sum of credits must be lower than 15." 
-)
+# A DateTime before 1 January 2012 at 12:00:00
+datetime(before: ~U[2012-01-01 12:00:00Z])
 
-schema = map(
-  %{"math_credits" => number(), "english_credits" => number()},
-  check: sum_lower_than_threshold
-)
+# A Time after 08:00
+time(after: ~T[08:00:00])
 ```
 
-If a well-formed input is passed, this is fine. But let's say it is not:
+### Recursive schemas
+
+Recursive schemas can be defined by providing 0-arity functions:
 
 ```elixir
-value = %{"math" => 17}
-validate(value, schema)
-
-# Result:
-[
-  %Validator.Error{
-    context: [],
-    message: "An exception was raised while evaluating a rule on that element, so it is likely incorrect."
-  },
-  # ...
-]
-```
-
-The `sum_lower_than_threshold` was evaluated, but since the fields do not exist,
-it resulted in an exception and a generic error message. If you replace `check` by
-`late_check`, you can make sure the rule will be evaluated only when the input is
-sufficiently well-formed.
-
-#### Built-in rules
-
-Several rules are predefined and can be used in `checks`:
-* `one_of(list)`: checks that the value is among a predefined set of elements
-
-The type helpers (`number()`, `string()`, etc.) also accept shortcut options for
-their supported built-in rules. For example, those are equivalent:
-
-```elixir
-number(checks: [min(2), max(6)])
-number(min: 2, max: 6)
-```
-
-#### Custom rules
-
-There are two ways to create a custom rule:
-* Using the `rule(predicate, error_message)` helper
-* Using a simple 1-arity predicate function
-
-The `predicate` in `rule/2` or the simple function follow the same rules:
-* It must take exactly one argument, the data to validate.
-* The data is considered valid if the function returns `true`, `:ok`, or a `{:ok, _}` tuple.
-* The data is considered invalid if the function returns `false`, `:error`, or a `{:error, error}` tuple.
-
-In case of error, the error message is evaluated like this:
-* If `{:error, error}` was returned, `error` becomes the error message.
-* If `error_message` is `nil` or the simple function was used, a generic message
-  "The predicate failed." is returned.
-* Otherwise `error_message` is evaluated and returned.
-
-The `error_message` can be one of those:
-* A string, which is returned as such.
-* A `{template, opts}` tuple. The template is a string and opts is a keyword list.
-  The interpolated variables will be replaced using values in the keyword list. This
-  is not useful yet, but will be used for translation later.
-* A function with one parameter (the value) and returning the error string or
-  template tuple.
-* A function with two parameters (the value and the context) and returning
-  the error string or template tuple. The context is the list of field names
-  (or indices for lists) defining *where* the error is located.
-
-Note: error messages are automatically encapsulated to a `Validator.Error` struct.
-
-Example:
-
-```elixir
-def max_length(n) do
-  rule(
-    fn value -> length(value) <= n end,
-    fn value -> {"The length is %{length}, but the maximum is %{max}", length: length(value), max: n} end
-  )
-end
-
-def is_lowercase(data) do
-  if String.downcase(data) == data do
-    :ok
-  else
-    {:error, "string must be in lowercase"}
-  end
-end
-
-# ---
-
-schema = string(checks: [max_length(5), &is_lowercase/1])
-```
-
-### Casting
-
-Let's say you have a schema like this:
-
-```elixir
-%{
-  "code" => number(),
-  "coordinates" => {float(), float(), integer()}
-}
-```
-
-Now, you receive a value to validate against this schema. This value comes from
-an external client where the `code` is a string input, and since it uses JSON,
-tuples are replaced by arrays. Also, coordinates use only integers instead of
-floats:
-
-```elixir
-%{
-  "code" => "32",
-  "coordinates" => [17, 17, 3]
-}
-```
-
-One could decide to replace the schema with:
-
-```elixir
-%{
-  "code" => string(),
-  "coordinates" => [number()]
-}
-```
-
-However, if another source of data was correctly matching the first schema, now it
-doesn't, and we need to maintain two similar schemas and choose the correct one
-manually. Besides, this new schema is too permissive: `code` does not necessarily
-represent a number, and coordinates can have more than 3 elements. Additional
-checks would be needed to validate that, but it would be cumbersome.
-
-Instead, you can use the `cast_from` option for every part of your schema. It
-indicates that the value might be of a different type than the expected one, but
-should be cast automatically if possible. Using it, we could replace our initial
-schema with:
-
-```elixir
-%{
-  "code" => number(cast_from: :string),
-  "coordinates" => tuple(
-    {float(cast_from: :integer), float(cast_from: :integer), integer()},
-    cast_from: :list
-  )
-}
-```
-
-Now our value would match the schema, while the schema remains precise.
-
-Note that any additional check will be performed on the *converted* value.
-
-#### Use a custom converter
-
-If the built-in conversions do not match your need, you can provide a custom converter.
-It should return `{:ok, converted_value}` on success, and `:error` or `{:error, _}` otherwise.
-
-Example:
-
-```elixir
-schema = map(
-  %{"value" => number()},
-  cast_from: {:string, with: &Jason.decode/2}
-)
-
-validate(~s({"value": 17}), schema)
-# OK
-```
-
-### Recursive data structures
-
-For recursive data structures, you can use 0-arity functions that return a
-schema, like this:
-
-```elixir
-def tree_schema() do
+def tree_schema do
   %{
-    value: number(max: 100),
-    left: &tree_schema/0,
-    right: &tree_schema/0
+    value: number(),
+    children: list(&tree_schema/0)
   }
 end
 ```
 
-Then you can call `validate(tree, tree_schema())` as usual.
+### Unions
 
-### Union types / Case type
-
-Union types are supported as such. However, there are multiple ways a field can
-have different types (without matching *anything* with `value()`):
-* Using `cast_from` (see "Casting" section above).
-* Using selectors
-
-Selectors are defined using a 1-arity function taking the current data as a
-parameter. This data can be used to decide on which schema should be used. For
-example:
+Unions can be defined using 1-arity functions that decide which schema
+to use based on the input data:
 
 ```elixir
-schema = %{
-  a: fn
-    %{} -> %{b: number(), c: number()}
-    l when is_list(l) -> list(number())
+%{
+  # Metadata is either a map with string values, or a list of strings
+  "metadata" => fn
+    %{} -> map(%{any_key() => string()})
+    [_ | _] -> list(string())
   end
 }
 ```
 
-This schema would accept field `:a` to be either:
-* A map with schema `%{b: number(), c: number()}`
-* A list of numbers
+### Casting
 
-If the input data is not a map or a list, then it is considered an error and
-none of the subschemas is tested.
+Data can be automatically casted to the expected type if possible. The data is
+validated after the casting has been performed:
 
-Compared to a potential generic `union([typeA, typeB])` function, this method
-has the advantage that we know which schema is expected to be used, so we can
-return more specific errors corresponding to the selected subschemas. If we
-didn't know, we'd have to either return a single generic error, or the errors
-for both schemas, which would be confusing.
+```elixir
+# Accept positive numbers, or strings representing positive numbers
+number(cast_from: :string, min: 0)
 
-### Validate a schema
+# With a custom converter
+map(%{"value" => number()}, cast_from: {:string, with: &Jason.decode/2})
+```
+
+## Validate data
+
+You can validate data against a schema with the `validate/3` function. It 
+returns a list of errors, which is empty if the data is valid.
+
+```elixir
+iex> schema = %{name: string(), age: number()}
+
+iex> validate(%{name: :Colin}, schema)
+[
+  %Validator.Error{context: [], message: "Missing required fields: :age (number)."},
+  %Validator.Error{context: [:name], message: "Expected type: string, got: :Colin."}
+]
+
+iex> validate(%{name: "Colin", age: 26}, schema)
+[]
+```
+
+## Validate schemas
 
 You can validate that a schema you're using is a valid schema with the
 `validate_schema/1` function:
@@ -517,3 +320,25 @@ actually defined using this library, and that schema validates itself.
 By default, validating a value against a schema will validate the schema first.
 If you wish to disable that behaviour (in particular if you can the function
 many times with the same schema), set the `check_schema` option to false.
+
+## Not what you need?
+
+If you find a bug, or if you would like to propose improvements, please open an
+issue or submit a PR.
+
+If this library does not fit exactly your needs, check out those other validation
+libraries. One of them might be best suited to your use case or preferences:
+
+- [Vex](https://github.com/CargoSense/vex)
+- [Norm](https://github.com/elixir-toniq/norm)
+- [Skooma](https://github.com/bobfp/skooma)
+- [Xema](https://github.com/hrzndhrn/xema)
+- [ex_json_schema](https://github.com/jonasschmidt/ex_json_schema)
+- [Exop](https://github.com/madeinussr/exop)
+- [Joi](https://github.com/scottming/joi)
+- [Optimal](https://hexdocs.pm/optimal/readme.html)
+- [TypeCheck](https://github.com/Qqwy/elixir-type_check)
+
+## License
+
+The source code of Validator is licensed under the MIT License.
