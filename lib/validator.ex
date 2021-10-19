@@ -483,11 +483,14 @@ defmodule Validator do
           %Spec{type: type} ->
             type
 
+          value when is_function(value) ->
+            nil
+
           value ->
             Types.type_of(value)
         end
 
-      "#{inspect(field)} (#{type})"
+      if type, do: "#{inspect(field)} (#{type})", else: inspect(field)
     end)
     |> Enum.join(", ")
   end

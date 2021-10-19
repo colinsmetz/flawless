@@ -373,6 +373,10 @@ defmodule ValidatorTest do
         "age" => number(),
         "score" => number(),
         "valid" => boolean(),
+        "something" => fn
+          %{} -> %{"a" => string()}
+          {_} -> {string()}
+        end,
         maybe("address") => string()
       }
 
@@ -382,7 +386,7 @@ defmodule ValidatorTest do
       }
 
       assert validate(value, schema) == [
-               Error.new(~s/Missing required fields: "age" (number), "valid" (boolean)./, [])
+               Error.new(~s/Missing required fields: "age" (number), "something", "valid" (boolean)./, [])
              ]
     end
 
