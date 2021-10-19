@@ -68,8 +68,11 @@ defmodule Validator.SchemaValidatorTest do
       }
 
       assert validate_schema(schema) == [
-               Error.new("Maximum length of 1 required (current: 2).", ["projects"]),
-               Error.new("Expected arity of 1, found: 0.", ["profile", "tags", :checks, 0]),
+               Error.new(
+                 "The list shortcut `[item_spec]` should define only one schema that will be the same for all items.",
+                 ["projects"]
+               ),
+               Error.new("Predicates used in checks must be function of arity 1.", ["profile", "tags", :checks, 0]),
                Error.new("Value does not match any of the possible schemas.", ["process"]),
                Error.new("Invalid value: :maybe. Valid options: [:default, true, false]", [
                  "name",

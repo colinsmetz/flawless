@@ -72,7 +72,11 @@ defmodule Validator.SchemaValidator do
   end
 
   defp list_schema() do
-    list(&schema_schema/0, max_length: 1)
+    list(&schema_schema/0,
+      max_length: 1,
+      on_error:
+        "The list shortcut `[item_spec]` should define only one schema that will be the same for all items."
+    )
   end
 
   defp tuple_schema() do
@@ -105,13 +109,17 @@ defmodule Validator.SchemaValidator do
     fn
       %_{} ->
         structure(%Validator.Rule{
-          predicate: function(arity: 1),
+          predicate: predicate_schema(),
           message: value()
         })
 
       _else ->
-        function(arity: 1)
+        predicate_schema()
     end
+  end
+
+  defp predicate_schema() do
+    function(arity: 1, on_error: "Predicates used in checks must be function of arity 1.")
   end
 
   defp cast_from_schema() do
