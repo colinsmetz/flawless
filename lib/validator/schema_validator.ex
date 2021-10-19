@@ -26,6 +26,7 @@ defmodule Validator.SchemaValidator do
       type: type_schema(),
       cast_from: cast_from_schema(),
       nil: nil_schema(),
+      on_error: on_error_schema(),
       for: fn
         %Validator.Spec.Value{} -> value_spec_schema()
         %Validator.Spec.List{} -> list_spec_schema()
@@ -123,5 +124,12 @@ defmodule Validator.SchemaValidator do
 
   defp nil_schema() do
     atom(in: [:default, true, false])
+  end
+
+  defp on_error_schema() do
+    fn
+      nil -> nil
+      _ -> string()
+    end
   end
 end

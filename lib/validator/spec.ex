@@ -4,7 +4,13 @@ defmodule Validator.Spec do
 
   The `for` attribute allows to define type-specific specs.
   """
-  defstruct checks: [], late_checks: [], type: :any, cast_from: [], nil: :default, for: nil
+  defstruct checks: [],
+            late_checks: [],
+            type: :any,
+            cast_from: [],
+            nil: :default,
+            on_error: nil,
+            for: nil
 
   @type t() :: %__MODULE__{
           checks: list(Validator.Rule.t()),
@@ -12,6 +18,7 @@ defmodule Validator.Spec do
           type: atom(),
           cast_from: list(atom()) | atom(),
           nil: :default | true | false,
+          on_error: binary() | nil,
           for:
             Validator.Spec.Value.t()
             | Validator.Spec.Struct.t()

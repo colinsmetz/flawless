@@ -165,13 +165,27 @@ defmodule Validator do
           [Error.new(error, context)]
       end
 
-    case {value, nil_opt(schema), errors} do
-      {nil, true, _} -> []
-      {nil, false, _} -> [Error.new("Value cannot be nil.", context)]
-      {nil, :default, []} -> []
-      {nil, :default, _errors} when context.is_optional_field -> []
-      {nil, :default, errors} -> errors
-      _ -> errors
+    # Handle nillable elements
+    errors =
+      case {value, nil_opt(schema), errors} do
+        {nil, true, _} -> []
+        {nil, false, _} -> [Error.new("Value cannot be nil.", context)]
+        {nil, :default, []} -> []
+        {nil, :default, _errors} when context.is_optional_field -> []
+        {nil, :default, errors} -> errors
+        _ -> errors
+      end
+
+    # Handle the on_error option
+    case {errors, schema} do
+      {[], _} ->
+        []
+
+      {_, %Spec{on_error: on_error_message}} when not is_nil(on_error_message) ->
+        [Error.new(on_error_message, context)]
+
+      _ ->
+        errors
     end
   end
 

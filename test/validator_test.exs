@@ -386,7 +386,10 @@ defmodule ValidatorTest do
       }
 
       assert validate(value, schema) == [
-               Error.new(~s/Missing required fields: "age" (number), "something", "valid" (boolean)./, [])
+               Error.new(
+                 ~s/Missing required fields: "age" (number), "something", "valid" (boolean)./,
+                 []
+               )
              ]
     end
 
@@ -1197,6 +1200,45 @@ defmodule ValidatorTest do
 
       assert validate(value, schema, stop_early: true) == [
                Error.new("Expected type: string, got: 1.", [0])
+             ]
+    end
+  end
+
+  describe "on_error" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "groups the errors and replaces them with a single hardcoded message" do
+      schema =
+        tuple(
+          {atom(in: [:ok, :error]), number(min: 0)},
+          on_error: "An :ok/:error tuple was expected."
+        )
+
+      assert validate({:ok, 7}, schema) == []
+
+      assert validate({:invalid, -4}, schema) == [
+               Error.new("An :ok/:error tuple was expected.", [])
+             ]
+
+      assert validate("hey", schema) == [
+               Error.new("An :ok/:error tuple was expected.", [])
+             ]
+    end
+
+    test "it still returns errors for other elements" do
+      schema = %{
+        "nickname" =>
+          string(
+            format: ~r/^[a-z_]+$/,
+            on_error: "Only lowercase letters and underscores are allowed."
+          ),
+        "age" => number(min: 0)
+      }
+
+      assert validate(%{"nickname" => "Thomas", "age" => -7}, schema) == [
+               Error.new("Must be greater than or equal to 0.", ["age"]),
+               Error.new("Only lowercase letters and underscores are allowed.", ["nickname"])
              ]
     end
   end

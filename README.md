@@ -83,6 +83,7 @@ All helpers support a few common options:
 - `late_checks` / `late_check` - See [Checks](#checks)
 - `nil` - See [Nullable values](#nullable-values)
 - `cast_from` - See [Casting](#casting)
+- `on_error` - See [Overriding error messages](#overriding-error-messages)
 
 The `value()` helper is the only helper without a specific type. It can be used
 to match literally anything.
@@ -280,6 +281,26 @@ number(cast_from: :string, min: 0)
 
 # With a custom converter
 map(%{"value" => number()}, cast_from: {:string, with: &Jason.decode/2})
+```
+
+### Overriding error messages
+
+You replace all the errors on an element by a single error message with
+`on_error`:
+
+```elixir
+iex> value = "xX-DarkL0rd-Xx"
+iex> schema1 = string(format: ~r/^[a-zA-Z_]+$/)
+iex> validate(value, schema1)
+[
+  %Validator.Error{context: [], message: "Value \"xX-DarkL0rd-Xx\" does not match regex ~r/^[a-zA-Z_]+$/."}
+]
+
+iex> schema2 = string(format: ~r/^[a-zA-Z_]+$/, on_error: "The username should only contain letters or underscores.")
+iex> validate(value, schema2)
+[
+  %Validator.Error{context: [], message: "The username should only contain letters or underscores."}
+]
 ```
 
 ## Validate data

@@ -11,6 +11,8 @@ defmodule Validator.Helpers do
   * `late_check`: a single late check. Can be repeated.
   * `nil`: whether the value is nillable.
   * `cast_from`: the types from which it is allowed to cast the value to the expected type.
+  * `on_error`: a string error message that will be used instead of any set of other errors
+    that the element might have.
 
   """
   alias Validator.Rule
@@ -44,6 +46,7 @@ defmodule Validator.Helpers do
       type: type,
       cast_from: opts |> Keyword.get(:cast_from, []),
       nil: opts |> Keyword.get(nil, :default),
+      on_error: opts |> Keyword.get(:on_error, nil),
       for: subspec
     }
   end

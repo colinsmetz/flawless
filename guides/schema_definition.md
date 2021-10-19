@@ -12,6 +12,8 @@ All types of elements support a few common options:
   multiple times.
 * `cast_from`: a type or list of types, to cast the value to the expected type
   before validating, if necessary (see [Casting](#casting) section below).
+* `on_error`: an error message that will be used if the element is invalid, and
+  override all the errors.
 * `type`: the type of the element (`:any` by default). Usually not set directly,
   use the specific type helpers.
 
@@ -391,3 +393,33 @@ has the advantage that we know which schema is expected to be used, so we can
 return more specific errors corresponding to the selected subschemas. If we
 didn't know, we'd have to either return a single generic error, or the errors
 for both schemas, which would be confusing.
+
+## Replace errors with `on_error` option
+
+It is possible to define a single error message to any element using the
+`on_error` keyword. If the element emits errors during validation, they will be
+discarded and replaced by this single error message.
+
+This is useful for outputting more user-friendly error messages or limiting the
+number of errors on a single element. For example:
+
+```elixir
+iex> value = "xX-DarkL0rd-Xx"
+iex> schema1 = string(format: ~r/^[a-zA-Z_]+$/)
+iex> validate(value, schema1)
+[
+  %Validator.Error{
+    context: [],
+    message: "Value \"xX-DarkL0rd-Xx\" does not match regex ~r/^[a-zA-Z_]+$/."
+  }
+]
+
+iex> schema2 = string(format: ~r/^[a-zA-Z_]+$/, on_error: "The username should only contain letters or underscores.")
+iex> validate(value, schema2)
+[
+  %Validator.Error{
+    context: [],
+    message: "The username should only contain letters or underscores."
+  }
+]
+```
