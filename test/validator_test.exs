@@ -1242,4 +1242,20 @@ defmodule ValidatorTest do
              ]
     end
   end
+
+  describe "unions" do
+    import Validator.Helpers
+    import Validator.Rule
+
+    test "accept any basic type in the list, otherwise returns a generic error" do
+      schema = union([string(), number()])
+
+      assert validate("hello", schema) == []
+      assert validate(18, schema) == []
+
+      assert validate(:boo, schema) == [
+               Error.new("The value does not match any schema in the union.", [])
+             ]
+    end
+  end
 end

@@ -7,6 +7,7 @@ defmodule Validator.SchemaValidator do
   def schema_schema() do
     fn
       %Validator.Spec{} -> spec_schema()
+      %Validator.Union{} -> union_schema()
       [] -> literal([])
       l when is_list(l) -> list_schema()
       t when is_tuple(t) -> tuple_schema()
@@ -18,6 +19,12 @@ defmodule Validator.SchemaValidator do
       literal when is_atom(literal) -> atom()
       literal when is_number(literal) -> number()
     end
+  end
+
+  defp union_schema() do
+    structure(%Validator.Union{
+      schemas: [schema_schema()]
+    })
   end
 
   defp spec_schema() do

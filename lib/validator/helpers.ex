@@ -760,6 +760,14 @@ defmodule Validator.Helpers do
   """
   defdelegate time(opts \\ []), to: Validator.Types.Time
 
+  @doc """
+  TODO
+  """
+  @spec union(list(Validator.spec_type())) :: Validator.Union.t()
+  def union(schemas) do
+    %Validator.Union{schemas: Validator.Union.flatten(schemas)}
+  end
+
   #######################
   #   BUILT-IN CHECKS   #
   #######################
