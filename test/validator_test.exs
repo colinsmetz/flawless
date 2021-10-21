@@ -1254,8 +1254,48 @@ defmodule ValidatorTest do
       assert validate(18, schema) == []
 
       assert validate(:boo, schema) == [
-               Error.new("The value does not match any schema in the union.", [])
+               Error.new(
+                 "The value does not match any schema in the union. Possible types: [:string, :number].",
+                 []
+               )
              ]
+    end
+
+    test "if it fails but matches the primary type of a single schema in the union, it returns the errors for that schema" do
+      schema = union([string(min_length: 10), number(min: 10), atom()])
+
+      assert validate("hello", schema) == [
+               Error.new("Minimum length of 10 required (current: 5).", [])
+             ]
+
+      assert validate(5, schema) == [Error.new("Must be greater than or equal to 10.", [])]
+      assert validate(:ok, schema) == []
+
+      assert validate(%{a: 1}, schema) == [
+               Error.new(
+                 "The value does not match any schema in the union. Possible types: [:string, :number, :atom].",
+                 []
+               )
+             ]
+    end
+
+    test "if it matches the primary type of more than one schema, it returns a generic error" do
+      schema = union([number(min: 0), float(min: 0), string(non_empty: true)])
+
+      assert validate(-9.9, schema) == [
+               Error.new(
+                 "The value does not match any schema in the union. Possible types: [:number, :float, :string].",
+                 []
+               )
+             ]
+
+      assert validate("", schema) == [Error.new("Value cannot be empty.", [])]
+    end
+
+    test "it takes cast_from into account" do
+      schema = union([number(min: 10, cast_from: :string), atom()])
+
+      assert validate("5", schema) == [Error.new("Must be greater than or equal to 10.", [])]
     end
   end
 end

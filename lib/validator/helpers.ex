@@ -761,7 +761,27 @@ defmodule Validator.Helpers do
   defdelegate time(opts \\ []), to: Validator.Types.Time
 
   @doc """
-  TODO
+  Represents the union of multiple schemas.
+
+  If the value matches any of the given schemas, it is considered valid. However,
+  if none of them matches, errors are returned. If the value matches the primary
+  type (map, string, number, etc.) of a single schema in the list, then the errors
+  for that schema are returned. Otherwise, a generic error is returned.
+
+  ## Examples
+
+      iex> Validator.validate("hello", union([string(), atom()]))
+      []
+
+      iex> Validator.validate(:hello, union([string(), atom()]))
+      []
+
+      iex> Validator.validate(15, union([string(), atom()]))
+      [%Validator.Error{context: [], message: "The value does not match any schema in the union. Possible types: [:string, :atom]."}]
+
+      iex> Validator.validate(15, union([number(max: 10), string()]))
+      [%Validator.Error{context: [], message: "Must be less than or equal to 10."}]
+
   """
   @spec union(list(Validator.spec_type())) :: Validator.Union.t()
   def union(schemas) do

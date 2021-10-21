@@ -446,8 +446,28 @@ defmodule Validator do
       end
     end)
     |> case do
-      [] -> []
-      _errors -> [Error.new("The value does not match any schema in the union.", context)]
+      [] ->
+        []
+
+      errors ->
+        schemas
+        |> Enum.map(&check_type_and_cast_if_needed(value, &1, context))
+        |> Enum.zip(Enum.reverse(errors))
+        |> Enum.reject(fn result -> match?({{:error, _}, _}, result) end)
+        |> case do
+          [{{:ok, _}, specific_errors}] ->
+            specific_errors
+
+          _ ->
+            schemas_types = schemas |> Enum.map(&type_of_schema/1) |> Enum.uniq()
+
+            [
+              Error.new(
+                "The value does not match any schema in the union. Possible types: #{inspect(schemas_types)}.",
+                context
+              )
+            ]
+        end
     end
   end
 
@@ -514,19 +534,14 @@ defmodule Validator do
       type =
         schema
         |> Map.get(field)
-        |> case do
-          %Spec{type: type} ->
-            type
-
-          value when is_function(value) ->
-            nil
-
-          value ->
-            Types.type_of(value)
-        end
+        |> type_of_schema()
 
       if type, do: "#{inspect(field)} (#{type})", else: inspect(field)
     end)
     |> Enum.join(", ")
   end
+
+  defp type_of_schema(%Spec{type: type}), do: type
+  defp type_of_schema(schema) when is_function(schema), do: nil
+  defp type_of_schema(schema), do: Types.type_of(schema)
 end
