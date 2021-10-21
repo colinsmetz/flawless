@@ -17,14 +17,15 @@ defmodule Validator.InspectTest do
       "f" => tuple({number(), atom()}, nil: true),
       "g" => map(%{z: pid()}),
       "h" => structure(%ForTest{x: string(), y: function()}),
-      maybe("h") => atom(late_check: one_of([:a, :b])),
+      "i" => union([string(), number()]),
+      maybe("z") => atom(late_check: one_of([:a, :b])),
       any_key() => string()
     }
 
     assert inspect(schema, pretty: true) <> "\n" == ~s"""
            %{
              any_key() => string(),
-             maybe("h") => atom(late_checks: #1),
+             maybe("z") => atom(late_checks: #1),
              "a" => number(),
              "b" => string(checks: #1, cast_from: [:integer, :atom]),
              "c" => any(),
@@ -32,7 +33,8 @@ defmodule Validator.InspectTest do
              "e" => list(string(), checks: #2),
              "f" => tuple({number(), atom()}, nil: true),
              "g" => map(%{z: pid()}),
-             "h" => struct(%Validator.InspectTest.ForTest{x: string(), y: function()})
+             "h" => struct(%Validator.InspectTest.ForTest{x: string(), y: function()}),
+             "i" => union([string(), number()])
            }
            """
   end

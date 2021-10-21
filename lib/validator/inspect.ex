@@ -68,6 +68,14 @@ defimpl Inspect, for: Validator.Spec do
   defp nillable(nillable, opts), do: ["nil: ", to_doc(nillable, opts)]
 end
 
+defimpl Inspect, for: Validator.Union do
+  alias Validator.Union
+
+  def inspect(%Union{schemas: schemas}, _opts) do
+    "union(#{inspect(schemas)})"
+  end
+end
+
 defimpl Inspect, for: Validator.AnyOtherKey do
   alias Validator.AnyOtherKey
 
