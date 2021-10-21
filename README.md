@@ -257,18 +257,26 @@ end
 
 ### Unions
 
-Unions can be defined using 1-arity functions that decide which schema
-to use based on the input data:
+Unions can be defined in two ways:
 
-```elixir
-%{
-  # Metadata is either a map with string values, or a list of strings
-  "metadata" => fn
-    %{} -> map(%{any_key() => string()})
-    [_ | _] -> list(string())
-  end
-}
-```
+1. Using the `union/1` helper:
+
+  ```elixir
+  union([string(non_empty: true), number(min: 0)])
+  ```
+
+2. Using 1-arity functions that decide which schema to use based on the input
+   data:
+
+  ```elixir
+  %{
+    # Metadata is either a map with string values, or a list of strings
+    "metadata" => fn
+      %{} -> map(%{any_key() => string()})
+      [_ | _] -> list(string())
+    end
+  }
+  ```
 
 ### Casting
 

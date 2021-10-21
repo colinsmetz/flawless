@@ -361,38 +361,74 @@ end
 
 Then you can call `validate(tree, tree_schema())` as usual.
 
-## Union types / Case type
+## Unions
 
-Union types are supported as such. However, there are multiple ways a field can
-have different types (without matching *anything* with `value()`):
-* Using `cast_from` (see "Casting" section above).
-* Using selectors
+Sometimes, a value can take multiple possible forms. In this case, it is useful
+to specify a union of possible types. This possible to some extent using the
+catch-all helper `value()` or using `cast_from`, but those are not exactly
+unions.
 
-Selectors are defined using a 1-arity function taking the current data as a
-parameter. This data can be used to decide on which schema should be used. For
-example:
+Validator offers two better ways to do unions of specific schemas.
+
+### The `union` helper
+
+The `union/1` helper takes a list of accepted schemas. A value is valid if it
+matches any of the schemas. If none of them matches, errors are returned
+according to the following rules:
+
+* If the value matches the primary type of a single schema (not more than one),
+  then the errors for that schema are returned.
+* Otherwise, a generic error message is returned, listing the potential types.
+
+The idea is to provide more specific error messages when it is very likely that
+the user was aiming for one of the schemas in particular.
 
 ```elixir
-schema = %{
-  a: fn
-    %{} -> %{b: number(), c: number()}
-    l when is_list(l) -> list(number())
-  end
-}
+iex> Validator.validate("hello", union([string(), atom()]))
+[]
+
+iex> Validator.validate(:hello, union([string(), atom()]))
+[]
+
+iex> Validator.validate(15, union([string(), atom()]))
+[%Validator.Error{context: [], message: "The value does not match any schema in the union. Possible types: [:string, :atom]."}]
+
+iex> Validator.validate(15, union([number(max: 10), string()]))
+[%Validator.Error{context: [], message: "Must be less than or equal to 10."}]
 ```
 
-This schema would accept field `:a` to be either:
-* A map with schema `%{b: number(), c: number()}`
-* A list of numbers
+### Pattern matching on the value
 
-If the input data is not a map or a list, then it is considered an error and
-none of the subschemas is tested.
+The `union` helper is handy but it often fails to provide specific error messages
+as there is no way to choose between the schemas in the union most of the time.
+An alternative could be to return the errors for *all possible schemas*, but this
+would likely be confusing.
 
-Compared to a potential generic `union([typeA, typeB])` function, this method
-has the advantage that we know which schema is expected to be used, so we can
-return more specific errors corresponding to the selected subschemas. If we
-didn't know, we'd have to either return a single generic error, or the errors
-for both schemas, which would be confusing.
+To solve that problem, you can define unions using 1-arity functions. The function
+will receive the value as input, so that you can pattern match on it, and select
+a schema.
+
+```elixir
+schema = fn
+  %{type: "car"} ->
+    %{
+      type: string(),
+      fuel_type: string(),
+      model: string()
+    }
+
+  %{type: "bike"} ->
+    %{
+      type: string(),
+      electric: boolean(),
+      brake_type: string()
+    }
+end
+```
+
+This schema would accept either one map or the other depending on the value for
+`:type`. If the value doesn't match any of the definitions, a generic error
+message in returned.
 
 ## Replace errors with `on_error` option
 

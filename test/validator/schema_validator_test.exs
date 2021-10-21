@@ -72,7 +72,12 @@ defmodule Validator.SchemaValidatorTest do
                  "The list shortcut `[item_spec]` should define only one schema that will be the same for all items.",
                  ["projects"]
                ),
-               Error.new("Predicates used in checks must be function of arity 1.", ["profile", "tags", :checks, 0]),
+               Error.new("Predicates used in checks must be function of arity 1.", [
+                 "profile",
+                 "tags",
+                 :checks,
+                 0
+               ]),
                Error.new("Value does not match any of the possible schemas.", ["process"]),
                Error.new("Invalid value: :maybe. Valid options: [:default, true, false]", [
                  "name",

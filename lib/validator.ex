@@ -12,16 +12,19 @@ defmodule Validator do
   alias Validator.Types
   alias Validator.Rule
   alias Validator.Spec
+  alias Validator.Union
   alias Validator.Utils.Enum, as: EnumUtils
 
   @type spec_type() ::
           Validator.Spec.t()
+          | Validator.Union.t()
           | map()
           | list()
           | tuple()
           | atom()
           | number()
           | binary()
+          | function()
 
   defmodule AnyOtherKey do
     @moduledoc """
@@ -195,6 +198,7 @@ defmodule Validator do
   defp dispatch_validation(value, schema, context) do
     case schema do
       %Spec{for: %Spec.List{}} -> validate_list(value, schema, context)
+      %Union{} -> validate_union(value, schema, context)
       [item_type] -> validate_list(value, Helpers.list(item_type), context)
       [] -> validate_list(value, Helpers.list(Helpers.value()), context)
       %Spec{for: %Spec.Tuple{}} -> validate_tuple(value, schema, context)
@@ -430,6 +434,43 @@ defmodule Validator do
     end
   end
 
+  defp validate_union(value, %Union{schemas: schemas}, context) do
+    schemas
+    |> Enum.reduce_while([], fn schema, errors ->
+      new_errors = do_validate(value, schema, context)
+
+      if new_errors == [] do
+        {:halt, []}
+      else
+        {:cont, [new_errors | errors]}
+      end
+    end)
+    |> case do
+      [] ->
+        []
+
+      errors ->
+        schemas
+        |> Enum.map(&check_type_and_cast_if_needed(value, &1, context))
+        |> Enum.zip(Enum.reverse(errors))
+        |> Enum.reject(fn result -> match?({{:error, _}, _}, result) end)
+        |> case do
+          [{{:ok, _}, specific_errors}] ->
+            specific_errors
+
+          _ ->
+            schemas_types = schemas |> Enum.map(&type_of_schema/1) |> Enum.uniq()
+
+            [
+              Error.new(
+                "The value does not match any schema in the union. Possible types: #{inspect(schemas_types)}.",
+                context
+              )
+            ]
+        end
+    end
+  end
+
   defp unexpected_fields(map, schema) do
     keys_from_schema =
       schema
@@ -493,19 +534,14 @@ defmodule Validator do
       type =
         schema
         |> Map.get(field)
-        |> case do
-          %Spec{type: type} ->
-            type
-
-          value when is_function(value) ->
-            nil
-
-          value ->
-            Types.type_of(value)
-        end
+        |> type_of_schema()
 
       if type, do: "#{inspect(field)} (#{type})", else: inspect(field)
     end)
     |> Enum.join(", ")
   end
+
+  defp type_of_schema(%Spec{type: type}), do: type
+  defp type_of_schema(schema) when is_function(schema), do: nil
+  defp type_of_schema(schema), do: Types.type_of(schema)
 end
