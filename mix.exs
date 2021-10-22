@@ -15,6 +15,7 @@ defmodule Flawless.MixProject do
         # The main page in the docs
         main: "readme",
         api_reference: false,
+        logo: "logo.png",
         extras: extras(),
         groups_for_modules: groups_for_modules()
       ]
