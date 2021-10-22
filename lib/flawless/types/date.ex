@@ -1,6 +1,6 @@
-defmodule Validator.Types.Date do
-  alias Validator.Helpers
-  alias Validator.Rule
+defmodule Flawless.Types.Date do
+  alias Flawless.Helpers
+  alias Flawless.Rule
 
   def date(opts \\ []) do
     Helpers.opaque_struct_type(

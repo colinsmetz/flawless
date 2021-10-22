@@ -1,12 +1,12 @@
-defmodule Validator.SchemaValidatorTest do
+defmodule Flawless.SchemaValidatorTest do
   use ExUnit.Case, async: true
-  doctest Validator.SchemaValidator
-  import Validator, only: [validate_schema: 1]
-  alias Validator.SchemaValidator
-  alias Validator.Error
+  doctest Flawless.SchemaValidator
+  import Flawless, only: [validate_schema: 1]
+  alias Flawless.SchemaValidator
+  alias Flawless.Error
 
-  import Validator.Helpers
-  import Validator.Rule
+  import Flawless.Helpers
+  import Flawless.Rule
 
   describe "schema_schema/0" do
     test "it validates itself" do

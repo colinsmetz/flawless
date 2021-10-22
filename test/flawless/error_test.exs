@@ -1,6 +1,6 @@
-defmodule Validator.ErrorTest do
+defmodule Flawless.ErrorTest do
   use ExUnit.Case, async: true
-  alias Validator.Error
+  alias Flawless.Error
 
   test "new/2 builds a valid error" do
     assert Error.new("my test error", ["a", "b"]) == %Error{

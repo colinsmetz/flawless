@@ -1,8 +1,8 @@
-defmodule Validator.Types.NaiveDateTimeTest do
+defmodule Flawless.Types.NaiveDateTimeTest do
   use ExUnit.Case, async: true
-  alias Validator.Error
-  import Validator.Helpers
-  import Validator, only: [validate: 2]
+  alias Flawless.Error
+  import Flawless.Helpers
+  import Flawless, only: [validate: 2]
 
   describe "datetime helper" do
     test "validates that the input is a NaiveDateTime struct" do

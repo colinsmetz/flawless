@@ -1,6 +1,6 @@
-defmodule Validator.Types.NaiveDateTime do
-  alias Validator.Helpers
-  alias Validator.Rule
+defmodule Flawless.Types.NaiveDateTime do
+  alias Flawless.Helpers
+  alias Flawless.Rule
 
   def naive_datetime(opts \\ []) do
     Helpers.opaque_struct_type(

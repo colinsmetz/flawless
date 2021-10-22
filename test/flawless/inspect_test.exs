@@ -1,7 +1,7 @@
-defmodule Validator.InspectTest do
+defmodule Flawless.InspectTest do
   use ExUnit.Case, async: true
-  import Validator.Helpers
-  import Validator.Rule
+  import Flawless.Helpers
+  import Flawless.Rule
 
   defmodule ForTest do
     defstruct x: nil, y: nil
@@ -33,7 +33,7 @@ defmodule Validator.InspectTest do
              "e" => list(string(), checks: #2),
              "f" => tuple({number(), atom()}, nil: true),
              "g" => map(%{z: pid()}),
-             "h" => struct(%Validator.InspectTest.ForTest{x: string(), y: function()}),
+             "h" => struct(%Flawless.InspectTest.ForTest{x: string(), y: function()}),
              "i" => union([string(), number()])
            }
            """

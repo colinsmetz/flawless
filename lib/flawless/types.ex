@@ -1,4 +1,4 @@
-defmodule Validator.Types do
+defmodule Flawless.Types do
   @moduledoc """
   Provides a number of helper functions to deal with types.
   """

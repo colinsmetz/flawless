@@ -1,4 +1,4 @@
-defmodule Validator.Spec do
+defmodule Flawless.Spec do
   @moduledoc """
   A structure for defining the spec of a schema element.
 
@@ -13,18 +13,18 @@ defmodule Validator.Spec do
             for: nil
 
   @type t() :: %__MODULE__{
-          checks: list(Validator.Rule.t()),
-          late_checks: list(Validator.Rule.t()),
+          checks: list(Flawless.Rule.t()),
+          late_checks: list(Flawless.Rule.t()),
           type: atom(),
           cast_from: list(atom()) | atom(),
           nil: :default | true | false,
           on_error: binary() | nil,
           for:
-            Validator.Spec.Value.t()
-            | Validator.Spec.Struct.t()
-            | Validator.Spec.List.t()
-            | Validator.Spec.Tuple.t()
-            | Validator.Spec.Literal.t()
+            Flawless.Spec.Value.t()
+            | Flawless.Spec.Struct.t()
+            | Flawless.Spec.List.t()
+            | Flawless.Spec.Tuple.t()
+            | Flawless.Spec.Literal.t()
         }
 
   defmodule Value do
@@ -62,7 +62,7 @@ defmodule Validator.Spec do
     defstruct item_type: nil
 
     @type t() :: %__MODULE__{
-            item_type: Validator.spec_type()
+            item_type: Flawless.spec_type()
           }
   end
 
@@ -76,7 +76,7 @@ defmodule Validator.Spec do
     defstruct elem_types: nil
 
     @type t() :: %__MODULE__{
-            elem_types: {Validator.spec_type()}
+            elem_types: {Flawless.spec_type()}
           }
   end
 

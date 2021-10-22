@@ -8,7 +8,7 @@ test:
     - mix local.hex --force
     - mix test
   cache:
-    key: "validator"
+    key: "flawless"
     paths:
       - deps
       - _build

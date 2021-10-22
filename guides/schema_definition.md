@@ -236,7 +236,7 @@ validate(value, schema)
 
 # Result:
 [
-  %Validator.Error{
+  %Flawless.Error{
     context: [],
     message: "An exception was raised while evaluating a rule on that element, so it is likely incorrect."
   },
@@ -252,11 +252,11 @@ sufficiently well-formed.
 ### Built-in rules
 
 Several rules are predefined and can be used in `checks`. Those are available in
-the [Validator.Rule](Validator.Rule.html) module.
+the [Flawless.Rule](Flawless.Rule.html) module.
 
 The type helpers (`number()`, `string()`, etc.) also accept shortcut options for
 their supported built-in rules. You can find them in the
-[`Validator.Helpers`](Validator.Helpers.html) documentation. For example, those
+[`Flawless.Helpers`](Flawless.Helpers.html) documentation. For example, those
 are equivalent:
 
 ```elixir
@@ -368,7 +368,7 @@ to specify a union of possible types. This possible to some extent using the
 catch-all helper `value()` or using `cast_from`, but those are not exactly
 unions.
 
-Validator offers two better ways to do unions of specific schemas.
+Flawless offers two better ways to do unions of specific schemas.
 
 ### The `union` helper
 
@@ -384,17 +384,17 @@ The idea is to provide more specific error messages when it is very likely that
 the user was aiming for one of the schemas in particular.
 
 ```elixir
-iex> Validator.validate("hello", union([string(), atom()]))
+iex> Flawless.validate("hello", union([string(), atom()]))
 []
 
-iex> Validator.validate(:hello, union([string(), atom()]))
+iex> Flawless.validate(:hello, union([string(), atom()]))
 []
 
-iex> Validator.validate(15, union([string(), atom()]))
-[%Validator.Error{context: [], message: "The value does not match any schema in the union. Possible types: [:string, :atom]."}]
+iex> Flawless.validate(15, union([string(), atom()]))
+[%Flawless.Error{context: [], message: "The value does not match any schema in the union. Possible types: [:string, :atom]."}]
 
-iex> Validator.validate(15, union([number(max: 10), string()]))
-[%Validator.Error{context: [], message: "Must be less than or equal to 10."}]
+iex> Flawless.validate(15, union([number(max: 10), string()]))
+[%Flawless.Error{context: [], message: "Must be less than or equal to 10."}]
 ```
 
 ### Pattern matching on the value
@@ -444,7 +444,7 @@ iex> value = "xX-DarkL0rd-Xx"
 iex> schema1 = string(format: ~r/^[a-zA-Z_]+$/)
 iex> validate(value, schema1)
 [
-  %Validator.Error{
+  %Flawless.Error{
     context: [],
     message: "Value \"xX-DarkL0rd-Xx\" does not match regex ~r/^[a-zA-Z_]+$/."
   }
@@ -453,7 +453,7 @@ iex> validate(value, schema1)
 iex> schema2 = string(format: ~r/^[a-zA-Z_]+$/, on_error: "The username should only contain letters or underscores.")
 iex> validate(value, schema2)
 [
-  %Validator.Error{
+  %Flawless.Error{
     context: [],
     message: "The username should only contain letters or underscores."
   }

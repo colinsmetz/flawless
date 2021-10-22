@@ -1,10 +1,10 @@
-# Validator
+# Flawless
 
-Validator is an Elixir library to help validate user input against a schema.
+Flawless is an Elixir library to help validate user input against a schema.
 
 
 ```elixir
-iex> import Validator.Helpers
+iex> import Flawless.Helpers
 
 iex> schema = %{
 ...>   "username" => string(max_length: 30),
@@ -26,17 +26,17 @@ iex> value = %{
 ...>   "interests" => ["programming", "music", :games]
 ...> }
 
-iex> Validator.validate(value, schema)
+iex> Flawless.validate(value, schema)
 [
-  %Validator.Error{
+  %Flawless.Error{
     context: [],
     message: "Missing required fields: \"username\" (string)."
   },
-  %Validator.Error{
+  %Flawless.Error{
     context: ["address"],
     message: "Unexpected fields: [\"country\"]."
   },
-  %Validator.Error{
+  %Flawless.Error{
     context: ["interests", 2],
     message: "Expected type: string, got: :games."
   }
@@ -92,7 +92,7 @@ to match literally anything.
 
 Every element can define a series of checks. Each check will evaluate a predicate
 on the value and return an error message if it didn't pass. A few built-in rules
-are available in `Validator.Rule` though shortcuts are also available for them.
+are available in `Flawless.Rule` though shortcuts are also available for them.
 
 It is also possible to define your own rules easily using the `rule/2` helper or
 a simple function that returns an `:ok`/`:error` tuple. For more information, see
@@ -120,7 +120,7 @@ map(
 
 ### Primitive types
 
-Validator supports all primitive Elixir types with the functions `integer/1`,
+Flawless supports all primitive Elixir types with the functions `integer/1`,
 `float/1`, `number/1`, `string/1`, `boolean/1`, `atom/1`, `pid/1`, `ref/1`,
 `function/1` and `port/1`. Each of them supports specific options, which are
 shortcuts to avoid lengthy `checks`.
@@ -301,13 +301,13 @@ iex> value = "xX-DarkL0rd-Xx"
 iex> schema1 = string(format: ~r/^[a-zA-Z_]+$/)
 iex> validate(value, schema1)
 [
-  %Validator.Error{context: [], message: "Value \"xX-DarkL0rd-Xx\" does not match regex ~r/^[a-zA-Z_]+$/."}
+  %Flawless.Error{context: [], message: "Value \"xX-DarkL0rd-Xx\" does not match regex ~r/^[a-zA-Z_]+$/."}
 ]
 
 iex> schema2 = string(format: ~r/^[a-zA-Z_]+$/, on_error: "The username should only contain letters or underscores.")
 iex> validate(value, schema2)
 [
-  %Validator.Error{context: [], message: "The username should only contain letters or underscores."}
+  %Flawless.Error{context: [], message: "The username should only contain letters or underscores."}
 ]
 ```
 
@@ -321,8 +321,8 @@ iex> schema = %{name: string(), age: number()}
 
 iex> validate(%{name: :Colin}, schema)
 [
-  %Validator.Error{context: [], message: "Missing required fields: :age (number)."},
-  %Validator.Error{context: [:name], message: "Expected type: string, got: :Colin."}
+  %Flawless.Error{context: [], message: "Missing required fields: :age (number)."},
+  %Flawless.Error{context: [:name], message: "Expected type: string, got: :Colin."}
 ]
 
 iex> validate(%{name: "Colin", age: 26}, schema)
@@ -370,4 +370,4 @@ libraries. One of them might be best suited to your use case or preferences:
 
 ## License
 
-The source code of Validator is licensed under the MIT License.
+The source code of Flawless is licensed under the MIT License.

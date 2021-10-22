@@ -1,11 +1,11 @@
-defmodule ValidatorTest do
+defmodule FlawlessTest do
   use ExUnit.Case, async: true
-  doctest Validator
-  import Validator, only: [defvalidator: 1, validate: 2, validate: 3]
-  alias Validator.Error
+  doctest Flawless
+  import Flawless, only: [defvalidator: 1, validate: 2, validate: 3]
+  alias Flawless.Error
 
   describe "basic types" do
-    import Validator.Helpers
+    import Flawless.Helpers
 
     test "value/1 expects any value" do
       assert validate(123, value()) == []
@@ -188,8 +188,8 @@ defmodule ValidatorTest do
   end
 
   describe "checks" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     test "are evaluated for basic values" do
       checks = [one_of([0, 1])]
@@ -244,8 +244,8 @@ defmodule ValidatorTest do
   end
 
   describe "late checks" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     test "are not evaluated if other checks failed" do
       assert validate("ho", string(min_length: 3, late_checks: [one_of(["plop"])])) == [
@@ -295,8 +295,8 @@ defmodule ValidatorTest do
   end
 
   describe "lists" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     test "evaluate all their elements" do
       assert validate([1, 2, 3, "4", "5", 6], list(integer())) == [
@@ -364,8 +364,8 @@ defmodule ValidatorTest do
   end
 
   describe "maps" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     test "detect missing required fields" do
       schema = %{
@@ -481,8 +481,8 @@ defmodule ValidatorTest do
   end
 
   describe "structs" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     defmodule TestStructA do
       defstruct a: nil, b: nil
@@ -524,7 +524,7 @@ defmodule ValidatorTest do
 
       assert validate(%TestStructB{a: 11, b: "yo"}, schema) == [
                Error.new(
-                 "Expected struct of type: ValidatorTest.TestStructA, got struct of type: ValidatorTest.TestStructB.",
+                 "Expected struct of type: FlawlessTest.TestStructA, got struct of type: FlawlessTest.TestStructB.",
                  []
                )
              ]
@@ -541,7 +541,7 @@ defmodule ValidatorTest do
              ]
 
       assert validate(TestStructA, schema) == [
-               Error.new("Expected type: struct, got: ValidatorTest.TestStructA.", [])
+               Error.new("Expected type: struct, got: FlawlessTest.TestStructA.", [])
              ]
     end
 
@@ -551,7 +551,7 @@ defmodule ValidatorTest do
                structure(%TestStructA{}, in: [%TestStructA{a: 3, b: 4}])
              ) == [
                Error.new(
-                 "Invalid value: %ValidatorTest.TestStructA{a: nil, b: nil}. Valid options: [%ValidatorTest.TestStructA{a: 3, b: 4}]",
+                 "Invalid value: %FlawlessTest.TestStructA{a: nil, b: nil}. Valid options: [%FlawlessTest.TestStructA{a: 3, b: 4}]",
                  []
                )
              ]
@@ -581,8 +581,8 @@ defmodule ValidatorTest do
   end
 
   describe "tuples" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     test "validate tuple size before anything else" do
       schema = tuple({number(), string(), string()})
@@ -646,8 +646,8 @@ defmodule ValidatorTest do
   end
 
   describe "literals" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     test "validate that value is strictly equal to expected value" do
       assert validate(14, literal(14)) == []
@@ -682,8 +682,8 @@ defmodule ValidatorTest do
   end
 
   describe "cast_from" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     test "can be used to cast strings to numbers" do
       schema = number(cast_from: :string)
@@ -767,8 +767,8 @@ defmodule ValidatorTest do
   end
 
   describe "nullable option" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     test "a nil value is never accepted when nil is false, even it matches the type" do
       assert validate(nil, literal(nil, nil: false)) == [Error.new("Value cannot be nil.", [])]
@@ -836,8 +836,8 @@ defmodule ValidatorTest do
   end
 
   describe "complex schemas" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     test "it validates map, list and tuple fields" do
       schema = %{
@@ -907,7 +907,7 @@ defmodule ValidatorTest do
     end
 
     defp required_if_is_key() do
-      Validator.Rule.rule(
+      Flawless.Rule.rule(
         fn field -> not (field["is_key"] == true and not field["is_required"]) end,
         fn field -> "Field '#{field["name"]}' is a key but is not required" end
       )
@@ -981,7 +981,7 @@ defmodule ValidatorTest do
         "test" => nil
       }
 
-      assert Validator.validate(value, schema) == [
+      assert Flawless.validate(value, schema) == [
                Error.new("Unexpected fields: [\"file_max_age_days\", \"options\"].", []),
                Error.new("Missing required fields: \"struct\" (struct), \"truc\" (string).", [
                  "bim"
@@ -1000,8 +1000,8 @@ defmodule ValidatorTest do
   end
 
   describe "recursive data structures" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     def tree_schema() do
       %{
@@ -1047,8 +1047,8 @@ defmodule ValidatorTest do
   end
 
   describe "selects" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     test "pass if the selected match is valid" do
       schema = %{
@@ -1096,8 +1096,8 @@ defmodule ValidatorTest do
   end
 
   describe "options" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     test "group_errors groups errors for the same path" do
       schema = %{
@@ -1205,8 +1205,8 @@ defmodule ValidatorTest do
   end
 
   describe "on_error" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     test "groups the errors and replaces them with a single hardcoded message" do
       schema =
@@ -1244,8 +1244,8 @@ defmodule ValidatorTest do
   end
 
   describe "unions" do
-    import Validator.Helpers
-    import Validator.Rule
+    import Flawless.Helpers
+    import Flawless.Rule
 
     test "accept any basic type in the list, otherwise returns a generic error" do
       schema = union([string(), number()])

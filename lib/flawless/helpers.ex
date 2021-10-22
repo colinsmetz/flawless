@@ -1,4 +1,4 @@
-defmodule Validator.Helpers do
+defmodule Flawless.Helpers do
   @moduledoc """
 
   A series of helper functions to build schemas.
@@ -15,10 +15,10 @@ defmodule Validator.Helpers do
     that the element might have.
 
   """
-  alias Validator.Rule
-  alias Validator.Types
-  alias Validator.Spec
-  alias Validator.{AnyOtherKey, OptionalKey}
+  alias Flawless.Rule
+  alias Flawless.Types
+  alias Flawless.Spec
+  alias Flawless.{AnyOtherKey, OptionalKey}
 
   defp value_with_type(type, opts) do
     opts
@@ -62,17 +62,17 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(:something, value())
+      iex> Flawless.validate(:something, value())
       []
 
-      iex> Validator.validate([1, 2, 3], value())
+      iex> Flawless.validate([1, 2, 3], value())
       []
 
-      iex> Validator.validate(2, value(in: [1, "1", :one]))
-      [%Validator.Error{context: [], message: "Invalid value: 2. Valid options: [1, \\"1\\", :one]"}]
+      iex> Flawless.validate(2, value(in: [1, "1", :one]))
+      [%Flawless.Error{context: [], message: "Invalid value: 2. Valid options: [1, \\"1\\", :one]"}]
 
   """
-  @spec value(keyword) :: Validator.Spec.t()
+  @spec value(keyword) :: Flawless.Spec.t()
   def value(opts \\ []) do
     type = opts |> Keyword.get(:type, :any)
 
@@ -96,11 +96,11 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate([1, 2, 3], list(integer()))
+      iex> Flawless.validate([1, 2, 3], list(integer()))
       []
 
-      iex> Validator.validate([1, "two", 3], list(integer()))
-      [%Validator.Error{context: [1], message: "Expected type: integer, got: \\"two\\"."}]
+      iex> Flawless.validate([1, "two", 3], list(integer()))
+      [%Flawless.Error{context: [1], message: "Expected type: integer, got: \\"two\\"."}]
 
   ## Shortcuts
 
@@ -109,7 +109,7 @@ defmodule Validator.Helpers do
   matching the empty list, consider using `literal([])` instead.
 
   """
-  @spec list(any, keyword) :: Validator.Spec.t()
+  @spec list(any, keyword) :: Flawless.Spec.t()
   def list(item_type, opts \\ []) do
     %Spec.List{item_type: item_type}
     |> build_spec(:list, opts)
@@ -129,21 +129,21 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate({:ok, 99}, tuple({atom(), number()}))
+      iex> Flawless.validate({:ok, 99}, tuple({atom(), number()}))
       []
 
-      iex> Validator.validate({:ok, "hello"}, tuple({atom(), number()}))
-      [%Validator.Error{context: [1], message: "Expected type: number, got: \\"hello\\"."}]
+      iex> Flawless.validate({:ok, "hello"}, tuple({atom(), number()}))
+      [%Flawless.Error{context: [1], message: "Expected type: number, got: \\"hello\\"."}]
 
-      iex> Validator.validate({:ok}, tuple({atom(), number()}))
-      [%Validator.Error{context: [], message: "Invalid tuple size (expected: 2, received: 1)."}]
+      iex> Flawless.validate({:ok}, tuple({atom(), number()}))
+      [%Flawless.Error{context: [], message: "Invalid tuple size (expected: 2, received: 1)."}]
 
   ## Shortcut
 
   If you do not need any of the options, you can use `elem_types` tuple alone.
 
   """
-  @spec tuple(any, keyword) :: Validator.Spec.t()
+  @spec tuple(any, keyword) :: Flawless.Spec.t()
   def tuple(elem_types, opts \\ []) do
     %Spec.Tuple{elem_types: elem_types}
     |> build_spec(:tuple, opts)
@@ -193,11 +193,11 @@ defmodule Validator.Helpers do
       ...>   name: string(),
       ...>   age: number()
       ...> })
-      iex> Validator.validate(%{name: "James", age: 10}, schema)
+      iex> Flawless.validate(%{name: "James", age: 10}, schema)
       []
-      iex> Validator.validate(%{age: 25, country: "BE"}, schema)
+      iex> Flawless.validate(%{age: 25, country: "BE"}, schema)
       [
-        %Validator.Error{
+        %Flawless.Error{
           context: [],
           message: [
             "Unexpected fields: [:country].",
@@ -212,9 +212,9 @@ defmodule Validator.Helpers do
       ...>   "age" => number(),
       ...>   maybe("country") => string()
       ...> })
-      iex> Validator.validate(%{"name" => "Patty", "age" => 24}, schema)
+      iex> Flawless.validate(%{"name" => "Patty", "age" => 24}, schema)
       []
-      iex> Validator.validate(%{"name" => "Patty", "age" => 24, "country" => "DE"}, schema)
+      iex> Flawless.validate(%{"name" => "Patty", "age" => 24, "country" => "DE"}, schema)
       []
 
       # Extra keys
@@ -222,21 +222,21 @@ defmodule Validator.Helpers do
       ...>   "id" => string(),
       ...>   any_key() => number()
       ...> })
-      iex> Validator.validate(%{"id" => "abc"}, schema)
+      iex> Flawless.validate(%{"id" => "abc"}, schema)
       []
-      iex> Validator.validate(%{"id" => "abc", "price" => 9.99, "age" => 10}, schema)
+      iex> Flawless.validate(%{"id" => "abc", "price" => 9.99, "age" => 10}, schema)
       []
-      iex> Validator.validate(%{"price" => 9.99}, schema)
-      [%Validator.Error{context: [], message: "Missing required fields: \\"id\\" (string)."}]
-      iex> Validator.validate(%{"id" => "abc", "name" => "stuff"}, schema)
-      [%Validator.Error{context: ["name"], message: "Expected type: number, got: \\"stuff\\"."}]
+      iex> Flawless.validate(%{"price" => 9.99}, schema)
+      [%Flawless.Error{context: [], message: "Missing required fields: \\"id\\" (string)."}]
+      iex> Flawless.validate(%{"id" => "abc", "name" => "stuff"}, schema)
+      [%Flawless.Error{context: ["name"], message: "Expected type: number, got: \\"stuff\\"."}]
 
   ## Shortcut
 
   If you do not need any of the options, you can use map schema alone.
 
   """
-  @spec map(any, keyword) :: Validator.Spec.t()
+  @spec map(any, keyword) :: Flawless.Spec.t()
   def map(schema, opts \\ []) do
     opts
     |> Keyword.put(:schema, schema)
@@ -273,20 +273,20 @@ defmodule Validator.Helpers do
       ...>   name: string(),
       ...>   age: number()
       ...> })
-      iex> Validator.validate(%User{name: "Stephen", age: 55}, schema)
+      iex> Flawless.validate(%User{name: "Stephen", age: 55}, schema)
       []
-      iex> Validator.validate(%User{name: "Stephen", age: "thirty"}, schema)
-      [%Validator.Error{context: [:age], message: "Expected type: number, got: \\"thirty\\"."}]
-      iex> Validator.validate(%{name: "Stephen", age: 55}, schema)
-      [%Validator.Error{context: [], message: "Expected type: Validator.HelpersTest.User, got: %{age: 55, name: \\"Stephen\\"}."}]
+      iex> Flawless.validate(%User{name: "Stephen", age: "thirty"}, schema)
+      [%Flawless.Error{context: [:age], message: "Expected type: number, got: \\"thirty\\"."}]
+      iex> Flawless.validate(%{name: "Stephen", age: 55}, schema)
+      [%Flawless.Error{context: [], message: "Expected type: Flawless.HelpersTest.User, got: %{age: 55, name: \\"Stephen\\"}."}]
 
       # Opaque struct
-      iex> Validator.validate(%User{name: "Stephen", age: 55}, structure(DateTime))
-      [%Validator.Error{context: [], message: "Expected struct of type: DateTime, got struct of type: Validator.HelpersTest.User."}]
+      iex> Flawless.validate(%User{name: "Stephen", age: 55}, structure(DateTime))
+      [%Flawless.Error{context: [], message: "Expected struct of type: DateTime, got struct of type: Flawless.HelpersTest.User."}]
 
   """
   @spec structure(atom | %{:__struct__ => atom, optional(any) => any}, keyword) ::
-          Validator.Spec.t()
+          Flawless.Spec.t()
   def structure(schema_or_module, opts \\ [])
 
   def structure(%module{} = schema, opts) do
@@ -310,14 +310,14 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(80, literal(80))
+      iex> Flawless.validate(80, literal(80))
       []
 
-      iex> Validator.validate({1, 2, 3}, literal({1, 2, 3}))
+      iex> Flawless.validate({1, 2, 3}, literal({1, 2, 3}))
       []
 
-      iex> Validator.validate("hello", literal("bonjour"))
-      [%Validator.Error{context: [], message: "Expected literal value \\"bonjour\\", got: \\"hello\\"."}]
+      iex> Flawless.validate("hello", literal("bonjour"))
+      [%Flawless.Error{context: [], message: "Expected literal value \\"bonjour\\", got: \\"hello\\"."}]
 
   ## Shortcuts
 
@@ -325,7 +325,7 @@ defmodule Validator.Helpers do
   the value directly.
 
   """
-  @spec literal(any, keyword) :: Validator.Spec.t()
+  @spec literal(any, keyword) :: Flawless.Spec.t()
   def literal(value, opts \\ []) do
     type = Types.type_of(value)
 
@@ -347,17 +347,17 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(100, integer())
+      iex> Flawless.validate(100, integer())
       []
 
-      iex> Validator.validate(2.5, integer())
-      [%Validator.Error{context: [], message: "Expected type: integer, got: 2.5."}]
+      iex> Flawless.validate(2.5, integer())
+      [%Flawless.Error{context: [], message: "Expected type: integer, got: 2.5."}]
 
-      iex> Validator.validate(250, integer(min: 0, max: 100))
-      [%Validator.Error{context: [], message: "Must be less than or equal to 100."}]
+      iex> Flawless.validate(250, integer(min: 0, max: 100))
+      [%Flawless.Error{context: [], message: "Must be less than or equal to 100."}]
 
   """
-  @spec integer(keyword) :: Validator.Spec.t()
+  @spec integer(keyword) :: Flawless.Spec.t()
   def integer(opts \\ []), do: value_with_type(:integer, opts)
 
   @doc """
@@ -376,20 +376,20 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate("hello", string())
+      iex> Flawless.validate("hello", string())
       []
 
-      iex> Validator.validate(:hello, string())
-      [%Validator.Error{context: [], message: "Expected type: string, got: :hello."}]
+      iex> Flawless.validate(:hello, string())
+      [%Flawless.Error{context: [], message: "Expected type: string, got: :hello."}]
 
-      iex> Validator.validate("", string(non_empty: true))
-      [%Validator.Error{context: [], message: "Value cannot be empty."}]
+      iex> Flawless.validate("", string(non_empty: true))
+      [%Flawless.Error{context: [], message: "Value cannot be empty."}]
 
-      iex> Validator.validate("123", string(format: ~r/[0-9]+/))
+      iex> Flawless.validate("123", string(format: ~r/[0-9]+/))
       []
 
   """
-  @spec string(keyword) :: Validator.Spec.t()
+  @spec string(keyword) :: Flawless.Spec.t()
   def string(opts \\ []), do: value_with_type(:string, opts)
 
   @doc """
@@ -406,17 +406,17 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(3.33, float())
+      iex> Flawless.validate(3.33, float())
       []
 
-      iex> Validator.validate(3, float())
-      [%Validator.Error{context: [], message: "Expected type: float, got: 3."}]
+      iex> Flawless.validate(3, float())
+      [%Flawless.Error{context: [], message: "Expected type: float, got: 3."}]
 
-      iex> Validator.validate(-3.33, float(min: 0.0, max: 5.0))
-      [%Validator.Error{context: [], message: "Must be greater than or equal to 0.0."}]
+      iex> Flawless.validate(-3.33, float(min: 0.0, max: 5.0))
+      [%Flawless.Error{context: [], message: "Must be greater than or equal to 0.0."}]
 
   """
-  @spec float(keyword) :: Validator.Spec.t()
+  @spec float(keyword) :: Flawless.Spec.t()
   def float(opts \\ []), do: value_with_type(:float, opts)
 
   @doc """
@@ -433,20 +433,20 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(3.33, number())
+      iex> Flawless.validate(3.33, number())
       []
 
-      iex> Validator.validate(3, number())
+      iex> Flawless.validate(3, number())
       []
 
-      iex> Validator.validate("three", number())
-      [%Validator.Error{context: [], message: "Expected type: number, got: \\"three\\"."}]
+      iex> Flawless.validate("three", number())
+      [%Flawless.Error{context: [], message: "Expected type: number, got: \\"three\\"."}]
 
-      iex> Validator.validate(-3.33, number(min: 0.0, max: 5.0))
-      [%Validator.Error{context: [], message: "Must be greater than or equal to 0.0."}]
+      iex> Flawless.validate(-3.33, number(min: 0.0, max: 5.0))
+      [%Flawless.Error{context: [], message: "Must be greater than or equal to 0.0."}]
 
   """
-  @spec number(keyword) :: Validator.Spec.t()
+  @spec number(keyword) :: Flawless.Spec.t()
   def number(opts \\ []), do: value_with_type(:number, opts)
 
   @doc """
@@ -460,14 +460,14 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(true, boolean())
+      iex> Flawless.validate(true, boolean())
       []
 
-      iex> Validator.validate("false", boolean())
-      [%Validator.Error{context: [], message: "Expected type: boolean, got: \\"false\\"."}]
+      iex> Flawless.validate("false", boolean())
+      [%Flawless.Error{context: [], message: "Expected type: boolean, got: \\"false\\"."}]
 
   """
-  @spec boolean(keyword) :: Validator.Spec.t()
+  @spec boolean(keyword) :: Flawless.Spec.t()
   def boolean(opts \\ []), do: value_with_type(:boolean, opts)
 
   @doc """
@@ -481,17 +481,17 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(:timeout, atom())
+      iex> Flawless.validate(:timeout, atom())
       []
 
-      iex> Validator.validate({:ok}, atom())
-      [%Validator.Error{context: [], message: "Expected type: atom, got: {:ok}."}]
+      iex> Flawless.validate({:ok}, atom())
+      [%Flawless.Error{context: [], message: "Expected type: atom, got: {:ok}."}]
 
-      iex> Validator.validate(:timeout, atom(in: [:ok, :error]))
-      [%Validator.Error{context: [], message: "Invalid value: :timeout. Valid options: [:ok, :error]"}]
+      iex> Flawless.validate(:timeout, atom(in: [:ok, :error]))
+      [%Flawless.Error{context: [], message: "Invalid value: :timeout. Valid options: [:ok, :error]"}]
 
   """
-  @spec atom(keyword) :: Validator.Spec.t()
+  @spec atom(keyword) :: Flawless.Spec.t()
   def atom(opts \\ []), do: value_with_type(:atom, opts)
 
   @doc """
@@ -507,14 +507,14 @@ defmodule Validator.Helpers do
 
       iex> pid_value = IEx.Helpers.pid("0.106.1")
       #PID<0.106.1>
-      iex> Validator.validate(pid_value, pid())
+      iex> Flawless.validate(pid_value, pid())
       []
 
-      iex> Validator.validate("#PID<0.106.1>", pid())
-      [%Validator.Error{context: [], message: "Expected type: pid, got: \\"#PID<0.106.1>\\"."}]
+      iex> Flawless.validate("#PID<0.106.1>", pid())
+      [%Flawless.Error{context: [], message: "Expected type: pid, got: \\"#PID<0.106.1>\\"."}]
 
   """
-  @spec pid(keyword) :: Validator.Spec.t()
+  @spec pid(keyword) :: Flawless.Spec.t()
   def pid(opts \\ []), do: value_with_type(:pid, opts)
 
   @doc """
@@ -528,14 +528,14 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(make_ref(), ref())
+      iex> Flawless.validate(make_ref(), ref())
       []
 
-      iex> Validator.validate(33, ref())
-      [%Validator.Error{context: [], message: "Expected type: ref, got: 33."}]
+      iex> Flawless.validate(33, ref())
+      [%Flawless.Error{context: [], message: "Expected type: ref, got: 33."}]
 
   """
-  @spec ref(keyword) :: Validator.Spec.t()
+  @spec ref(keyword) :: Flawless.Spec.t()
   def ref(opts \\ []), do: value_with_type(:ref, opts)
 
   @doc """
@@ -550,20 +550,20 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(fn x -> x end, function())
+      iex> Flawless.validate(fn x -> x end, function())
       []
 
-      iex> Validator.validate(&Enum.count/1, function(arity: 1))
+      iex> Flawless.validate(&Enum.count/1, function(arity: 1))
       []
 
-      iex> Validator.validate(%{}, function())
-      [%Validator.Error{context: [], message: "Expected type: function, got: %{}."}]
+      iex> Flawless.validate(%{}, function())
+      [%Flawless.Error{context: [], message: "Expected type: function, got: %{}."}]
 
-      iex> Validator.validate(fn x, y -> x + y end, function(arity: 3))
-      [%Validator.Error{context: [], message: "Expected arity of 3, found: 2."}]
+      iex> Flawless.validate(fn x, y -> x + y end, function(arity: 3))
+      [%Flawless.Error{context: [], message: "Expected arity of 3, found: 2."}]
 
   """
-  @spec function(keyword) :: Validator.Spec.t()
+  @spec function(keyword) :: Flawless.Spec.t()
   def function(opts \\ []), do: value_with_type(:function, opts)
 
   @doc """
@@ -577,14 +577,14 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(Port.list() |> Enum.at(0), port())
+      iex> Flawless.validate(Port.list() |> Enum.at(0), port())
       []
 
-      iex> Validator.validate(123, port())
-      [%Validator.Error{context: [], message: "Expected type: port, got: 123."}]
+      iex> Flawless.validate(123, port())
+      [%Flawless.Error{context: [], message: "Expected type: port, got: 123."}]
 
   """
-  @spec port(keyword) :: Validator.Spec.t()
+  @spec port(keyword) :: Flawless.Spec.t()
   def port(opts \\ []), do: value_with_type(:port, opts)
 
   @doc """
@@ -593,7 +593,7 @@ defmodule Validator.Helpers do
   See [`map/2`](#map/2-non-specified-keys) to know how to use it.
 
   """
-  @spec any_key :: Validator.AnyOtherKey.t()
+  @spec any_key :: Flawless.AnyOtherKey.t()
   def any_key(), do: %AnyOtherKey{}
 
   @doc """
@@ -602,7 +602,7 @@ defmodule Validator.Helpers do
   See [`map/2`](#map/2-optional-keys) to know how to use it.
 
   """
-  @spec maybe(any) :: Validator.OptionalKey.t()
+  @spec maybe(any) :: Flawless.OptionalKey.t()
   def maybe(key), do: %OptionalKey{key: key}
 
   @doc """
@@ -629,7 +629,7 @@ defmodule Validator.Helpers do
   ```
 
   """
-  @spec opaque_struct_type(atom, keyword, keyword) :: Validator.Spec.t()
+  @spec opaque_struct_type(atom, keyword, keyword) :: Flawless.Spec.t()
   def opaque_struct_type(module, user_opts, opts \\ []) do
     converter = Keyword.get(opts, :converter, nil)
     shortcut_rules = Keyword.get(opts, :shortcut_rules, [])
@@ -661,20 +661,20 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(DateTime.utc_now(), datetime())
+      iex> Flawless.validate(DateTime.utc_now(), datetime())
       []
 
-      iex> Validator.validate("2015-01-23T23:50:07Z", datetime(cast_from: :string))
+      iex> Flawless.validate("2015-01-23T23:50:07Z", datetime(cast_from: :string))
       []
 
-      iex> Validator.validate(~U[2011-01-23 23:50:07Z], datetime(after: ~U[2015-01-23 23:50:07Z]))
-      [%Validator.Error{context: [], message: "The datetime should be later than 2015-01-23 23:50:07Z."}]
+      iex> Flawless.validate(~U[2011-01-23 23:50:07Z], datetime(after: ~U[2015-01-23 23:50:07Z]))
+      [%Flawless.Error{context: [], message: "The datetime should be later than 2015-01-23 23:50:07Z."}]
 
-      iex> Validator.validate(~N[2011-01-23 23:50:07], datetime())
-      [%Validator.Error{context: [], message: "Expected struct of type: DateTime, got struct of type: NaiveDateTime."}]
+      iex> Flawless.validate(~N[2011-01-23 23:50:07], datetime())
+      [%Flawless.Error{context: [], message: "Expected struct of type: DateTime, got struct of type: NaiveDateTime."}]
 
   """
-  defdelegate datetime(opts \\ []), to: Validator.Types.DateTime
+  defdelegate datetime(opts \\ []), to: Flawless.Types.DateTime
 
   @doc """
   Represents a NaiveDateTime struct.
@@ -689,20 +689,20 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(NaiveDateTime.utc_now(), naive_datetime())
+      iex> Flawless.validate(NaiveDateTime.utc_now(), naive_datetime())
       []
 
-      iex> Validator.validate("2015-01-23 23:50:07Z", naive_datetime(cast_from: :string))
+      iex> Flawless.validate("2015-01-23 23:50:07Z", naive_datetime(cast_from: :string))
       []
 
-      iex> Validator.validate(~N[2011-01-23 23:50:07Z], naive_datetime(after: ~N[2015-01-23 23:50:07Z]))
-      [%Validator.Error{context: [], message: "The naive datetime should be later than 2015-01-23 23:50:07."}]
+      iex> Flawless.validate(~N[2011-01-23 23:50:07Z], naive_datetime(after: ~N[2015-01-23 23:50:07Z]))
+      [%Flawless.Error{context: [], message: "The naive datetime should be later than 2015-01-23 23:50:07."}]
 
-      iex> Validator.validate(~U[2011-01-23T23:50:07Z], naive_datetime())
-      [%Validator.Error{context: [], message: "Expected struct of type: NaiveDateTime, got struct of type: DateTime."}]
+      iex> Flawless.validate(~U[2011-01-23T23:50:07Z], naive_datetime())
+      [%Flawless.Error{context: [], message: "Expected struct of type: NaiveDateTime, got struct of type: DateTime."}]
 
   """
-  defdelegate naive_datetime(opts \\ []), to: Validator.Types.NaiveDateTime
+  defdelegate naive_datetime(opts \\ []), to: Flawless.Types.NaiveDateTime
 
   @doc """
   Represents a Date struct.
@@ -717,20 +717,20 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(Date.utc_today(), date())
+      iex> Flawless.validate(Date.utc_today(), date())
       []
 
-      iex> Validator.validate("2015-01-23", date(cast_from: :string))
+      iex> Flawless.validate("2015-01-23", date(cast_from: :string))
       []
 
-      iex> Validator.validate(~D[2011-01-23], date(after: ~D[2015-01-23]))
-      [%Validator.Error{context: [], message: "The date should be later than 2015-01-23."}]
+      iex> Flawless.validate(~D[2011-01-23], date(after: ~D[2015-01-23]))
+      [%Flawless.Error{context: [], message: "The date should be later than 2015-01-23."}]
 
-      iex> Validator.validate(~N[2011-01-23 23:50:07], date())
-      [%Validator.Error{context: [], message: "Expected struct of type: Date, got struct of type: NaiveDateTime."}]
+      iex> Flawless.validate(~N[2011-01-23 23:50:07], date())
+      [%Flawless.Error{context: [], message: "Expected struct of type: Date, got struct of type: NaiveDateTime."}]
 
   """
-  defdelegate date(opts \\ []), to: Validator.Types.Date
+  defdelegate date(opts \\ []), to: Flawless.Types.Date
 
   @doc """
   Represents a Time struct.
@@ -745,20 +745,20 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate(Time.utc_now(), time())
+      iex> Flawless.validate(Time.utc_now(), time())
       []
 
-      iex> Validator.validate("23:50:07", time(cast_from: :string))
+      iex> Flawless.validate("23:50:07", time(cast_from: :string))
       []
 
-      iex> Validator.validate(~T[21:15:00], time(after: ~T[23:50:07]))
-      [%Validator.Error{context: [], message: "The time should be later than 23:50:07."}]
+      iex> Flawless.validate(~T[21:15:00], time(after: ~T[23:50:07]))
+      [%Flawless.Error{context: [], message: "The time should be later than 23:50:07."}]
 
-      iex> Validator.validate(~N[2011-01-23 23:50:07], time())
-      [%Validator.Error{context: [], message: "Expected struct of type: Time, got struct of type: NaiveDateTime."}]
+      iex> Flawless.validate(~N[2011-01-23 23:50:07], time())
+      [%Flawless.Error{context: [], message: "Expected struct of type: Time, got struct of type: NaiveDateTime."}]
 
   """
-  defdelegate time(opts \\ []), to: Validator.Types.Time
+  defdelegate time(opts \\ []), to: Flawless.Types.Time
 
   @doc """
   Represents the union of multiple schemas.
@@ -770,22 +770,22 @@ defmodule Validator.Helpers do
 
   ## Examples
 
-      iex> Validator.validate("hello", union([string(), atom()]))
+      iex> Flawless.validate("hello", union([string(), atom()]))
       []
 
-      iex> Validator.validate(:hello, union([string(), atom()]))
+      iex> Flawless.validate(:hello, union([string(), atom()]))
       []
 
-      iex> Validator.validate(15, union([string(), atom()]))
-      [%Validator.Error{context: [], message: "The value does not match any schema in the union. Possible types: [:string, :atom]."}]
+      iex> Flawless.validate(15, union([string(), atom()]))
+      [%Flawless.Error{context: [], message: "The value does not match any schema in the union. Possible types: [:string, :atom]."}]
 
-      iex> Validator.validate(15, union([number(max: 10), string()]))
-      [%Validator.Error{context: [], message: "Must be less than or equal to 10."}]
+      iex> Flawless.validate(15, union([number(max: 10), string()]))
+      [%Flawless.Error{context: [], message: "Must be less than or equal to 10."}]
 
   """
-  @spec union(list(Validator.spec_type())) :: Validator.Union.t()
+  @spec union(list(Flawless.spec_type())) :: Flawless.Union.t()
   def union(schemas) do
-    %Validator.Union{schemas: Validator.Union.flatten(schemas)}
+    %Flawless.Union{schemas: Flawless.Union.flatten(schemas)}
   end
 
   #######################
