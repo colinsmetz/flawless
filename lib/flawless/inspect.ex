@@ -1,6 +1,6 @@
-defimpl Inspect, for: Validator.Spec do
+defimpl Inspect, for: Flawless.Spec do
   import Inspect.Algebra
-  alias Validator.Spec
+  alias Flawless.Spec
 
   def inspect(
         %Spec{
@@ -68,24 +68,24 @@ defimpl Inspect, for: Validator.Spec do
   defp nillable(nillable, opts), do: ["nil: ", to_doc(nillable, opts)]
 end
 
-defimpl Inspect, for: Validator.Union do
-  alias Validator.Union
+defimpl Inspect, for: Flawless.Union do
+  alias Flawless.Union
 
   def inspect(%Union{schemas: schemas}, _opts) do
     "union(#{inspect(schemas)})"
   end
 end
 
-defimpl Inspect, for: Validator.AnyOtherKey do
-  alias Validator.AnyOtherKey
+defimpl Inspect, for: Flawless.AnyOtherKey do
+  alias Flawless.AnyOtherKey
 
   def inspect(%AnyOtherKey{}, _opts) do
     "any_key()"
   end
 end
 
-defimpl Inspect, for: Validator.OptionalKey do
-  alias Validator.OptionalKey
+defimpl Inspect, for: Flawless.OptionalKey do
+  alias Flawless.OptionalKey
 
   def inspect(%OptionalKey{key: key}, _opts) do
     "maybe(#{inspect(key)})"

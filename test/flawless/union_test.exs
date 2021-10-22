@@ -1,7 +1,7 @@
-defmodule Validator.UnionTest do
+defmodule Flawless.UnionTest do
   use ExUnit.Case, async: true
-  alias Validator.Union
-  import Validator.Helpers
+  alias Flawless.Union
+  import Flawless.Helpers
 
   test "it flattens schemas correctly" do
     assert Union.flatten([string(), number(), atom()]) == [string(), number(), atom()]

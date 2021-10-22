@@ -1,13 +1,13 @@
-defmodule Validator.SchemaValidator do
+defmodule Flawless.SchemaValidator do
   @moduledoc """
   Defines a schema to validate that schemas are valid.
   """
-  import Validator.Helpers
+  import Flawless.Helpers
 
   def schema_schema() do
     fn
-      %Validator.Spec{} -> spec_schema()
-      %Validator.Union{} -> union_schema()
+      %Flawless.Spec{} -> spec_schema()
+      %Flawless.Union{} -> union_schema()
       [] -> literal([])
       l when is_list(l) -> list_schema()
       t when is_tuple(t) -> tuple_schema()
@@ -22,30 +22,30 @@ defmodule Validator.SchemaValidator do
   end
 
   defp union_schema() do
-    structure(%Validator.Union{
+    structure(%Flawless.Union{
       schemas: [schema_schema()]
     })
   end
 
   defp spec_schema() do
-    structure(%Validator.Spec{
+    structure(%Flawless.Spec{
       checks: checks_schema(),
       type: type_schema(),
       cast_from: cast_from_schema(),
       nil: nil_schema(),
       on_error: on_error_schema(),
       for: fn
-        %Validator.Spec.Value{} -> value_spec_schema()
-        %Validator.Spec.List{} -> list_spec_schema()
-        %Validator.Spec.Tuple{} -> tuple_spec_schema()
-        %Validator.Spec.Literal{} -> literal_spec_schema()
-        %Validator.Spec.Struct{module: module} -> struct_spec_schema(module)
+        %Flawless.Spec.Value{} -> value_spec_schema()
+        %Flawless.Spec.List{} -> list_spec_schema()
+        %Flawless.Spec.Tuple{} -> tuple_spec_schema()
+        %Flawless.Spec.Literal{} -> literal_spec_schema()
+        %Flawless.Spec.Struct{module: module} -> struct_spec_schema(module)
       end
     })
   end
 
   defp value_spec_schema() do
-    structure(%Validator.Spec.Value{
+    structure(%Flawless.Spec.Value{
       schema: fn
         nil -> nil
         _ -> map_schema()
@@ -54,26 +54,26 @@ defmodule Validator.SchemaValidator do
   end
 
   defp struct_spec_schema(module) do
-    structure(%Validator.Spec.Struct{
+    structure(%Flawless.Spec.Struct{
       module: atom(),
       schema: struct_schema(module)
     })
   end
 
   defp list_spec_schema() do
-    structure(%Validator.Spec.List{
+    structure(%Flawless.Spec.List{
       item_type: &schema_schema/0
     })
   end
 
   defp tuple_spec_schema() do
-    structure(%Validator.Spec.Tuple{
+    structure(%Flawless.Spec.Tuple{
       elem_types: list(&schema_schema/0, cast_from: :tuple)
     })
   end
 
   defp literal_spec_schema() do
-    structure(%Validator.Spec.Literal{
+    structure(%Flawless.Spec.Literal{
       value: value()
     })
   end
@@ -105,7 +105,7 @@ defmodule Validator.SchemaValidator do
   end
 
   defp type_schema() do
-    atom(in: Validator.Types.valid_types())
+    atom(in: Flawless.Types.valid_types())
   end
 
   defp checks_schema() do
@@ -115,7 +115,7 @@ defmodule Validator.SchemaValidator do
   defp check_schema() do
     fn
       %_{} ->
-        structure(%Validator.Rule{
+        structure(%Flawless.Rule{
           predicate: predicate_schema(),
           message: value()
         })

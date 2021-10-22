@@ -1,23 +1,23 @@
-defmodule Validator do
+defmodule Flawless do
   @moduledoc """
-  Validator is a library meant for validating Elixir data structures. The validation
+  Flawless is a library meant for validating Elixir data structures. The validation
   is done by providing the `validate` function with a value and a schema.
 
   Schemas can be defined with the helper of the `defvalidator` macro, whose main
   purpose is to import helpers locally.
   """
 
-  alias Validator.Error
-  alias Validator.Helpers
-  alias Validator.Types
-  alias Validator.Rule
-  alias Validator.Spec
-  alias Validator.Union
-  alias Validator.Utils.Enum, as: EnumUtils
+  alias Flawless.Error
+  alias Flawless.Helpers
+  alias Flawless.Types
+  alias Flawless.Rule
+  alias Flawless.Spec
+  alias Flawless.Union
+  alias Flawless.Utils.Enum, as: EnumUtils
 
   @type spec_type() ::
-          Validator.Spec.t()
-          | Validator.Union.t()
+          Flawless.Spec.t()
+          | Flawless.Union.t()
           | map()
           | list()
           | tuple()
@@ -72,9 +72,9 @@ defmodule Validator do
   """
   defmacro defvalidator(do: body) do
     quote do
-      import Validator
-      import Validator.Rule
-      import Validator.Helpers
+      import Flawless
+      import Flawless.Rule
+      import Flawless.Helpers
 
       unquote(body)
     end
@@ -92,7 +92,7 @@ defmodule Validator do
     if you can validate the schema separately and you have to validate many values
     against the same schema. Defaults to `true`.
   - `group_errors` - (boolean) If true, error messages associated to the same path
-    in the value will be grouped into a list of messages in a single `Validator.Error`.
+    in the value will be grouped into a list of messages in a single `Flawless.Error`.
     Defaults to `true`.
   - `stop_early` - (boolean) If true, the validation will try and stop at the first
     primitive element in error. It allows to potentially reduce drastically the
@@ -100,30 +100,30 @@ defmodule Validator do
     if you do not care about having *all* the errors at once. Defaults to `false`.
 
   ## Examples
-      iex> import Validator.Helpers
-      iex> Validator.validate("hello", string())
+      iex> import Flawless.Helpers
+      iex> Flawless.validate("hello", string())
       []
-      iex> Validator.validate("hello", number())
-      [%Validator.Error{context: [], message: "Expected type: number, got: \\"hello\\"."}]
-      iex> Validator.validate(
+      iex> Flawless.validate("hello", number())
+      [%Flawless.Error{context: [], message: "Expected type: number, got: \\"hello\\"."}]
+      iex> Flawless.validate(
       ...>   %{"name" => 1234, "age" => "Steve"},
       ...>   %{"name" => string(), "age" => number(), "city" => string()}
       ...> )
       [
-        %Validator.Error{context: [], message: "Missing required fields: \\"city\\" (string)."},
-        %Validator.Error{context: ["age"], message: "Expected type: number, got: \\"Steve\\"."},
-        %Validator.Error{context: ["name"], message: "Expected type: string, got: 1234."}
+        %Flawless.Error{context: [], message: "Missing required fields: \\"city\\" (string)."},
+        %Flawless.Error{context: ["age"], message: "Expected type: number, got: \\"Steve\\"."},
+        %Flawless.Error{context: ["name"], message: "Expected type: string, got: 1234."}
       ]
 
       # Stop early
-      iex> import Validator.Helpers
-      iex> Validator.validate(
+      iex> import Flawless.Helpers
+      iex> Flawless.validate(
       ...>   %{"name" => 1234, "age" => "Steve"},
       ...>   %{"name" => string(), "age" => number(), "city" => string()},
       ...>   stop_early: true
       ...> )
       [
-        %Validator.Error{context: [], message: "Missing required fields: \\"city\\" (string)."}
+        %Flawless.Error{context: [], message: "Missing required fields: \\"city\\" (string)."}
       ]
 
   """
@@ -154,7 +154,7 @@ defmodule Validator do
   """
   @spec validate_schema(any) :: list(Error.t())
   def validate_schema(schema) do
-    do_validate(schema, Validator.SchemaValidator.schema_schema())
+    do_validate(schema, Flawless.SchemaValidator.schema_schema())
     |> Error.evaluate_messages()
   end
 

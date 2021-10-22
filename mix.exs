@@ -1,16 +1,16 @@
-defmodule Validator.MixProject do
+defmodule Flawless.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :validator,
+      app: :flawless,
       version: "0.1.0",
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
 
       # Docs
-      name: "Validator",
+      name: "Flawless",
       docs: [
         # The main page in the docs
         main: "readme",
@@ -47,24 +47,24 @@ defmodule Validator.MixProject do
   defp groups_for_modules do
     [
       "Opaque structs": [
-        Validator.Types.Date,
-        Validator.Types.DateTime,
-        Validator.Types.NaiveDateTime,
-        Validator.Types.Time
+        Flawless.Types.Date,
+        Flawless.Types.DateTime,
+        Flawless.Types.NaiveDateTime,
+        Flawless.Types.Time
       ],
       "Spec elements": [
-        Validator.AnyOtherKey,
-        Validator.OptionalKey,
-        Validator.Spec,
-        Validator.Spec.List,
-        Validator.Spec.Literal,
-        Validator.Spec.Struct,
-        Validator.Spec.Tuple,
-        Validator.Spec.Value
+        Flawless.AnyOtherKey,
+        Flawless.OptionalKey,
+        Flawless.Spec,
+        Flawless.Spec.List,
+        Flawless.Spec.Literal,
+        Flawless.Spec.Struct,
+        Flawless.Spec.Tuple,
+        Flawless.Spec.Value
       ],
       "Validation helpers": [
-        Validator.Context,
-        Validator.Utils.Enum
+        Flawless.Context,
+        Flawless.Utils.Enum
       ]
     ]
   end

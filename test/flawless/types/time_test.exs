@@ -1,8 +1,8 @@
-defmodule Validator.Types.TimeTest do
+defmodule Flawless.Types.TimeTest do
   use ExUnit.Case, async: true
-  alias Validator.Error
-  import Validator.Helpers
-  import Validator, only: [validate: 2]
+  alias Flawless.Error
+  import Flawless.Helpers
+  import Flawless, only: [validate: 2]
 
   describe "date helper" do
     test "validates that the input is a Time struct" do

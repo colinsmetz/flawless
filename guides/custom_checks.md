@@ -26,7 +26,7 @@ The `error_message` can be one of those:
   the error string or template tuple. The context is the list of field names
   (or indices for lists) defining *where* the error is located.
 
-Note: error messages are automatically encapsulated to a `Validator.Error` struct.
+Note: error messages are automatically encapsulated to a `Flawless.Error` struct.
 
 Example:
 

@@ -1,4 +1,4 @@
-defmodule Validator.Utils.Enum do
+defmodule Flawless.Utils.Enum do
   @spec collect_errors(any, boolean, function()) :: any
   def collect_errors(enumerable, stop_early \\ false, collect_func) do
     enumerable
@@ -13,8 +13,8 @@ defmodule Validator.Utils.Enum do
     end)
   end
 
-  @spec maybe_add_errors(list(Validator.Error.t()), boolean(), function()) ::
-          list(Validator.Error.t())
+  @spec maybe_add_errors(list(Flawless.Error.t()), boolean(), function()) ::
+          list(Flawless.Error.t())
   def maybe_add_errors([], _stop_early, collect_func) do
     collect_func.()
   end

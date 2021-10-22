@@ -1,11 +1,11 @@
-defmodule Validator.Error do
+defmodule Flawless.Error do
   @moduledoc """
   Provides the Error struct, and helpers for building and converting errors.
   """
 
   defstruct context: [], message: ""
 
-  alias Validator.Context
+  alias Flawless.Context
 
   @type t_message :: String.t() | {String.t(), Keyword.t()} | list(String.t())
 
@@ -45,7 +45,7 @@ defmodule Validator.Error do
     end)
   end
 
-  @spec invalid_type_error(Validator.Types.t(), any, Context.t()) :: Validator.Error.t()
+  @spec invalid_type_error(Flawless.Types.t(), any, Context.t()) :: Flawless.Error.t()
   def invalid_type_error(expected_type, value, %Context{} = context) do
     new(
       {"Expected type: %{expected_type}, got: %{value}.",

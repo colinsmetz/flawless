@@ -1,7 +1,7 @@
-defmodule Validator.RuleTest do
+defmodule Flawless.RuleTest do
   use ExUnit.Case, async: true
-  alias Validator.Error
-  import Validator.Rule
+  alias Flawless.Error
+  import Flawless.Rule
 
   describe "rule/2 and evaluate/3" do
     test "returns a valid rule with a simple string error" do

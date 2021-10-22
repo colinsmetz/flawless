@@ -1,24 +1,24 @@
-defmodule Validator.Rule do
+defmodule Flawless.Rule do
   @moduledoc """
   Provides helpers to build and evaluate rules. It also defines all the built-in rules.
   """
 
   defstruct predicate: nil, message: nil
 
-  alias Validator.Context
+  alias Flawless.Context
 
   @type predicate() :: (any -> boolean())
   @type error_function() ::
-          Validator.Error.t_message()
-          | (any -> Validator.Error.t_message())
-          | (any, list -> Validator.Error.t_message())
+          Flawless.Error.t_message()
+          | (any -> Flawless.Error.t_message())
+          | (any, list -> Flawless.Error.t_message())
 
   @type t() :: %__MODULE__{
           predicate: function(),
           message: error_function() | nil
         }
 
-  @spec rule(predicate(), error_function() | nil) :: Validator.Rule.t()
+  @spec rule(predicate(), error_function() | nil) :: Flawless.Rule.t()
   def rule(predicate, error_message \\ nil) do
     %__MODULE__{
       predicate: predicate,
@@ -26,7 +26,7 @@ defmodule Validator.Rule do
     }
   end
 
-  @spec evaluate(Validator.Rule.t() | function(), any, Context.t()) :: [] | Validator.Error.t()
+  @spec evaluate(Flawless.Rule.t() | function(), any, Context.t()) :: [] | Flawless.Error.t()
   def evaluate(%__MODULE__{predicate: predicate, message: error_message} = _rule, data, context) do
     do_evaluate(predicate, error_message, data, context)
   end
@@ -41,12 +41,12 @@ defmodule Validator.Rule do
         []
 
       {:error, error} ->
-        Validator.Error.new(error, context)
+        Flawless.Error.new(error, context)
 
       :error ->
         error_message
         |> evaluate_error_message(data, context)
-        |> Validator.Error.new(context)
+        |> Flawless.Error.new(context)
     end
   rescue
     _ -> error_on_exception(context)
@@ -74,7 +74,7 @@ defmodule Validator.Rule do
   end
 
   defp error_on_exception(context) do
-    Validator.Error.new(
+    Flawless.Error.new(
       "An exception was raised while evaluating a rule on that element, so it is likely incorrect.",
       context
     )

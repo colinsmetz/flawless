@@ -1,11 +1,11 @@
-defmodule Validator.Union do
+defmodule Flawless.Union do
   @moduledoc """
   Represents the union of multiple schemas.
   """
   defstruct schemas: []
 
   @type t() :: %__MODULE__{
-          schemas: [Validator.spec_type()]
+          schemas: [Flawless.spec_type()]
         }
 
   @spec flatten(list()) :: list()

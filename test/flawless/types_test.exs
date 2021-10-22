@@ -1,6 +1,6 @@
-defmodule Validator.TypesTest do
+defmodule Flawless.TypesTest do
   use ExUnit.Case, async: true
-  import Validator.Types
+  import Flawless.Types
 
   defmodule TestModule do
     defstruct c: nil
