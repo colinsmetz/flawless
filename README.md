@@ -43,6 +43,10 @@ iex> Flawless.validate(value, schema)
 ]
 ```
 
+**Note:** this is a personal project, which I released pretty recently. While it
+is completed tested, it was never battle-tested. Use it carefully, and don't
+hesitate to share bugs, ideas and your impressions.
+
 ## Why another validation library?
 
 There are already a lot of validation libraries in Elixir. So why write another
@@ -52,6 +56,8 @@ When I looked for other libraries, I found that there were a few recurrent
 issues. Namely, poor error messages (not very suitable for user-facing
 applications), and a cumbersome or inconsistent syntax. While they all have
 their qualities, I wanted to try out something that was more to my taste.
+
+Also, that was an occasion to learn more about Elixir and experiment.
 
 As much as possible, this library tries to be:
 
