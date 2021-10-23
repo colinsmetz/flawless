@@ -1,13 +1,19 @@
 defmodule Flawless.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+  @repo_url "https://github.com/colinsmetz/flawless"
+
   def project do
     [
       app: :flawless,
-      version: "0.1.0",
+      description: "Validate any data in Elixir.",
+      version: @version,
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      package: package(),
+      source_url: @repo_url,
 
       # Docs
       name: "Flawless",
@@ -72,6 +78,14 @@ defmodule Flawless.MixProject do
         Flawless.Utils.Enum,
         Flawless.Utils.Interpolation
       ]
+    ]
+  end
+
+  defp package() do
+    [
+      files: ~w(lib .formatter.exs mix.exs README.md LICENSE),
+      licenses: ["MIT"],
+      links: %{"GitHub" => @repo_url}
     ]
   end
 end

@@ -1,5 +1,8 @@
 # Flawless
 
+[![Hex.pm](https://img.shields.io/hexpm/v/flawless.svg)](https://hex.pm/packages/flawless)
+[![hexdocs.pm](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/flawless)
+
 Flawless is an Elixir library to help validate user input against a schema.
 
 
