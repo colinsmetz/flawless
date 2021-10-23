@@ -2,9 +2,6 @@ defmodule Flawless do
   @moduledoc """
   Flawless is a library meant for validating Elixir data structures. The validation
   is done by providing the `validate` function with a value and a schema.
-
-  Schemas can be defined with the helper of the `defvalidator` macro, whose main
-  purpose is to import helpers locally.
   """
 
   alias Flawless.Error
@@ -65,21 +62,6 @@ defmodule Flawless do
     end
   end
 
-  @doc """
-  Macro to create a schema.
-
-  It doesn't do much except importing all the helpers locally to avoid importing
-  them in a larger scope.
-  """
-  defmacro defvalidator(do: body) do
-    quote do
-      import Flawless
-      import Flawless.Rule
-      import Flawless.Helpers
-
-      unquote(body)
-    end
-  end
 
   @doc """
   Validates Elixir data against a schema and returns the list of errors.

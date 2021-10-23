@@ -1,7 +1,7 @@
 defmodule FlawlessTest do
   use ExUnit.Case, async: true
   doctest Flawless
-  import Flawless, only: [defvalidator: 1, validate: 2, validate: 3]
+  import Flawless, only: [validate: 2, validate: 3]
   alias Flawless.Error
 
   describe "basic types" do
@@ -816,22 +816,6 @@ defmodule FlawlessTest do
     test "a nil value is accepted for optional fields in a map, when nothing was specified" do
       assert validate(%{"a" => nil}, %{maybe("a") => string()}) == []
       assert validate(%{"a" => nil}, %{any_key() => string()}) == []
-    end
-  end
-
-  describe "defvalidator macro" do
-    test "can be used to avoid importing globally all the helpers" do
-      schema =
-        defvalidator do
-          %{
-            "name" => string(checks: [rule(&(&1 != ""), "is empty")]),
-            "gender" => string(checks: [one_of(["male", "female", "other"])])
-          }
-        end
-
-      value = %{"name" => "", "gender" => "male"}
-
-      assert validate(value, schema) == [Error.new("is empty", ["name"])]
     end
   end
 
