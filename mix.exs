@@ -33,7 +33,10 @@ defmodule Flawless.MixProject do
   defp deps do
     [
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-      {:ex_doc, "~> 0.25", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.25", only: :dev, runtime: false},
+      {:benchee, "~> 1.0", only: :dev},
+      {:skooma, "~> 0.2.0", only: :dev},
+      {:norm, "~> 0.13.0", only: :dev}
     ]
   end
 
@@ -41,7 +44,8 @@ defmodule Flawless.MixProject do
     [
       "README.md",
       "guides/schema_definition.md",
-      "guides/custom_checks.md"
+      "guides/custom_checks.md",
+      "guides/optimization.md"
     ]
   end
 
@@ -65,7 +69,8 @@ defmodule Flawless.MixProject do
       ],
       "Validation helpers": [
         Flawless.Context,
-        Flawless.Utils.Enum
+        Flawless.Utils.Enum,
+        Flawless.Utils.Interpolation
       ]
     ]
   end

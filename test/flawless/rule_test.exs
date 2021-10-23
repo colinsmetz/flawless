@@ -2,6 +2,7 @@ defmodule Flawless.RuleTest do
   use ExUnit.Case, async: true
   alias Flawless.Error
   import Flawless.Rule
+  import Flawless.Utils.Interpolation, only: [sigil_t: 2]
 
   describe "rule/2 and evaluate/3" do
     test "returns a valid rule with a simple string error" do
@@ -99,7 +100,7 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, 7, []) ==
                Error.new(
-                 {"Invalid value: %{value}. Valid options: %{options}",
+                 {~t"Invalid value: %{value}. Valid options: %{options}",
                   [value: "7", options: "[1, 2, 3]"]},
                  []
                )
@@ -110,14 +111,14 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, "hey", []) ==
                Error.new(
-                 {"Minimum length of %{min_length} required (current: %{actual_length}).",
+                 {~t"Minimum length of %{min_length} required (current: %{actual_length}).",
                   [min_length: 5, actual_length: 3]},
                  []
                )
 
       assert evaluate(test_rule, "hell", []) ==
                Error.new(
-                 {"Minimum length of %{min_length} required (current: %{actual_length}).",
+                 {~t"Minimum length of %{min_length} required (current: %{actual_length}).",
                   [min_length: 5, actual_length: 4]},
                  []
                )
@@ -130,14 +131,14 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, [1, 2, 3], []) ==
                Error.new(
-                 {"Minimum length of %{min_length} required (current: %{actual_length}).",
+                 {~t"Minimum length of %{min_length} required (current: %{actual_length}).",
                   [min_length: 5, actual_length: 3]},
                  []
                )
 
       assert evaluate(test_rule, [1, 2, 3, 4], []) ==
                Error.new(
-                 {"Minimum length of %{min_length} required (current: %{actual_length}).",
+                 {~t"Minimum length of %{min_length} required (current: %{actual_length}).",
                   [min_length: 5, actual_length: 4]},
                  []
                )
@@ -153,7 +154,7 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, "hello", []) ==
                Error.new(
-                 {"Maximum length of %{max_length} required (current: %{actual_length}).",
+                 {~t"Maximum length of %{max_length} required (current: %{actual_length}).",
                   [max_length: 4, actual_length: 5]},
                  []
                )
@@ -167,7 +168,7 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, [1, 2, 3, 4, 5], []) ==
                Error.new(
-                 {"Maximum length of %{max_length} required (current: %{actual_length}).",
+                 {~t"Maximum length of %{max_length} required (current: %{actual_length}).",
                   [max_length: 4, actual_length: 5]},
                  []
                )
@@ -192,7 +193,7 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, "hey", []) ==
                Error.new(
-                 {"Expected length of %{expected_length} (current: %{actual_length}).",
+                 {~t"Expected length of %{expected_length} (current: %{actual_length}).",
                   [expected_length: 4, actual_length: 3]},
                  []
                )
@@ -201,7 +202,7 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, "hello", []) ==
                Error.new(
-                 {"Expected length of %{expected_length} (current: %{actual_length}).",
+                 {~t"Expected length of %{expected_length} (current: %{actual_length}).",
                   [expected_length: 4, actual_length: 5]},
                  []
                )
@@ -212,7 +213,7 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, [1, 2, 3], []) ==
                Error.new(
-                 {"Expected length of %{expected_length} (current: %{actual_length}).",
+                 {~t"Expected length of %{expected_length} (current: %{actual_length}).",
                   [expected_length: 4, actual_length: 3]},
                  []
                )
@@ -221,7 +222,7 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, [1, 2, 3, 4, 5], []) ==
                Error.new(
-                 {"Expected length of %{expected_length} (current: %{actual_length}).",
+                 {~t"Expected length of %{expected_length} (current: %{actual_length}).",
                   [expected_length: 4, actual_length: 5]},
                  []
                )
@@ -232,7 +233,7 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(no_duplicate(), [1, 5, 3, 5, 7, 3, 3], []) ==
                Error.new(
-                 {"The list should not contain duplicates (duplicates found: %{duplicates}).",
+                 {~t"The list should not contain duplicates (duplicates found: %{duplicates}).",
                   [duplicates: "[5, 3]"]},
                  []
                )
@@ -246,7 +247,7 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, "heyy", []) ==
                Error.new(
-                 {"Value %{value} does not match regex %{regex}.",
+                 {~t"Value %{value} does not match regex %{regex}.",
                   [value: "\"heyy\"", regex: "~r/^hel/"]},
                  []
                )
@@ -260,7 +261,7 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, "heyy", []) ==
                Error.new(
-                 {"Value %{value} does not match regex %{regex}.",
+                 {~t"Value %{value} does not match regex %{regex}.",
                   [value: "\"heyy\"", regex: "~r/^hel/"]},
                  []
                )
@@ -273,7 +274,10 @@ defmodule Flawless.RuleTest do
       assert evaluate(test_rule, 10, []) == []
 
       assert evaluate(test_rule, 9, []) ==
-               Error.new({"Must be greater than or equal to %{min_value}.", [min_value: 10]}, [])
+               Error.new(
+                 {~t"Must be greater than or equal to %{min_value}.", [min_value: 10]},
+                 []
+               )
     end
 
     test "max/1 detects when value is too high" do
@@ -283,7 +287,7 @@ defmodule Flawless.RuleTest do
       assert evaluate(test_rule, 10, []) == []
 
       assert evaluate(test_rule, 11, []) ==
-               Error.new({"Must be less than or equal to %{max_value}.", [max_value: 10]}, [])
+               Error.new({~t"Must be less than or equal to %{max_value}.", [max_value: 10]}, [])
     end
 
     test "between/2 detects when value is out of range" do
@@ -291,7 +295,8 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, 2, []) ==
                Error.new(
-                 {"Must be between %{min_value} and %{max_value}.", [min_value: 3, max_value: 6]},
+                 {~t"Must be between %{min_value} and %{max_value}.",
+                  [min_value: 3, max_value: 6]},
                  []
                )
 
@@ -301,7 +306,8 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, 7, []) ==
                Error.new(
-                 {"Must be between %{min_value} and %{max_value}.", [min_value: 3, max_value: 6]},
+                 {~t"Must be between %{min_value} and %{max_value}.",
+                  [min_value: 3, max_value: 6]},
                  []
                )
     end
@@ -315,7 +321,7 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, %{"b" => 12, "a" => 9}, []) ==
                Error.new(
-                 {"Fields %{field1} and %{field2} cannot both be defined.",
+                 {~t"Fields %{field1} and %{field2} cannot both be defined.",
                   [field1: "a", field2: "b"]},
                  []
                )
@@ -326,14 +332,14 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, fn -> 0 end, []) ==
                Error.new(
-                 {"Expected arity of %{expected_arity}, found: %{actual_arity}.",
+                 {~t"Expected arity of %{expected_arity}, found: %{actual_arity}.",
                   [expected_arity: 2, actual_arity: 0]},
                  []
                )
 
       assert evaluate(test_rule, fn x -> x end, []) ==
                Error.new(
-                 {"Expected arity of %{expected_arity}, found: %{actual_arity}.",
+                 {~t"Expected arity of %{expected_arity}, found: %{actual_arity}.",
                   [expected_arity: 2, actual_arity: 1]},
                  []
                )
@@ -342,7 +348,7 @@ defmodule Flawless.RuleTest do
 
       assert evaluate(test_rule, fn x, y, z -> x + y + z end, []) ==
                Error.new(
-                 {"Expected arity of %{expected_arity}, found: %{actual_arity}.",
+                 {~t"Expected arity of %{expected_arity}, found: %{actual_arity}.",
                   [expected_arity: 2, actual_arity: 3]},
                  []
                )
