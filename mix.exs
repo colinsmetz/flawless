@@ -44,7 +44,8 @@ defmodule Flawless.MixProject do
     [
       "README.md",
       "guides/schema_definition.md",
-      "guides/custom_checks.md"
+      "guides/custom_checks.md",
+      "guides/optimization.md"
     ]
   end
 
@@ -68,7 +69,8 @@ defmodule Flawless.MixProject do
       ],
       "Validation helpers": [
         Flawless.Context,
-        Flawless.Utils.Enum
+        Flawless.Utils.Enum,
+        Flawless.Utils.Interpolation
       ]
     ]
   end
