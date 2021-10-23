@@ -33,7 +33,10 @@ defmodule Flawless.MixProject do
   defp deps do
     [
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-      {:ex_doc, "~> 0.25", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.25", only: :dev, runtime: false},
+      {:benchee, "~> 1.0", only: :dev},
+      {:skooma, "~> 0.2.0", only: :dev},
+      {:norm, "~> 0.13.0", only: :dev}
     ]
   end
 

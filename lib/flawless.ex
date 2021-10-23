@@ -14,6 +14,7 @@ defmodule Flawless do
   alias Flawless.Spec
   alias Flawless.Union
   alias Flawless.Utils.Enum, as: EnumUtils
+  import Flawless.Utils.Interpolation, only: [sigil_t: 2]
 
   @type spec_type() ::
           Flawless.Spec.t()
@@ -197,13 +198,13 @@ defmodule Flawless do
 
   defp dispatch_validation(value, schema, context) do
     case schema do
+      %Spec{for: %Spec.Value{}} -> validate_value(value, schema, context)
       %Spec{for: %Spec.List{}} -> validate_list(value, schema, context)
       %Union{} -> validate_union(value, schema, context)
       [item_type] -> validate_list(value, Helpers.list(item_type), context)
       [] -> validate_list(value, Helpers.list(Helpers.value()), context)
       %Spec{for: %Spec.Tuple{}} -> validate_tuple(value, schema, context)
       tuple when is_tuple(tuple) -> validate_tuple(value, Helpers.tuple(tuple), context)
-      %Spec{for: %Spec.Value{}} -> validate_value(value, schema, context)
       %Spec{for: %Spec.Literal{}} -> validate_literal(value, schema, context)
       %Spec{for: %Spec.Struct{}} -> validate_struct(value, schema, context)
       %_{} -> validate_struct(value, Helpers.structure(schema), context)
@@ -266,9 +267,7 @@ defmodule Flawless do
     []
     |> EnumUtils.maybe_add_errors(context.stop_early, fn ->
       # Top-level errors
-      checks
-      |> Enum.map(&Rule.evaluate(&1, value, context))
-      |> List.flatten()
+      checks |> Enum.map(&Rule.evaluate(&1, value, context))
     end)
     |> EnumUtils.maybe_add_errors(context.stop_early, get_sub_errors)
     |> EnumUtils.maybe_add_errors(true, fn ->
@@ -346,7 +345,7 @@ defmodule Flawless do
        when value_module != module do
     [
       Error.new(
-        {"Expected struct of type: %{expected_module}, got struct of type: %{actual_module}.",
+        {~t"Expected struct of type: %{expected_module}, got struct of type: %{actual_module}.",
          expected_module: inspect(module), actual_module: inspect(value_module)},
         context
       )
@@ -402,7 +401,7 @@ defmodule Flawless do
 
     [
       Error.new(
-        {"Invalid tuple size (expected: %{expected_size}, received: %{actual_size}).",
+        {~t"Invalid tuple size (expected: %{expected_size}, received: %{actual_size}).",
          expected_size: expected_size, actual_size: actual_size},
         context
       )
@@ -426,7 +425,7 @@ defmodule Flawless do
     else
       [
         Error.new(
-          {"Expected literal value %{expected_value}, got: %{value}.",
+          {~t"Expected literal value %{expected_value}, got: %{value}.",
            expected_value: inspect(spec.for.value), value: inspect(value)},
           context
         )
@@ -493,7 +492,7 @@ defmodule Flawless do
     else
       [
         Error.new(
-          {"Unexpected fields: %{unexpected_fields}.",
+          {~t"Unexpected fields: %{unexpected_fields}.",
            unexpected_fields: inspect(unexpected_fields)},
           context
         )
@@ -520,7 +519,7 @@ defmodule Flawless do
     else
       [
         Error.new(
-          {"Missing required fields: %{missing_fields}.",
+          {~t"Missing required fields: %{missing_fields}.",
            missing_fields: show_fields_with_type(schema, missing_fields)},
           context
         )

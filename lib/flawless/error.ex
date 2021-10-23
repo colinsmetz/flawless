@@ -6,8 +6,9 @@ defmodule Flawless.Error do
   defstruct context: [], message: ""
 
   alias Flawless.Context
+  import Flawless.Utils.Interpolation, only: [sigil_t: 2]
 
-  @type t_message :: String.t() | {String.t(), Keyword.t()} | list(String.t())
+  @type t_message :: String.t() | {String.t() | list(), Keyword.t()} | list(String.t())
 
   @type t() :: %__MODULE__{
           context: list(),
@@ -28,9 +29,7 @@ defmodule Flawless.Error do
 
   @spec message_from_template(String.t(), Keyword.t()) :: String.t()
   def message_from_template(message, opts) do
-    Regex.replace(~r"%{(\w+)}", message, fn _, key ->
-      opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
-    end)
+    Flawless.Utils.Interpolation.from_template(message, opts)
   end
 
   @spec evaluate_messages(list(t())) :: list(t())
@@ -48,7 +47,7 @@ defmodule Flawless.Error do
   @spec invalid_type_error(Flawless.Types.t(), any, Context.t()) :: Flawless.Error.t()
   def invalid_type_error(expected_type, value, %Context{} = context) do
     new(
-      {"Expected type: %{expected_type}, got: %{value}.",
+      {~t"Expected type: %{expected_type}, got: %{value}.",
        expected_type: expected_type, value: inspect(value)},
       context
     )
