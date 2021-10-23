@@ -85,7 +85,7 @@ All helpers support a few common options:
 - `cast_from` - See [Casting](#casting)
 - `on_error` - See [Overriding error messages](#overriding-error-messages)
 
-The `value()` helper is the only helper without a specific type. It can be used
+The `any()` helper is the only helper without a specific type. It can be used
 to match literally anything.
 
 ### Checks
@@ -106,7 +106,7 @@ is useful if the rule should only be evaluated on well-formed data.
 integer(checks: [between(0, 10)])
 
 # Accepts only "yes", true, or 1
-value(check: one_of(["yes", true, 1]))
+any(check: one_of(["yes", true, 1]))
 
 # A number that is different from 0
 number(check: rule(&(&1 != 0), "The number should be different from zero."))

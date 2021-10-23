@@ -23,7 +23,7 @@ defmodule Flawless.SchemaValidatorTest do
         "polling" =>
           map(%{
             "slice_size" =>
-              value(
+              any(
                 checks: [
                   rule(&(String.length(&1) > 100), "Slice size must be longer than 100")
                 ]
@@ -39,7 +39,7 @@ defmodule Flawless.SchemaValidatorTest do
                 "is_required" => boolean(),
                 "meta" =>
                   map(%{
-                    "id" => value()
+                    "id" => any()
                   })
               },
               checks: []

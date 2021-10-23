@@ -22,7 +22,7 @@ All types of elements support a few common options:
 
 Several helpers are provided to define basic types:
 
-* `value()`: matches anything
+* `any()`
 * `integer()`
 * `float()`
 * `number()`
@@ -365,7 +365,7 @@ Then you can call `validate(tree, tree_schema())` as usual.
 
 Sometimes, a value can take multiple possible forms. In this case, it is useful
 to specify a union of possible types. This possible to some extent using the
-catch-all helper `value()` or using `cast_from`, but those are not exactly
+catch-all helper `any()` or using `cast_from`, but those are not exactly
 unions.
 
 Flawless offers two better ways to do unions of specific schemas.

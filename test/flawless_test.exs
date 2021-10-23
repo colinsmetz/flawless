@@ -7,10 +7,10 @@ defmodule FlawlessTest do
   describe "basic types" do
     import Flawless.Helpers
 
-    test "value/1 expects any value" do
-      assert validate(123, value()) == []
-      assert validate(true, value()) == []
-      assert validate("hey", value()) == []
+    test "any/1 expects any value" do
+      assert validate(123, any()) == []
+      assert validate(true, any()) == []
+      assert validate("hey", any()) == []
     end
 
     test "boolean/1 expects a boolean value" do
@@ -195,7 +195,7 @@ defmodule FlawlessTest do
       checks = [one_of([0, 1])]
       expected_errors = [Error.new("Invalid value: 123. Valid options: [0, 1]", [])]
 
-      assert validate(123, value(checks: checks)) == expected_errors
+      assert validate(123, any(checks: checks)) == expected_errors
       assert validate(123, number(checks: checks)) == expected_errors
       assert validate(123, integer(checks: checks)) == expected_errors
       assert validate(0, integer(checks: checks)) == []
@@ -476,7 +476,7 @@ defmodule FlawlessTest do
                Error.new("Expected type: number, got: \"hey\".", ["d"])
              ]
 
-      assert validate(%{}, %{any_key() => value()}) == []
+      assert validate(%{}, %{any_key() => any()}) == []
     end
   end
 
@@ -621,7 +621,7 @@ defmodule FlawlessTest do
         tuple(
           {
             atom(checks: [one_of([:ok, :error])]),
-            value()
+            any()
           },
           checks: tuple_checks
         )
@@ -775,7 +775,7 @@ defmodule FlawlessTest do
       assert validate(nil, string(nil: false)) == [Error.new("Value cannot be nil.", [])]
       assert validate(nil, atom(nil: false)) == [Error.new("Value cannot be nil.", [])]
 
-      assert validate(nil, value(in: [nil], nil: false)) == [
+      assert validate(nil, any(in: [nil], nil: false)) == [
                Error.new("Value cannot be nil.", [])
              ]
 
@@ -804,7 +804,7 @@ defmodule FlawlessTest do
       assert validate(nil, nil) == []
       assert validate(nil, literal(nil)) == []
       assert validate(nil, atom()) == []
-      assert validate(nil, value()) == []
+      assert validate(nil, any()) == []
     end
 
     test "a nil value is not accepted for required fields in a map, when nothing was specified" do
@@ -920,17 +920,17 @@ defmodule FlawlessTest do
     test "it validates very complex schema" do
       schema = %{
         "format" => string(checks: [one_of(["csv", "xml"])]),
-        "regex" => string(),
+        "string" => string(),
         maybe("bim") => %{
           "truc" => string(),
           "struct" => structure(%M{x: number()})
         },
-        maybe("polling") =>
+        maybe("settings") =>
           map(%{
-            maybe("slice_size") =>
-              value(
+            maybe("stuff") =>
+              any(
                 checks: [
-                  rule(&(String.length(&1) > 100), "Slice size must be longer than 100")
+                  rule(&(String.length(&1) > 100), "Stuff must be longer than 100")
                 ]
               )
           }),
@@ -944,7 +944,7 @@ defmodule FlawlessTest do
                 maybe("is_required") => boolean(),
                 maybe("meta") =>
                   map(%{
-                    "id" => value()
+                    "id" => any()
                   })
               },
               checks: [required_if_is_key()]
@@ -962,19 +962,19 @@ defmodule FlawlessTest do
 
       value = %{
         "format" => "yml",
-        "regex" => "/the/regex",
+        "string" => "/the/string",
         "options" => %{"a" => "b"},
         "bim" => %{},
         "fields" => [
           %{"name" => "a", "type" => "INT64", "is_key" => true, "is_required" => false},
           %{"name" => "b", "type" => "STRING", "tru" => "blop", "meta" => %{}}
         ],
-        "polling" => %{
-          "slice_size" => "50MB",
-          "interval_seconds" => "12",
-          "timeout_ms" => "34567"
+        "settings" => %{
+          "stuff" => "abcd",
+          "other_stuff" => "12",
+          "something" => "34567"
         },
-        "file_max_age_days" => "67",
+        "unexpected_number" => "67",
         "brands" => ["hey", 28],
         "status" => :ok,
         "tuple_of_things" => {["x", "y", 9, "z"], %{}},
@@ -982,7 +982,7 @@ defmodule FlawlessTest do
       }
 
       assert Flawless.validate(value, schema) == [
-               Error.new("Unexpected fields: [\"file_max_age_days\", \"options\"].", []),
+               Error.new("Unexpected fields: [\"options\", \"unexpected_number\"].", []),
                Error.new("Missing required fields: \"struct\" (struct), \"truc\" (string).", [
                  "bim"
                ]),
@@ -991,8 +991,8 @@ defmodule FlawlessTest do
                Error.new("Unexpected fields: [\"tru\"].", ["fields", 1]),
                Error.new("Missing required fields: \"id\" (any).", ["fields", 1, "meta"]),
                Error.new("Invalid value: \"yml\". Valid options: [\"csv\", \"xml\"]", ["format"]),
-               Error.new("Unexpected fields: [\"interval_seconds\", \"timeout_ms\"].", ["polling"]),
-               Error.new("Slice size must be longer than 100", ["polling", "slice_size"]),
+               Error.new("Unexpected fields: [\"other_stuff\", \"something\"].", ["settings"]),
+               Error.new("Stuff must be longer than 100", ["settings", "stuff"]),
                Error.new("Value cannot be nil.", ["test"]),
                Error.new("Expected type: string, got: 9.", ["tuple_of_things", 0, 2])
              ]

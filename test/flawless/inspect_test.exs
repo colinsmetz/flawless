@@ -11,7 +11,7 @@ defmodule Flawless.InspectTest do
     schema = %{
       "a" => number(),
       "b" => string(check: min_length(2), cast_from: [:integer, :atom]),
-      "c" => value(),
+      "c" => any(),
       "d" => literal(19),
       "e" => list(string(), non_empty: true, no_duplicate: true),
       "f" => tuple({number(), atom()}, nil: true),

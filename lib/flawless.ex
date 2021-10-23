@@ -202,7 +202,7 @@ defmodule Flawless do
       %Spec{for: %Spec.List{}} -> validate_list(value, schema, context)
       %Union{} -> validate_union(value, schema, context)
       [item_type] -> validate_list(value, Helpers.list(item_type), context)
-      [] -> validate_list(value, Helpers.list(Helpers.value()), context)
+      [] -> validate_list(value, Helpers.list(Helpers.any()), context)
       %Spec{for: %Spec.Tuple{}} -> validate_tuple(value, schema, context)
       tuple when is_tuple(tuple) -> validate_tuple(value, Helpers.tuple(tuple), context)
       %Spec{for: %Spec.Literal{}} -> validate_literal(value, schema, context)

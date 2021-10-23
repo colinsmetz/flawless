@@ -51,6 +51,13 @@ defmodule Flawless.Helpers do
     }
   end
 
+  defp value(opts) do
+    type = opts |> Keyword.get(:type, :any)
+
+    %Spec.Value{schema: opts |> Keyword.get(:schema, nil)}
+    |> build_spec(type, opts)
+  end
+
   @doc """
   Represents any value.
 
@@ -62,22 +69,19 @@ defmodule Flawless.Helpers do
 
   ## Examples
 
-      iex> Flawless.validate(:something, value())
+      iex> Flawless.validate(:something, any())
       []
 
-      iex> Flawless.validate([1, 2, 3], value())
+      iex> Flawless.validate([1, 2, 3], any())
       []
 
-      iex> Flawless.validate(2, value(in: [1, "1", :one]))
+      iex> Flawless.validate(2, any(in: [1, "1", :one]))
       [%Flawless.Error{context: [], message: "Invalid value: 2. Valid options: [1, \\"1\\", :one]"}]
 
   """
-  @spec value(keyword) :: Flawless.Spec.t()
-  def value(opts \\ []) do
-    type = opts |> Keyword.get(:type, :any)
-
-    %Spec.Value{schema: opts |> Keyword.get(:schema, nil)}
-    |> build_spec(type, opts)
+  @spec any(keyword) :: Flawless.Spec.t()
+  def any(opts \\ []) do
+    value(opts)
   end
 
   @doc """
@@ -105,7 +109,7 @@ defmodule Flawless.Helpers do
   ## Shortcuts
 
   If you do not need any of the options, you can use the `[item_type]` shortcut instead of this
-  function. You can also use `[]` for matching any list (equivalent to `list(value())`). For
+  function. You can also use `[]` for matching any list (equivalent to `list(any())`). For
   matching the empty list, consider using `literal([])` instead.
 
   """

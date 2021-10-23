@@ -74,7 +74,7 @@ defmodule Flawless.SchemaValidator do
 
   defp literal_spec_schema() do
     structure(%Flawless.Spec.Literal{
-      value: value()
+      value: any()
     })
   end
 
@@ -117,7 +117,7 @@ defmodule Flawless.SchemaValidator do
       %_{} ->
         structure(%Flawless.Rule{
           predicate: predicate_schema(),
-          message: value()
+          message: any()
         })
 
       _else ->
