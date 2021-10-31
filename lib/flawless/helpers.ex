@@ -793,6 +793,57 @@ defmodule Flawless.Helpers do
   end
 
   #######################
+  #      MODIFIERS      #
+  #######################
+
+  @doc """
+  Modifies an existing schema by adding or updating existing options.
+
+  It accepts the same common set of options as the helpers (see [Common options](#module-common-options)).
+  The behaviour is a bit different depending on the type of option:nonempty_list()
+
+  - Checks and late checks are *added* to existing checks.
+  - `cast_from` options are *added* to existing ones.
+  - Other options override the existing value
+
+  ## Examples
+
+      iex> number() |> add_opts(min: 0, nil: false) == number(min: 0, nil: false)
+      true
+
+      iex> schema = number(min: 0, cast_from: :string) |> add_opts(max: 10, cast_from: :float)
+      iex> expected = number(min: 0, max: 10, cast_from: [:string, :float])
+      iex> schema == expected
+      true
+
+  """
+  @spec add_opts(Flawless.spec_type(), Keyword.t()) :: Flawless.Spec.t()
+  def add_opts(schema, opts) do
+    spec = schema |> as_spec()
+    checks = extract_checks(opts, spec.type)
+    late_checks = extract_late_checks(opts)
+    nillable = opts |> Keyword.get(nil, spec.nil)
+    on_error = opts |> Keyword.get(:on_error, spec.on_error)
+    cast_from = opts |> Keyword.get(:cast_from, [])
+
+    %{
+      spec
+      | checks: spec.checks ++ checks,
+        late_checks: spec.late_checks ++ late_checks,
+        nil: nillable,
+        on_error: on_error,
+        cast_from: List.wrap(spec.cast_from) ++ List.wrap(cast_from)
+    }
+  end
+
+  defp as_spec(%Spec{} = spec), do: spec
+  defp as_spec([schema] = _spec), do: list(schema)
+  defp as_spec(tuple_schema) when is_tuple(tuple_schema), do: tuple(tuple_schema)
+  defp as_spec(%_{} = struct_schema), do: structure(struct_schema)
+  defp as_spec(%{} = map_schema), do: map(map_schema)
+  defp as_spec(l) when is_atom(l) or is_binary(l) or is_number(l), do: literal(l)
+
+  #######################
   #   BUILT-IN CHECKS   #
   #######################
 

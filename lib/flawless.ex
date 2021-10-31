@@ -62,7 +62,6 @@ defmodule Flawless do
     end
   end
 
-
   @doc """
   Validates Elixir data against a schema and returns the list of errors.
 
