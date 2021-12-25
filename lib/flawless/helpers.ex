@@ -597,8 +597,12 @@ defmodule Flawless.Helpers do
   See [`map/2`](#map/2-non-specified-keys) to know how to use it.
 
   """
-  @spec any_key :: Flawless.AnyOtherKey.t()
-  def any_key(), do: %AnyOtherKey{}
+  @spec any_key :: Macro.t()
+  defmacro any_key() do
+    quote do
+      %AnyOtherKey{}
+    end
+  end
 
   @doc """
   A helper to define an optional key in maps.
@@ -606,8 +610,12 @@ defmodule Flawless.Helpers do
   See [`map/2`](#map/2-optional-keys) to know how to use it.
 
   """
-  @spec maybe(any) :: Flawless.OptionalKey.t()
-  def maybe(key), do: %OptionalKey{key: key}
+  @spec maybe(any) :: Macro.t()
+  defmacro maybe(key) do
+    quote do
+      %OptionalKey{key: unquote(key)}
+    end
+  end
 
   @doc """
   A helper to build other helpers for opaque structs.
@@ -787,9 +795,11 @@ defmodule Flawless.Helpers do
       [%Flawless.Error{context: [], message: "Must be less than or equal to 10."}]
 
   """
-  @spec union(list(Flawless.spec_type())) :: Flawless.Union.t()
-  def union(schemas) do
-    %Flawless.Union{schemas: Flawless.Union.flatten(schemas)}
+  @spec union(list(Flawless.spec_type())) :: Macro.t()
+  defmacro union(schemas) do
+    quote do
+      %Flawless.Union{schemas: unquote(Flawless.Union.flatten(schemas))}
+    end
   end
 
   #######################
